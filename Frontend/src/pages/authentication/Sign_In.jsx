@@ -27,13 +27,13 @@ export const Sign_In = () => {
   };
 
   return (
-    <div className="flex flex-col sm:flex-row w-full h-screen bg-gray-100">
+    <div className="flex flex-col sm:flex-row w-full h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
       {/* Left Section - Sign In Form */}
-      <div className="w-full sm:w-1/2 flex flex-col justify-center items-center p-6 md:p-10 bg-white shadow-lg">
+      <div className="w-full sm:w-1/2 flex flex-col justify-center items-center p-6 md:p-10  shadow-lg">
         {/* Logo */}
         <div className="flex items-center pb-2">
-          <div className="w-8 h-8 bg-black rounded-full mr-2"></div>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
+          <div className="w-8 h-8 bg-white rounded-full mr-2"></div>
+          <h1 className="text-2xl md:text-3xl font-bold text-white">
             RATE A PROPERTY
           </h1>
         </div>

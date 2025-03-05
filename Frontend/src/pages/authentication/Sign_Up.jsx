@@ -1,10 +1,12 @@
-import { React, useState } from "react";
-import { NavLink } from "react-router-dom";
+import { useState } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
 import { useFormik } from "formik";
 import * as Yup from "yup";
+import { Camera } from "lucide-react";
 import { APIS } from "../../../config/Config";
 
 export const Sign_Up = () => {
+  const navigate = useNavigate();
   const [preview, setPreview] = useState(null);
 
   const formik = useFormik({
@@ -34,7 +36,10 @@ export const Sign_Up = () => {
       formData.append("image", values.image);
 
       APIS.signup(formData)
-        .then((res) => console.log(res))
+        .then((res) => {
+          navigate("/");
+          console.log(res);
+        })
         .catch((err) => console.log(err));
 
       setSubmitting(false);
@@ -50,26 +55,45 @@ export const Sign_Up = () => {
   };
 
   return (
-    <div className="flex flex-col sm:flex-row w-full h-screen bg-gray-100">
-      <div className="w-full sm:w-1/2  flex flex-col justify-center items-center p-6 md:p-10 bg-white shadow-lg">
-        <div className=" flex items-center sm:static pb-2 sm:mb-6">
-          <div className="w-8 h-8 bg-black rounded-full mr-2"></div>
-          <h1 className="text-2xl md:text-3xl  font-bold text-gray-800">
-            RATE A PROPERTY
-          </h1>
-        </div>
-
-        <div className="bg-gray-800 p-6 sm:p-8 rounded-lg shadow-xl w-full max-w-md">
-          <h2 className="text-white text-2xl font-semibold mb-6 text-center">
-            Sign Up
-          </h2>
-
+    <div className="flex flex-col sm:flex-row w-full h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
+      <div className="w-full sm:w-1/2 flex flex-col justify-center items-center p-6 md:p-10">
+        <h1 className="text-4xl font-bold mb-6">RATE A PROPERTY</h1>
+        <div className="bg-gray-800 p-8 rounded-xl shadow-lg w-full max-w-md">
+          <h2 className="text-2xl font-semibold mb-6 text-center">Sign Up</h2>
+          <div className="flex justify-center mb-6">
+            <label className="relative w-24 h-24 cursor-pointer">
+              <input
+                type="file"
+                name="image"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="hidden"
+              />
+              <div className="w-24 h-24 bg-gray-700 rounded-full flex items-center justify-center overflow-hidden relative border-4 border-gray-600 shadow-lg">
+                {preview ? (
+                  <img
+                    src={preview}
+                    alt="Preview"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <Camera className="text-gray-400" size={32} />
+                )}
+                <div className="absolute bottom-1 right-1 bg-black bg-opacity-75 p-2 rounded-full">
+                  <Camera className="text-white" size={18} />
+                </div>
+              </div>
+            </label>
+          </div>
+          {formik.touched.image && formik.errors.image && (
+            <p className="text-red-400 text-center">{formik.errors.image}</p>
+          )}
           <form onSubmit={formik.handleSubmit} className="space-y-4">
             <input
               type="text"
               name="name"
               placeholder="Enter Your Name"
-              className="w-full px-4 py-2 sm:py-3 rounded-md bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 transition"
+              className="w-full p-3 rounded-lg bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
               value={formik.values.name}
@@ -82,7 +106,7 @@ export const Sign_Up = () => {
               type="email"
               name="email"
               placeholder="Email"
-              className="w-full px-4 py-2 sm:py-3 rounded-md bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 transition"
+              className="w-full p-3 rounded-lg bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
               value={formik.values.email}
@@ -95,7 +119,7 @@ export const Sign_Up = () => {
               type="password"
               name="password"
               placeholder="Password"
-              className="w-full px-4 py-2 sm:py-3 rounded-md bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 transition"
+              className="w-full p-3 rounded-lg bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
               value={formik.values.password}
@@ -108,7 +132,7 @@ export const Sign_Up = () => {
               type="password"
               name="confirmPassword"
               placeholder="Confirm Password"
-              className="w-full px-4 py-2 sm:py-3 rounded-md bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 transition"
+              className="w-full p-3 rounded-lg bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
               value={formik.values.confirmPassword}
@@ -118,34 +142,14 @@ export const Sign_Up = () => {
                 <p className="text-red-400">{formik.errors.confirmPassword}</p>
               )}
 
-            <input
-              type="file"
-              name="image"
-              accept="image/*"
-              onChange={handleImageChange}
-              className="w-full text-white bg-gray-700 rounded-md p-2"
-            />
-            {formik.touched.image && formik.errors.image && (
-              <p className="text-red-400">{formik.errors.image}</p>
-            )}
-
-            {preview && (
-              <img
-                src={preview}
-                alt="Preview"
-                className="mt-4 w-24 h-24 object-cover rounded-full mx-auto"
-              />
-            )}
-
             <button
               type="submit"
               disabled={formik.isSubmitting}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 sm:py-3 rounded-md transition font-semibold"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg transition font-semibold text-lg"
             >
               {formik.isSubmitting ? "Signing Up..." : "Sign Up ➤"}
             </button>
           </form>
-
           <p className="text-gray-400 text-center mt-4">
             Already have an account?{" "}
             <NavLink
@@ -158,10 +162,8 @@ export const Sign_Up = () => {
         </div>
       </div>
       <div className="w-full sm:w-1/2 flex flex-col justify-center items-center bg-blue-600 text-white text-center p-6 sm:p-10">
-        <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-          Join RATE A PROPERTY
-        </h2>
-        <p className="text-base sm:text-lg max-w-md">
+        <h2 className="text-4xl font-bold mb-4">Join RATE A PROPERTY</h2>
+        <p className="text-lg max-w-md">
           Create an account to rate, review, and explore properties. Start your
           journey today!
         </p>

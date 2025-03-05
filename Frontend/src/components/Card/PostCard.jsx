@@ -90,7 +90,7 @@ const PostCard = ({ post }) => {
 
             <div className="leading-tight">
               <p className="text-sm font-semibold">{post.owner.user_name}</p>
-              <span className="text-xs">
+              <span className="text-xs text-gray-500">
                 {changeToLocalTime(post.createdAt)}
               </span>
             </div>
@@ -125,45 +125,32 @@ const PostCard = ({ post }) => {
       <div className="flex justify-between gap-2 border-t border-gray-300 pt-3 items-center mt-4 text-gray-600 text-sm">
         <div className="flex items-center gap-x-2">
           <div className="flex items-center justify-center gap-x-1">
-          <button
-            // className={`flex items-center md:gap-x-1 transition ${
-            //   likes.some((like) => like.owner === likeOwner)
-            //     ? "text-blue-500"
-            //     : "hover:text-blue-500"
-            // }`}
-            onClick={handleLike}
-          >
-            <ArrowBigUp
-              size={32}
-              className={`transition-transform ${
-                likes.some((like) => like.owner === likeOwner)
-                  ? "translate-y-[-2px] scale-110 fill-green-700 stroke-0"
-                  : ""
-              }`}
-            />
-          </button>
+            <button onClick={handleLike}>
+              <ArrowBigUp
+                size={32}
+                className={`transition-transform ${
+                  likes.some((like) => like.owner === likeOwner)
+                    ? "translate-y-[-2px] scale-110 fill-green-700 stroke-0"
+                    : ""
+                }`}
+              />
+            </button>
             <span className="text-base font-medium">{post.likes.length}</span>
-
           </div>
           <div className="flex items-center justify-center gap-x-1">
-          <button
-            // className={`flex items-center md:gap-x-1 transition ${
-            //   disLikes.some((like) => like.owner === likeOwner)
-            //     ? "text-red-500"
-            //     : "hover:text-red-500"
-            // }`}
-            onClick={handleDisLike}
-          >
-            <ArrowBigDown
-              size={32}
-              className={`transition-transform ${
-                disLikes.some((like) => like.owner === likeOwner)
-                  ? "translate-y-[2px] scale-110 fill-red-500 stroke-0"
-                  : ""
-              }`}
-            />
-          </button>
-          <span className="text-base font-medium">{post.disLikes.length}</span>
+            <button onClick={handleDisLike}>
+              <ArrowBigDown
+                size={32}
+                className={`transition-transform ${
+                  disLikes.some((like) => like.owner === likeOwner)
+                    ? "translate-y-[2px] scale-110 fill-red-500 stroke-0"
+                    : ""
+                }`}
+              />
+            </button>
+            <span className="text-base font-medium">
+              {post.disLikes.length}
+            </span>
           </div>
         </div>
 
