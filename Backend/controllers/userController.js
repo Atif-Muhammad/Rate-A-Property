@@ -187,6 +187,17 @@ const userController = {
                 return decoded
             }
         }))
+    },
+    getUser: async (req, res)=>{
+        const user_id = req.query.user;
+        
+        try {
+            const usr = await user.findOne({_id: user_id});
+            // console.log(usr)
+            res.send(usr)
+        } catch (error) {
+            res.send(error);
+        }
     }
 
 }

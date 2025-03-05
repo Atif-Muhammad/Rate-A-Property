@@ -35,8 +35,8 @@ const postController = {
         }
     },
     getSingPost: async (req, res)=>{
-        const postId = req.query.post_id
-        console.log(postId)
+        const postId = req.query.post
+        // console.log(postId)
         try {
             const post = await post.find({_id: postId}).populate("owner").populate("likes").populate("disLikes");
             res.send(post)
@@ -140,8 +140,8 @@ const postController = {
             const dis_like_removed = await disLike.findOneAndDelete({$and : [{for_post: post_id}, {owner: owner_id}] });
             
             if(dis_like_removed){
-                await user.updateOne({_id: owner_id}, {$pull: {likes: dis_like_removed._id}});
-                await post.updateOne({_id: post_id}, {$pull: {likes: dis_like_removed._id}});   
+                await user.updateOne({_id: owner_id}, {$pull: {disLikes: dis_like_removed._id}});
+                await post.updateOne({_id: post_id}, {$pull: {disLikes: dis_like_removed._id}});   
                 res.send(dis_like_removed)
             }
             

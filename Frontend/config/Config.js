@@ -3,7 +3,7 @@ import axios from "axios";
 const Baseurl = "http://localhost:3000/api";
 
 
-const userWho = async (token)=>{
+const userWho = async ()=>{
   try {
     const response = await axios.get(`${Baseurl}/user/userWho`,{withCredentials: true})
     return response
@@ -31,6 +31,14 @@ const signin = async (data) => {
 const logout = async () => {
   try {
     const response = await axios.post(`${Baseurl}/user/logout`, {}, { withCredentials });
+    return response
+  } catch (error) {
+    return error
+  }
+}
+const getUser = async (id)=>{
+  try {
+    const response = await axios.get(`${Baseurl}/user/getUser?user=${id}`);
     return response
   } catch (error) {
     return error
@@ -95,6 +103,7 @@ export const APIS = {
   userWho,
   signup,
   signin,
+  getUser,
   logout,
   getPosts,
   getSinglePost,
