@@ -2,16 +2,13 @@ import React, { useEffect, useState } from "react";
 import {
   MoreHorizontal,
   MapPin,
-  ArrowUp,
-  ArrowDown,
   MessagesSquare,
   Share2,
   ArrowBigUp,
   ArrowBigDown,
 } from "lucide-react";
 import { APIS } from "../../../config/Config";
-import { changeToLocalTime } from "../../ReUsables/toLocalTime";
-// import { ActionButton } from "../../components/ActionButton";
+import { getTimeAgo } from "../../ReUsables/GetTimeAgo";
 
 const PostCard = ({ post }) => {
   const [likeOwner, setLikeOwner] = useState(""); // User ID
@@ -91,13 +88,13 @@ const PostCard = ({ post }) => {
             <div className="leading-tight">
               <p className="text-sm font-semibold">{post.owner.user_name}</p>
               <span className="text-xs text-gray-500">
-                {changeToLocalTime(post.createdAt)}
+                {getTimeAgo(post.createdAt)}
               </span>
             </div>
           </div>
 
           <div className="flex items-center text-xs text-gray-500 gap-x-2">
-            <MapPin size={14} /> <span>{post.location}</span>
+            {/* <MapPin size={14} /> <span>{post.location}</span> */}
             <MoreHorizontal
               size={22}
               className="text-gray-500 cursor-pointer"
@@ -105,9 +102,14 @@ const PostCard = ({ post }) => {
           </div>
         </div>
       </div>
+      <div>
+        <span className="text-xs py-3 flex text-gray-500">
+          <MapPin size={14} /> <span>{post.location}</span>
+        </span>
 
-      {/* Post Content */}
-      <p className="mt-3 text-gray-800 text-base">{post.description}</p>
+        {/* Post Content */}
+        <p className=" text-gray-800 text-base">{post.description}</p>
+      </div>
 
       {/* Post Image (If Exists) */}
       {post.image && (
@@ -120,9 +122,8 @@ const PostCard = ({ post }) => {
         </div>
       )}
 
-      {/* action button */}
       {/* Action Buttons */}
-      <div className="flex justify-between gap-2 border-t border-gray-300 pt-3 items-center mt-4 text-gray-600 text-sm">
+      <div className="flex justify-between gap-2 p-2 border-t border-gray-300 pt-3 items-center mt-4 text-gray-600 text-sm">
         <div className="flex items-center gap-x-2">
           <div className="flex items-center justify-center gap-x-1">
             <button onClick={handleLike}>
@@ -156,12 +157,12 @@ const PostCard = ({ post }) => {
 
         <button className="flex items-center md:gap-x-2 hover:text-gray-700 transition">
           <MessagesSquare size={22} />
-          <span className="text-base font-medium">Comment</span>
+          <span className="text-base hidden md:flex font-medium">Comment</span>
         </button>
 
         <button className="flex items-center md:gap-x-2 hover:text-green-500 transition">
           <Share2 size={22} />
-          <span className="text-base font-medium">Share</span>
+          <span className="text-base font-medium hidden md:flex">Share</span>
         </button>
       </div>
     </div>

@@ -25,6 +25,8 @@ export const Sidebar = () => {
               <span>{label}</span>
             </NavLink>
           ))}
+
+          <NavLink to="/newPost">Post</NavLink>
         </nav>
       </div>
 

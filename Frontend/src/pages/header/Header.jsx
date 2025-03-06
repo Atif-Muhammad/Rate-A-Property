@@ -52,35 +52,35 @@ export const Header = () => {
       <NavLink className="md:hidden">
         <Search size={24} className="text-gray-700" />
       </NavLink>
-    <div className="flex items-center gap-2 h-full">
-      {loading ? (
-        <></>
-      ) : user && user.image ? ( // Ensure user and image exist
-        <div className="h-full w-full flex justify-end pe-4">
-          <img
-            className="rounded-full"
-            src={`data:${user.image.contentType};base64,${arrayBufferToBase64(
-              user.image.data.data
-            )}`}
-            alt="user profile"
-          />
-        </div>
-      ) : (
-        <div className="flex items-center gap-2">
-          <NavLink
-            to="/signin"
-            className="bg-blue-600 hover:bg-blue-700 text-white md:px-5 px-3 py-2 rounded-lg text-sm transition"
-          >
-            Sign In
-          </NavLink>
-          <NavLink
-            to="/signup"
-            className="bg-gray-600 hover:bg-gray-700 text-white md:px-5 px-3 py-2 rounded-lg text-sm transition"
-          >
-            Sign Up
-          </NavLink>
-        </div>
-      )}
+      <div className="flex items-center gap-2 ">
+        {loading ? (
+          <></>
+        ) : user && user.image ? ( // Ensure user and image exist
+          <div className="w-12 h-12 rounded-full  flex items-center justify-center shadow-md transition-transform hover:scale-105">
+            <img
+              className="w-full h-full rounded-full object-cover border-2 border-white"
+              src={`data:${user.image.contentType};base64,${arrayBufferToBase64(
+                user.image.data.data
+              )}`}
+              alt="user profile"
+            />
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <NavLink
+              to="/signin"
+              className="bg-blue-600 hover:bg-blue-700 text-white md:px-5 px-3 py-2 rounded-lg text-sm transition"
+            >
+              Sign In
+            </NavLink>
+            <NavLink
+              to="/signup"
+              className="bg-gray-600 hover:bg-gray-700 text-white md:px-5 px-3 py-2 rounded-lg text-sm transition"
+            >
+              Sign Up
+            </NavLink>
+          </div>
+        )}
       </div>
     </header>
   );
