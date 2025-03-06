@@ -4,67 +4,69 @@ import {
   MapPin,
   MessagesSquare,
   Share2,
-  ArrowBigUp,
-  ArrowBigDown,
+  ThumbsUp,
+  ThumbsDown,
 } from "lucide-react";
 import { APIS } from "../../../config/Config";
 import { getTimeAgo } from "../../ReUsables/GetTimeAgo";
 
 const PostCard = ({ post }) => {
-  const [likeOwner, setLikeOwner] = useState(""); // User ID
-  const [likes, setLikes] = useState(post.likes);
-  const [disLikes, setDisLikes] = useState(post.disLikes);
+  const [agreeOwner, setAgreeOwner] = useState(""); // User ID
+  const [agrees, setAgrees] = useState(post.likes);
+  const [disagrees, setDisagrees] = useState(post.disLikes);
 
   useEffect(() => {
     APIS.userWho()
-      .then((res) => setLikeOwner(res.data.id))
+      .then((res) => setAgreeOwner(res.data.id))
       .catch((err) => console.log(err));
   }, []);
 
-  const handleLike = async () => {
-    if (likes.some((like) => like.owner === likeOwner)) {
+  const handleAgree = async () => {
+    if (agrees.some((agree) => agree.owner === agreeOwner)) {
       await APIS.unLike(post._id);
-      setLikes((prevLikes) =>
-        prevLikes.filter((like) => like.owner !== likeOwner)
+      setAgrees((prevAgrees) =>
+        prevAgrees.filter((agree) => agree.owner !== agreeOwner)
       );
     } else {
       await APIS.like(post._id);
-      setLikes((prevLikes) => [
-        ...prevLikes,
-        { owner: likeOwner, for_post: post._id },
+      setAgrees((prevAgrees) => [
+        ...prevAgrees,
+        { owner: agreeOwner, for_post: post._id },
       ]);
 
-      // Remove Dislike if exists
-      setDisLikes((prevDisLikes) => {
-        if (prevDisLikes.some((dislike) => dislike.owner === likeOwner)) {
+      // Remove Disagree if exists
+      setDisagrees((prevDisagrees) => {
+        if (prevDisagrees.some((disagree) => disagree.owner === agreeOwner)) {
           APIS.unDisLike(post._id);
-          return prevDisLikes.filter((dislike) => dislike.owner !== likeOwner);
+          return prevDisagrees.filter(
+            (disagree) => disagree.owner !== agreeOwner
+          );
         }
-        return prevDisLikes;
+        return prevDisagrees;
       });
     }
   };
 
-  const handleDisLike = async () => {
-    if (disLikes.some((dislike) => dislike.owner === likeOwner)) {
+  const handleDisagree = async () => {
+    if (disagrees.some((disagree) => disagree.owner === agreeOwner)) {
       await APIS.unDisLike(post._id);
-      setDisLikes((prevDisLikes) =>
-        prevDisLikes.filter((dislike) => dislike.owner !== likeOwner)
+      setDisagrees((prevDisagrees) =>
+        prevDisagrees.filter((disagree) => disagree.owner !== agreeOwner)
       );
     } else {
       await APIS.disLike(post._id);
-      setDisLikes((prevDisLikes) => [
-        ...prevDisLikes,
-        { owner: likeOwner, for_post: post._id },
+      setDisagrees((prevDisagrees) => [
+        ...prevDisagrees,
+        { owner: agreeOwner, for_post: post._id },
       ]);
 
-      // Remove Like if exists
-      setLikes((prevLikes) => {
-        if (prevLikes.some((like) => like.owner === likeOwner)) {
+      // Remove Agree if exists
+      setAgrees((prevAgrees) => {
+        if (prevAgrees.some((agree) => agree.owner === agreeOwner)) {
           APIS.unLike(post._id);
-          return prevLikes.filter((like) => like.owner !== likeOwner);
+          return prevAgrees.filter((agree) => agree.owner !== agreeOwner);
         }
-        return prevLikes;
+        return prevAgrees;
       });
     }
   };
@@ -94,7 +96,6 @@ const PostCard = ({ post }) => {
           </div>
 
           <div className="flex items-center text-xs text-gray-500 gap-x-2">
-            {/* <MapPin size={14} /> <span>{post.location}</span> */}
             <MoreHorizontal
               size={22}
               className="text-gray-500 cursor-pointer"
@@ -105,7 +106,7 @@ const PostCard = ({ post }) => {
       <div>
         <span className="text-sm py-3 flex text-gray-500">
           <MapPin size={14} />
-          <span >{post.location}</span>
+          <span>{post.location}</span>
         </span>
 
         {/* Post Content */}
@@ -127,32 +128,30 @@ const PostCard = ({ post }) => {
       <div className="flex justify-between gap-2 p-2 border-t border-gray-300 pt-3 items-center mt-4 text-gray-600 text-sm">
         <div className="flex items-center gap-x-2">
           <div className="flex items-center justify-center gap-x-1">
-            <button onClick={handleLike}>
-              <ArrowBigUp
+            <button onClick={handleAgree}>
+              <ThumbsUp
                 size={32}
                 className={`transition-transform ${
-                  likes.some((like) => like.owner === likeOwner)
-                    ? "translate-y-[-2px] scale-110 fill-green-700 stroke-0"
-                    : ""
+                  agrees.some((agree) => agree.owner === agreeOwner)
+                    ? "text-green-700"
+                    : "text-gray-500"
                 }`}
               />
             </button>
-            <span className="text-base font-medium">{likes.length}</span>
+            <span className="text-base font-medium">{agrees.length}</span>
           </div>
           <div className="flex items-center justify-center gap-x-1">
-            <button onClick={handleDisLike}>
-              <ArrowBigDown
+            <button onClick={handleDisagree}>
+              <ThumbsDown
                 size={32}
                 className={`transition-transform ${
-                  disLikes.some((like) => like.owner === likeOwner)
-                    ? "translate-y-[2px] scale-110 fill-red-500 stroke-0"
-                    : ""
+                  disagrees.some((disagree) => disagree.owner === agreeOwner)
+                    ? "text-red-500"
+                    : "text-gray-500"
                 }`}
               />
             </button>
-            <span className="text-base font-medium">
-              {disLikes.length}
-            </span>
+            <span className="text-base font-medium">{disagrees.length}</span>
           </div>
         </div>
 
