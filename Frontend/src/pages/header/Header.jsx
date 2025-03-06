@@ -15,7 +15,7 @@ export const Header = () => {
             .then((res) => {
               if (res.status === 200) {
                 setUser(res.data);
-                setLoading(false)
+                setLoading(false);
               }
             })
             .catch((err) => {
@@ -54,17 +54,28 @@ export const Header = () => {
       </NavLink>
       <div className="flex items-center gap-2 ">
         {loading ? (
-          <></>
+          <>loading...</>
         ) : user && user.image ? ( // Ensure user and image exist
-          <div className="w-12 h-12 rounded-full  flex items-center justify-center shadow-md transition-transform hover:scale-105">
-            <img
-              className="w-full h-full rounded-full object-cover border-2 border-white"
-              src={`data:${user.image.contentType};base64,${arrayBufferToBase64(
-                user.image.data.data
-              )}`}
-              alt="user profile"
-            />
-          </div>
+          <>
+            {/* Button to Open Modal */}
+            <NavLink
+              // onClick={() => setIsModalOpen(true)}
+              to="/newPost"
+              className="bg-blue-500 text-white px-4 py-2 rounded-md"
+            >
+              Create Post
+            </NavLink>
+
+            <div className="w-12 h-12 rounded-full  flex items-center justify-center shadow-md transition-transform hover:scale-105">
+              <img
+                className="w-full h-full rounded-full object-cover border-2 border-white"
+                src={`data:${
+                  user.image.contentType
+                };base64,${arrayBufferToBase64(user.image.data.data)}`}
+                alt="user profile"
+              />
+            </div>
+          </>
         ) : (
           <div className="flex items-center gap-2">
             <NavLink

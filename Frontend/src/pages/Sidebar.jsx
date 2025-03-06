@@ -26,7 +26,6 @@ export const Sidebar = () => {
             </NavLink>
           ))}
 
-          <NavLink to="/newPost">Post</NavLink>
         </nav>
       </div>
 

@@ -103,8 +103,9 @@ const PostCard = ({ post }) => {
         </div>
       </div>
       <div>
-        <span className="text-xs py-3 flex text-gray-500">
-          <MapPin size={14} /> <span>{post.location}</span>
+        <span className="text-sm py-3 flex text-gray-500">
+          <MapPin size={14} />
+          <span >{post.location}</span>
         </span>
 
         {/* Post Content */}
@@ -136,7 +137,7 @@ const PostCard = ({ post }) => {
                 }`}
               />
             </button>
-            <span className="text-base font-medium">{post.likes.length}</span>
+            <span className="text-base font-medium">{likes.length}</span>
           </div>
           <div className="flex items-center justify-center gap-x-1">
             <button onClick={handleDisLike}>
@@ -150,7 +151,7 @@ const PostCard = ({ post }) => {
               />
             </button>
             <span className="text-base font-medium">
-              {post.disLikes.length}
+              {disLikes.length}
             </span>
           </div>
         </div>
