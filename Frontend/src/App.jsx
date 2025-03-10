@@ -5,6 +5,7 @@ import { NotFound } from "./pages/notfound/NotFound";
 import { Sign_In } from "./pages/authentication/Sign_In";
 import { Sign_Up } from "./pages/authentication/Sign_Up";
 import { NewPost } from "./components/NewPost";
+import CommentSection from "./components/Card/CommentSection";
 // import State from "./context/state";
 
 function App() {
@@ -18,6 +19,7 @@ function App() {
           <Route path="/signin" element={<Sign_In />} />
           <Route path="/signup" element={<Sign_Up />} />
           <Route path="/newPost" element={<NewPost />} />
+          <Route path="/commentsection" element={<CommentSection />} />
         </Routes>
       </BrowserRouter>
           {/* </State> */}

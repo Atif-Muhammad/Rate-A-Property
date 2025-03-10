@@ -3,6 +3,7 @@ import { MoreHorizontal, MapPin, MessagesSquare, Share2 } from "lucide-react";
 import { APIS } from "../../../config/Config";
 import { getTimeAgo } from "../../ReUsables/GetTimeAgo";
 import MediaGrid from "./MediaGrid";
+import { NavLink } from "react-router-dom";
 
 const PostCard = ({ post }) => {
   const [agreeOwner, setAgreeOwner] = useState("");
@@ -140,10 +141,13 @@ const PostCard = ({ post }) => {
           </button>
         </div>
 
-        <button className="flex items-center md:gap-x-2 hover:text-gray-700 transition">
+        <NavLink
+          to="/commentsection"
+          className="flex items-center md:gap-x-2 hover:text-gray-700 transition"
+        >
           <MessagesSquare size={22} />
           <span className="text-base hidden md:flex font-medium">Comment</span>
-        </button>
+        </NavLink>
 
         <button className="flex items-center md:gap-x-2 hover:text-green-500 transition">
           <Share2 size={22} />
