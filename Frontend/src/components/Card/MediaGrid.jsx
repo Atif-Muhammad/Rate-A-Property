@@ -1,4 +1,4 @@
-import React ,{ useState } from "react";
+import React, { useState } from "react";
 import {
   ThumbsUp,
   ThumbsDown,
@@ -54,134 +54,180 @@ export default function MediaGrid({ media }) {
     setSelectedIndex((prev) => (prev - 1 + media.length) % media.length);
 
   return (
-    <div>
-      {/* Media Grid */}
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
-        {media.slice(0, MAX_VISIBLE).map((item, index) => (
+    <>
+      <div className="grid gap-2 py-2">
+        {media.length >= 2 &&
+        media[0].width > media[0].height &&
+        media[1].width > media[1].height ? (
+          <>
+            {/* First 2 images (if both are landscape) in a row */}
+            <div className="grid grid-cols-2 gap-2">
+              {media.slice(0, 2).map((item, index) => (
+                <div
+                  key={index}
+                  className="relative cursor-pointer"
+                  onClick={() => {
+                    setSelectedIndex(index);
+                    setIsModalOpen(true);
+                  }}
+                >
+                  <img
+                    src={item.url}
+                    alt="Post"
+                    className="w-full h-auto rounded-lg object-cover"
+                  />
+                </div>
+              ))}
+            </div>
+
+            {/* Remaining images in grid */}
+            <div
+              className={`grid gap-2 ${
+                media.length - 2 === 1
+                  ? "grid-cols-1"
+                  : "grid-cols-2 md:grid-cols-3"
+              }`}
+            >
+              {media.slice(2).map((item, index) => (
+                <div
+                  key={index + 2}
+                  className="relative cursor-pointer"
+                  onClick={() => {
+                    setSelectedIndex(index + 2);
+                    setIsModalOpen(true);
+                  }}
+                >
+                  {item.type === "image" ? (
+                    <img
+                      src={item.url}
+                      alt="Post"
+                      className="w-full h-auto rounded-lg object-cover"
+                    />
+                  ) : (
+                    <video controls className="w-full h-auto rounded-lg">
+                      <source src={item.url} type="video/mp4" />
+                    </video>
+                  )}
+                </div>
+              ))}
+            </div>
+          </>
+        ) : (
+          // Default Grid Layout if first 2 are not both landscape
           <div
-            key={index}
-            className="relative cursor-pointer"
-            onClick={() => {
-              setSelectedIndex(index);
-              setIsModalOpen(true);
-            }}
+            className={`grid gap-2  ${
+              media.length === 1
+                ? "grid-cols-1"
+                : media.length === 2
+                ? "grid-cols-2 items-center"
+                : "grid-cols-3 md:grid-cols-4 items-center"
+            }`}
           >
-            {item.type === "image" ? (
-              <img
-                src={item.url}
-                alt="Post"
-                className="w-full h-auto rounded-lg object-cover"
-              />
-            ) : (
-              <video controls className="w-full h-auto rounded-lg">
-                <source src={item.url} type="video/mp4" />
-                Your browser does not support the video tag.
-              </video>
-            )}
+            {media.slice(0, MAX_VISIBLE).map((item, index) => (
+              <div
+                key={index}
+                className="relative cursor-pointer"
+                onClick={() => {
+                  setSelectedIndex(index);
+                  setIsModalOpen(true);
+                }}
+              >
+                {item.type === "image" ? (
+                  <img
+                    src={item.url}
+                    alt="Post"
+                    className="w-full h-auto rounded-lg object-cover"
+                  />
+                ) : (
+                  <video controls className="w-full h-auto rounded-lg">
+                    <source src={item.url} type="video/mp4" />
+                  </video>
+                )}
+              </div>
+            ))}
           </div>
-        ))}
+        )}
 
         {/* "See More" Button */}
         {media.length > MAX_VISIBLE && (
           <div
-            className="flex items-center justify-center bg-black/50 text-white text-lg font-semibold rounded-lg cursor-pointer"
+            className="flex items-center px-3 py-1.5 justify-center bg-black/50 text-white text-md  rounded-lg cursor-pointer"
             onClick={() => setIsModalOpen(true)}
           >
             +{media.length - MAX_VISIBLE} See More
           </div>
         )}
       </div>
-      {/* Modal */}
+
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-80 flex justify-center items-center p-4 z-50">
-          <div className="relative bg-white rounded-lg p-4 max-w-4xl w-full max-h-[90vh] overflow-auto">
-            {/* Close Button */}
-            <button
-              className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full"
-              onClick={() => setIsModalOpen(false)}
-            >
-              ✕
-            </button>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center p-6 z-50">
+          {/* Close Button (Top Right) */}
+          <button
+            className="absolute top-6 right-6 bg-red-600 hover:bg-red-700 z-10 text-white px-3 py-1.5 rounded-full transition"
+            onClick={() => setIsModalOpen(false)}
+          >
+            ✕
+          </button>
 
-            {/* Slider Controls */}
-            <button
-              className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-gray-700/60 text-white p-2 rounded-full"
-              onClick={prevMedia}
-            >
-              <ChevronLeft size={28} />
-            </button>
+          {/* Next & Previous Buttons (Side Positions) */}
+          {media.length > 1 && (
+            <>
+              {/* Next & Previous Buttons - Vertically Centered */}
+              <button
+                className="absolute md:left-2 left-0 top-1/2 -translate-y-1/2 z-10 bg-white hover:bg-gray-300 text-gray-700 md:p-3 p-1.5 rounded-full transition"
+                onClick={prevMedia}
+              >
+                <ChevronLeft size={32} />
+              </button>
 
-            <button
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-gray-700/60 text-white p-2 rounded-full"
-              onClick={nextMedia}
-            >
-              <ChevronRight size={28} />
-            </button>
+              <button
+                className="absolute md:right-2 right-0 top-1/2 -translate-y-1/2 z-10 bg-white hover:bg-gray-300 text-gray-700 md:p-3 p-1.5 rounded-full transition"
+                onClick={nextMedia}
+              >
+                <ChevronRight size={32} />
+              </button>
+            </>
+          )}
 
-            {/* Full-Width Media Display with Swipe Support */}
-            <div
-              className="flex flex-col items-center"
-              onTouchStart={handleTouchStart}
-              onTouchMove={handleTouchMove}
-              onTouchEnd={handleTouchEnd}
-            >
+          <div className="relative bg-white rounded-xl p-6 max-w-4xl w-full max-h-[90vh] overflow-auto shadow-xl">
+            {/* Media Display */}
+            <div className="flex flex-col items-center">
               {media[selectedIndex].type === "image" ? (
                 <img
                   src={media[selectedIndex].url}
                   alt="Post"
-                  className="w-full max-h-[70vh] object-contain rounded-lg"
+                  className="w-full max-h-[70vh] object-contain  rounded-lg shadow-md"
                 />
               ) : (
-                <video controls className="w-full max-h-[70vh] rounded-lg">
+                <video
+                  controls
+                  className="w-full max-h-[70vh] rounded-lg shadow-md"
+                >
                   <source src={media[selectedIndex].url} type="video/mp4" />
-                  Your browser does not support the video tag.
                 </video>
               )}
 
               {/* Footer Actions */}
-              <div className="flex items-center gap-x-4 mt-3">
-                <div className="flex items-center gap-x-2">
-                  {/* Like Button */}
-                  <div className="flex items-center justify-center gap-x-1">
-                    <button onClick={handleAgree}>
-                      <ThumbsUp
-                        size={32}
-                        className={`transition-transform ${
-                          agrees.some((agree) => agree.owner === agreeOwner)
-                            ? "text-green-700"
-                            : "text-gray-500"
-                        }`}
-                      />
-                    </button>
-                    <span className="text-base font-medium">
-                      {agrees.length}
-                    </span>
-                  </div>
+              <div className="flex items-center gap-x-6 mt-4">
+                <button className="flex items-center gap-x-2">
+                  <ThumbsUp
+                    size={32}
+                    className="text-gray-500 hover:text-green-600"
+                  />
+                  <span className="text-lg font-semibold">0</span>
+                </button>
 
-                  {/* Dislike Button */}
-                  <div className="flex items-center justify-center gap-x-1">
-                    <button onClick={handleDisagree}>
-                      <ThumbsDown
-                        size={32}
-                        className={`transition-transform ${
-                          disagrees.some(
-                            (disagree) => disagree.owner === agreeOwner
-                          )
-                            ? "text-red-500"
-                            : "text-gray-500"
-                        }`}
-                      />
-                    </button>
-                    <span className="text-base font-medium">
-                      {disagrees.length}
-                    </span>
-                  </div>
-                </div>
+                <button className="flex items-center gap-x-2">
+                  <ThumbsDown
+                    size={32}
+                    className="text-gray-500 hover:text-red-600"
+                  />
+                  <span className="text-lg font-semibold">0</span>
+                </button>
 
-                {/* Comment Button */}
-                <button className="flex items-center md:gap-x-2 hover:text-gray-700 transition">
-                  <MessagesSquare size={22} />
-                  <span className="text-base hidden md:flex font-medium">
+                <button className="flex items-center gap-x-2 hover:text-gray-700 transition">
+                  <MessagesSquare size={24} />
+                  <span className="text-lg font-medium hidden md:inline">
                     Comment
                   </span>
                 </button>
@@ -190,7 +236,6 @@ export default function MediaGrid({ media }) {
           </div>
         </div>
       )}
-         
-    </div>
+    </>
   );
 }

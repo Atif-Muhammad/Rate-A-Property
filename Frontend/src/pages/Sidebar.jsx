@@ -24,8 +24,6 @@ export const Sidebar = () => {
     APIS.logout()
       .then(() => {
         console.log("Logout successful");
-        // localStorage.removeItem("token"); // JWT token delete
-        // sessionStorage.removeItem("token");
         navigate("/");
       })
       .catch((err) => console.log("Logout error:", err));
@@ -40,7 +38,11 @@ export const Sidebar = () => {
             <NavLink
               key={to}
               to={to}
-              className="flex items-center gap-3 py-2 px-4 w-full text-left hover:bg-gray-800 rounded-md"
+              className={({ isActive }) =>
+                `flex items-center gap-3 py-2 px-4 w-full text-left rounded-md transition ${
+                  isActive ? "bg-gray-700 text-white" : "hover:bg-gray-800"
+                }`
+              }
             >
               {icon}
               <span>{label}</span>
@@ -64,7 +66,11 @@ export const Sidebar = () => {
           <NavLink
             key={to}
             to={to}
-            className="flex flex-col items-center text-gray-700"
+            className={({ isActive }) =>
+              `flex flex-col items-center text-gray-700 ${
+                isActive ? "text-red-600" : "hover:text-gray-500"
+              }`
+            }
           >
             {icon}
           </NavLink>

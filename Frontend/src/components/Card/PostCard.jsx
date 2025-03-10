@@ -90,7 +90,7 @@ const PostCard = ({ post }) => {
       </div>
 
       {/* Location Section - Moved Up */}
-      <div className="bg-gray-100 lg:text-sm md:text-sm text-[0.5rem] font-semibold text-blue-600 flex items-center  tracking-wide justify-center lg:px-5 md:px-3 px-2 py-2 mt-2 rounded-md hover:underline cursor-pointer">
+      <div className="bg-gray-100 lg:text-sm md:text-sm text-[0.8rem] font-semibold text-blue-600 flex items-center  tracking-wide justify-center lg:px-5 md:px-3 px-2 py-2 mt-2 rounded-md hover:underline cursor-pointer">
         <MapPin size={16} className="text-blue-500 mr-1" />
         <a
           href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(

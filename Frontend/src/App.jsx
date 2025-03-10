@@ -4,7 +4,7 @@ import { Home } from "./pages/Home";
 import { NotFound } from "./pages/notfound/NotFound";
 import { Sign_In } from "./pages/authentication/Sign_In";
 import { Sign_Up } from "./pages/authentication/Sign_Up";
-// import { NewPost } from "./components/NewPost";
+import { NewPost } from "./components/NewPost";
 // import State from "./context/state";
 
 function App() {
