@@ -139,6 +139,56 @@ const unDisLike = async (postId) => {
     return error;
   }
 };
+const likeMedia = async (postId) => {
+  try {
+    const response = await axios.put(
+      `${Baseurl}/posts/likeMedia`,
+      { postId },
+      { withCredentials: true }
+    );
+    return response;
+  } catch (error) {
+    return error;
+  }
+};
+
+const unLikeMedia = async (postId) => {
+  try {
+    const response = await axios.put(
+      `${Baseurl}/posts/unLikeMedia`,
+      { postId },
+      { withCredentials: true }
+    );
+    return response;
+  } catch (error) {
+    return error;
+  }
+};
+
+const disLikeMedia = async (postId) => {
+  try {
+    const response = await axios.put(
+      `${Baseurl}/posts/disLikeMedia`,
+      { postId },
+      { withCredentials: true }
+    );
+    return response;
+  } catch (error) {
+    return error;
+  }
+};
+const unDisLikeMedia = async (postId) => {
+  try {
+    const response = await axios.put(
+      `${Baseurl}/posts/unDisLikeMedia`,
+      { postId },
+      { withCredentials: true }
+    );
+    return response;
+  } catch (error) {
+    return error;
+  }
+};
 
 export const APIS = {
   userWho,
@@ -153,4 +203,8 @@ export const APIS = {
   disLike,
   unLike,
   unDisLike,
+  likeMedia,
+  unLikeMedia,
+  disLikeMedia,
+  unDisLikeMedia
 };

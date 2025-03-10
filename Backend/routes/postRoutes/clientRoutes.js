@@ -12,9 +12,15 @@ router.post(
 );
 router.get("/getPosts", postController.getPosts);
 router.get("/getSinglePost", postController.getSingPost);
+
 router.put("/likePost", postController.likePost);
 router.put("/unLikePost", postController.unLikePost);
 router.put("/disLikePost", postController.disLikePost);
 router.put("/unDisLikePost", postController.unDisLikePost);
+
+router.put("/likeMedia", postController.likeMedia);
+router.put("/unLikeMedia", postController.unLikeMedia);
+router.put("/disLikeMedia", postController.disLikeMedia);
+router.put("/unDisLikeMedia", postController.unDisLikeMedia);
 
 module.exports = router;

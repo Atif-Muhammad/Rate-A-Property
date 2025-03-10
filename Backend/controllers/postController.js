@@ -78,12 +78,19 @@ const postController = {
                 .populate("owner")
                 .populate("likes")
                 .populate("disLikes")
-                .populate("media")
+                .populate({
+                    path: "media",
+                    populate: [
+                      { path: "likes" },
+                      { path: "disLikes" }, 
+                    ],
+                  })
                 .sort({ createdAt: -1 });
         
             const updatedPosts = posts.map(post => {
                 const mediaUrls = post.media
                     .map(file => {
+                        // console.log(file)
                         const fileData = file.toObject();
                         const fileExt = fileData.identifier.filename.split(".").pop()?.toLowerCase();
                         const mediaType = ["mp4", "webm", "mov"].includes(fileExt) ? "video" : "image";
@@ -97,7 +104,12 @@ const postController = {
                         return {
                             url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${fileData.identifier.filename}`,
                             type: mediaType,
-                            filename: fileData.identifier.filename
+                            filename: fileData.identifier.filename,
+                            likes: file.likes,
+                            disLikes: file.disLikes,
+                            of_post: file.of_post,
+                            owner: file.owner,
+                            _id: file._id
                         };
                     })
                     .filter(Boolean);
@@ -236,7 +248,114 @@ const postController = {
         } catch (error) {
             res.send(error);
         }
-    }
+    },
+
+    likeMedia: async (req, res) => {
+        const post_id = req.body.postId;
+        const user_token = req.cookies;
+        // console.log(post_id)
+        try {
+            const user_detail = checkUser(user_token.jwtToken);
+            const owner_id = user_detail.id;
+            const data = {
+                for_post: post_id,
+                owner: owner_id
+            }
+            const dis_liked_remove = await disLike.findOneAndDelete({ $and: [{ for_post: post_id }, { owner: owner_id }] });
+
+            if (dis_liked_remove) {
+                await user.updateOne({ _id: owner_id }, { $pull: { disLikes: dis_liked_remove._id } });
+                await media.updateOne({ _id: post_id }, { $pull: { disLikes: dis_liked_remove._id } });
+            }
+            const liked = await like.create(data);
+            // console.log(liked)
+            if (liked) {
+                await user.updateOne({ _id: owner_id }, { $push: { likes: liked._id } });
+                await media.updateOne({ _id: post_id }, { $push: { likes: liked._id } });
+                res.status(200).send(liked)
+            }
+        } catch (error) {
+            res.send(error);
+        }
+    },
+    unLikeMedia: async (req, res) => {
+        const post_id = req.body.postId;
+        const user_token = req.cookies;
+
+        try {
+            const user_detail = checkUser(user_token.jwtToken);
+            const owner_id = user_detail.id;
+            const data = {
+                for_post: post_id,
+                owner: owner_id
+            }
+            const like_removed = await like.findOneAndDelete({ $and: [{ for_post: post_id }, { owner: owner_id }] });
+
+            if (like_removed) {
+                await user.updateOne({ _id: owner_id }, { $pull: { likes: like_removed._id } });
+                await media.updateOne({ _id: post_id }, { $pull: { likes: like_removed._id } });
+                res.send(like_removed)
+            }
+
+
+        } catch (error) {
+            res.send(error);
+        }
+    },
+    disLikeMedia: async (req, res) => {
+        const post_id = req.body.postId;
+        const user_token = req.cookies;
+
+        try {
+            const user_detail = checkUser(user_token.jwtToken);
+            const owner_id = user_detail.id;
+            const data = {
+                for_post: post_id,
+                owner: owner_id
+            }
+
+            const un_liked = await like.findOneAndDelete({ $and: [{ for_post: post_id }, { owner: owner_id }] });
+            if (un_liked) {
+                await user.updateOne({ _id: owner_id }, { $pull: { likes: un_liked._id } });
+                await media.updateOne({ _id: post_id }, { $pull: { likes: un_liked._id } });
+                // create record for un_liked
+            }
+            const disLiked = await disLike.create(data);
+            if (disLiked) {
+                await user.updateOne({ _id: owner_id }, { $push: { disLikes: disLiked._id } });
+                await media.updateOne({ _id: post_id }, { $push: { disLikes: disLiked._id } });
+                res.status(200).send(data)
+            }
+
+        } catch (error) {
+            res.send(error);
+        }
+    },
+    unDisLikeMedia: async (req, res) => {
+        const post_id = req.body.postId;
+        const user_token = req.cookies;
+
+        try {
+            const user_detail = checkUser(user_token.jwtToken);
+            const owner_id = user_detail.id;
+            const data = {
+                for_post: post_id,
+                owner: owner_id
+            }
+
+            const dis_like_removed = await disLike.findOneAndDelete({ $and: [{ for_post: post_id }, { owner: owner_id }] });
+
+            if (dis_like_removed) {
+                await user.updateOne({ _id: owner_id }, { $pull: { disLikes: dis_like_removed._id } });
+                await media.updateOne({ _id: post_id }, { $pull: { disLikes: dis_like_removed._id } });
+                res.send(dis_like_removed)
+            }
+
+
+        } catch (error) {
+            res.send(error);
+        }
+    },
 }
 
 module.exports = postController;

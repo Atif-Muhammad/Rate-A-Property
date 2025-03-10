@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { APIS } from "../../../config/Config";
 import {
   ThumbsUp,
   ThumbsDown,
@@ -12,31 +13,60 @@ export default function MediaGrid({ media }) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [agrees, setAgrees] = useState([]);
   const [disagrees, setDisagrees] = useState([]);
-  const agreeOwner = "user-id"; // Replace with actual user ID
+  const [agreeOwner, setAgreeOwner] = useState("");
 
   const MAX_VISIBLE = 4; // Number of media to show before "See More"
 
-  const handleAgree = () => {
-    if (agrees.some((agree) => agree.owner === agreeOwner)) {
-      setAgrees(agrees.filter((agree) => agree.owner !== agreeOwner));
-    } else {
-      setAgrees([...agrees, { owner: agreeOwner }]);
-      setDisagrees(
-        disagrees.filter((disagree) => disagree.owner !== agreeOwner)
-      );
-    }
-  };
+  useEffect(() => {
+    // console.log(media)
+    APIS.userWho()
+      .then((res) => setAgreeOwner(res.data.id))
+      .catch((err) => console.log(err));
+  }, []);
 
-  const handleDisagree = () => {
-    if (disagrees.some((disagree) => disagree.owner === agreeOwner)) {
-      setDisagrees(
-        disagrees.filter((disagree) => disagree.owner !== agreeOwner)
-      );
+  useEffect(() => {
+    // Update likes and dislikes when selected media changes
+    setAgrees(media[selectedIndex]?.likes || []);
+    setDisagrees(media[selectedIndex]?.disLikes || []);
+  }, [selectedIndex, media]);
+
+  const handleAgree = async (mediaId) => {
+    if (agrees.some((agree) => agree.owner === agreeOwner)) {
+      await APIS.unLikeMedia(mediaId);
+      setAgrees((prev) => prev.filter((agree) => agree.owner !== agreeOwner));
     } else {
-      setDisagrees([...disagrees, { owner: agreeOwner }]);
-      setAgrees(agrees.filter((agree) => agree.owner !== agreeOwner));
+      await APIS.likeMedia(mediaId);
+      setAgrees((prev) => [...prev, { owner: agreeOwner, of_post: mediaId }]);
+  
+      // Remove from disagrees if user had already disliked
+      setDisagrees((prev) => {
+        if (prev.some((disagree) => disagree.owner === agreeOwner)) {
+          APIS.unDisLikeMedia(mediaId);
+          return prev.filter((disagree) => disagree.owner !== agreeOwner);
+        }
+        return prev;
+      });
     }
   };
+  const handleDisagree = async (mediaId) => {
+    if (disagrees.some((disagree) => disagree.owner === agreeOwner)) {
+      await APIS.unDisLikeMedia(mediaId);
+      setDisagrees((prev) => prev.filter((disagree) => disagree.owner !== agreeOwner));
+    } else {
+      await APIS.disLikeMedia(mediaId);
+      setDisagrees((prev) => [...prev, { owner: agreeOwner, of_post: mediaId }]);
+  
+      // Remove from agrees if user had already liked
+      setAgrees((prev) => {
+        if (prev.some((agree) => agree.owner === agreeOwner)) {
+          APIS.unLikeMedia(mediaId);
+          return prev.filter((agree) => agree.owner !== agreeOwner);
+        }
+        return prev;
+      });
+    }
+  };
+  
 
   // Handle swipe gestures
   let touchStartX = 0;
@@ -192,26 +222,74 @@ export default function MediaGrid({ media }) {
           <div className="relative bg-white rounded-xl p-6 max-w-4xl w-full max-h-[90vh] overflow-auto shadow-xl">
             {/* Media Display */}
             <div className="flex flex-col items-center">
-              {media[selectedIndex].type === "image" ? (
-                <img
-                  src={media[selectedIndex].url}
-                  alt="Post"
-                  className="w-full max-h-[70vh] object-contain  rounded-lg shadow-md"
-                />
+              {media[selectedIndex]?.type === "image" ? (
+                <>
+                  <img
+                    src={media[selectedIndex].url}
+                    alt="Post"
+                    className="w-full max-h-[70vh] object-contain rounded-lg shadow-md"
+                  />
+                </>
               ) : (
-                <video
-                  controls
-                  className="w-full max-h-[70vh] rounded-lg shadow-md"
-                >
-                  <source src={media[selectedIndex].url} type="video/mp4" />
-                </video>
+                <>
+                  <video
+                    controls
+                    className="w-full max-h-[70vh] rounded-lg shadow-md"
+                  >
+                    <source src={media[selectedIndex].url} type="video/mp4" />
+                  </video>
+                </>
               )}
 
-              {/* Footer Actions */}
               <div className="flex items-center gap-x-6 mt-4">
+                {/* Like Button */}
+                <button
+                  className="flex items-center gap-x-2"
+                  onClick={() => handleAgree(media[selectedIndex]._id)}
+                >
+                  <ThumbsUp
+                    size={32}
+                    className={`hover:text-green-600 ${
+                      agrees.some((a) => a.owner === agreeOwner)
+                        ? "text-green-600"
+                        : "text-gray-500"
+                    }`}
+                  />
+                  <span className="text-lg font-semibold">{agrees.length}</span>
+                </button>
+
+                {/* Dislike Button */}
+                <button
+                  className="flex items-center gap-x-2"
+                  onClick={() => handleDisagree(media[selectedIndex]._id)}
+                >
+                  <ThumbsDown
+                    size={32}
+                    className={`hover:text-red-600 ${
+                      disagrees.some((d) => d.owner === agreeOwner)
+                        ? "text-red-600"
+                        : "text-gray-500"
+                    }`}
+                  />
+                  <span className="text-lg font-semibold">
+                    {disagrees.length}
+                  </span>
+                </button>
+
+                {/* Comment Button */}
+                <button className="flex items-center gap-x-2 hover:text-gray-700 transition">
+                  <MessagesSquare size={24} />
+                  <span className="text-lg font-medium hidden md:inline">
+                    Comment
+                  </span>
+                </button>
+              </div>
+              {/* Footer Actions */}
+              {/* <div className="flex items-center gap-x-6 mt-4">
                 <button className="flex items-center gap-x-2">
                   <ThumbsUp
                     size={32}
+                    onClick={() => handleAgree(media._id)}
                     className="text-gray-500 hover:text-green-600"
                   />
                   <span className="text-lg font-semibold">0</span>
@@ -220,6 +298,7 @@ export default function MediaGrid({ media }) {
                 <button className="flex items-center gap-x-2">
                   <ThumbsDown
                     size={32}
+                    onClick={() => handleDisagree(media._id)}
                     className="text-gray-500 hover:text-red-600"
                   />
                   <span className="text-lg font-semibold">0</span>
@@ -231,7 +310,7 @@ export default function MediaGrid({ media }) {
                     Comment
                   </span>
                 </button>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>
