@@ -19,6 +19,8 @@ export const Home = () => {
           <PostDesign />
         </main>
       </div>
+
+      
     </div>
   );
 };
