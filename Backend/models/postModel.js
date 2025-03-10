@@ -1,29 +1,44 @@
 const mongoose = require("mongoose");
-const user = require("./userModel")
-const comment = require("./commentModel")
-const like = require("./likesModel")
-const disLike = require("./disLikeModel")
+const user = require("./userModel");
+const comment = require("./commentModel");
+const like = require("./likesModel");
+const disLike = require("./disLikeModel");
+const media = require("./mediaModel");
 
-const postSchema = mongoose.Schema({
+const postSchema = mongoose.Schema(
+  {
     description: String,
-    owner:{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'user'
+    owner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "user",
     },
     location: String,
-    likes:[{
+    likes: [
+      {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'like'
-    }],
-    disLikes:[{
+        ref: "like",
+      },
+    ],
+    media: [
+      {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'disLike'
-    }],
-    comments: [{
+        ref: "media",
+      },
+    ],
+    disLikes: [
+      {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'comment'
-    }]
-
-}, {timestamps: true})
+        ref: "disLike",
+      },
+    ],
+    comments: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "comment",
+      },
+    ],
+  },
+  { timestamps: true }
+);
 
 module.exports = mongoose.model("post", postSchema);

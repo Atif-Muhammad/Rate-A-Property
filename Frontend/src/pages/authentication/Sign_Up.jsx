@@ -29,20 +29,23 @@ export const Sign_Up = () => {
       image: Yup.mixed().required("Profile image is required"),
     }),
     onSubmit: async (values, { setSubmitting }) => {
-      const formData = new FormData();
-      formData.append("name", values.name);
-      formData.append("email", values.email);
-      formData.append("password", values.password);
-      formData.append("image", values.image);
+      setSubmitting(true); // Ensure button is disabled immediately
 
-      APIS.signup(formData)
-        .then((res) => {
-          navigate("/");
-          console.log(res);
-        })
-        .catch((err) => console.log(err));
+      try {
+        const formData = new FormData();
+        formData.append("name", values.name);
+        formData.append("email", values.email);
+        formData.append("password", values.password);
+        formData.append("image", values.image);
 
-      setSubmitting(false);
+        await APIS.signup(formData); // Wait for API response
+
+        navigate("/"); // Redirect after successful signup
+      } catch (err) {
+        console.error(err);
+      }
+
+      setSubmitting(false); // Re-enable button only after request completes
     },
   });
 
@@ -145,7 +148,9 @@ export const Sign_Up = () => {
             <button
               type="submit"
               disabled={formik.isSubmitting}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg transition font-semibold text-lg"
+              className={`w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg transition font-semibold text-lg ${
+                formik.isSubmitting ? "opacity-50 cursor-not-allowed" : ""
+              }`}
             >
               {formik.isSubmitting ? "Signing Up..." : "Sign Up ➤"}
             </button>

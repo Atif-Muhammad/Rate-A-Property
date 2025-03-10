@@ -84,7 +84,9 @@ export const Sign_In = () => {
                 {/* Submit Button */}
                 <button
                   type="submit"
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 sm:py-3 rounded-md transition font-semibold"
+                  className={`w-full bg-blue-600 hover:bg-blue-700 text-white py-2 sm:py-3 rounded-md transition font-semibold ${
+                    isSubmitting ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? "Signing In..." : "Sign In ➤"}
