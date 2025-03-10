@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { Image, Smile, UserPlus, MapPin, X, Trash2 } from "lucide-react";
 import {APIS} from "../../config/Config"
 import { arrayBufferToBase64 } from "../ReUsables/arrayTobuffer";
-import { useNavigate } from "react-router-dom";
+import { useNavigate,NavLink } from "react-router-dom";
 
 export const NewPost = () => {
   const textRef = useRef(null)
