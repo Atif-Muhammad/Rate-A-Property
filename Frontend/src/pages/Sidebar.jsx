@@ -1,5 +1,13 @@
-import { NavLink } from "react-router-dom";
-import { Home, Bell, MessageCircle, UserCircle, Settings } from "lucide-react";
+import { NavLink, useNavigate } from "react-router-dom";
+import {
+  Home,
+  Bell,
+  MessageCircle,
+  UserCircle,
+  Settings,
+  LogOut,
+} from "lucide-react";
+import { APIS } from "../../config/Config";
 
 const navLinks = [
   { to: "/", label: "Home", icon: <Home size={24} /> },
@@ -10,6 +18,19 @@ const navLinks = [
 ];
 
 export const Sidebar = () => {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    APIS.logout()
+      .then(() => {
+        console.log("Logout successful");
+        // localStorage.removeItem("token"); // JWT token delete
+        // sessionStorage.removeItem("token");
+        navigate("/");
+      })
+      .catch((err) => console.log("Logout error:", err));
+  };
+
   return (
     <>
       {/* Large Screens Sidebar */}
@@ -26,6 +47,14 @@ export const Sidebar = () => {
             </NavLink>
           ))}
 
+          {/* Logout Button */}
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-3 py-2 px-4 w-full text-left bg-red-600 hover:bg-red-700 rounded-md mt-4"
+          >
+            <LogOut size={24} />
+            <span>Logout</span>
+          </button>
         </nav>
       </div>
 

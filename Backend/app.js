@@ -1,7 +1,10 @@
 require("dotenv").config();
 const express = require("express")
 const cors = require("cors");
-const cookieParser = require("cookie-parser")
+const cookieParser = require("cookie-parser");
+const path = require("path");
+
+
 const mongoose = require("mongoose")
 // const Grid = require("gridfs-stream");
 const userRoutes = require("./routes/userRoutes")
@@ -20,6 +23,22 @@ app.use(cors({
 
 app.use(cookieParser());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+
+app.use("/uploads", express.static(path.join(__dirname, "uploads"),{
+    setHeaders: (res, path) => {
+        if (path.endsWith(".mp4")) {
+            res.setHeader("Content-Type", "video/mp4");
+        } else if (path.endsWith(".webm")) {
+            res.setHeader("Content-Type", "video/webm");
+        } else if (path.endsWith(".MOV")) {
+            res.setHeader("Content-Type", "video/mov");
+        }
+    }
+    
+}));
+
 
 mongoose.connect(process.env.DATABASE_URI).then(result => {
     const port = process.env.PORT || 3000
@@ -42,7 +61,7 @@ app.get("/api/bing", (req, res)=>{
 });
 
 
-// Initialize GridFS and Export `gfs`
+// Initialize GridFS and Export gfs
 // const conn = mongoose.connection;
 // let gfs;
 // conn.once("open", ()=>{
@@ -51,4 +70,4 @@ app.get("/api/bing", (req, res)=>{
 //     module.exports.gfs = gfs;
 // });
 
-// module.exports.conn = conn;
+// module.exports.conn = conn;

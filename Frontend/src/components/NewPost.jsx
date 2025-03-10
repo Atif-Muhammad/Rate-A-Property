@@ -1,10 +1,17 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Image, Smile, UserPlus, MapPin, X, Trash2 } from "lucide-react";
+import {APIS} from "../../config/Config"
+import { arrayBufferToBase64 } from "../ReUsables/arrayTobuffer";
+import { useNavigate } from "react-router-dom";
 
 export const NewPost = () => {
+  const textRef = useRef(null)
   const fileInputRef = useRef(null);
   const [selectedMedia, setSelectedMedia] = useState([]);
   const [location, setLocation] = useState("Select Location");
+  const [user, setUser] = useState({});
+
+  const navigate = useNavigate()
 
   // if (!isOpen) return null; // Hide modal when not open
 
@@ -29,6 +36,47 @@ export const NewPost = () => {
     if (userLocation) setLocation(userLocation);
   };
 
+  const formData = new FormData();
+  formData.append("owner", user._id)
+  formData.append("description", textRef.current?.value);
+  formData.append("location", location);
+  selectedMedia.forEach((element, index) => {
+    formData.append(`files`, element.file); 
+  });
+  for (let [key, value] of formData.entries()) {
+    console.log(`${key}:`, value);
+  }
+  const handleSubmit = ()=>{
+    // console.log(formData)
+    APIS.createPost(formData).then(res=>{
+      // console.log(res)
+      if(res.status === 200){
+        navigate(-1)
+      }
+    }).catch(err=>{
+      console.log(err)
+    })
+  }
+
+
+  useEffect(() => {
+    APIS.userWho()
+      .then((res) => {
+        if (res.status === 200) {
+          APIS.getUser(res.data.id)
+            .then((res) => {
+              setUser(res.data);
+            })
+            .catch((err) => {
+              console.log(err);
+            });
+        }
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  }, []);
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4 z-50">
       <div className="bg-white shadow-lg rounded-lg p-4 w-full max-w-lg border border-gray-300">
@@ -45,13 +93,15 @@ export const NewPost = () => {
 
         {/* Profile & Input Box */}
         <div className="flex items-center space-x-3 my-3">
-          <img
-            src="https://via.placeholder.com/150"
-            alt="User Profile"
+          {user.image && <img
+            src={`data:${user.image.contentType};base64,${arrayBufferToBase64(
+              user.image.data.data
+            )}`}
+            alt="user profile"
             className="w-10 h-10 rounded-full border-2 border-blue-500"
-          />
+          />}
           <div>
-            <p className="text-sm font-semibold">Abu Haris</p>
+            <p className="text-sm font-semibold">{user.user_name}</p>
             <button
               className="text-xs flex items-center text-gray-600 bg-gray-200 px-2 py-1 rounded-md"
               onClick={handleSelectLocation}
@@ -64,10 +114,12 @@ export const NewPost = () => {
 
         {/* Post Input */}
         <textarea
+          ref={textRef}
           placeholder="Say something about these photos..."
           className="w-full p-3 text-gray-700 text-sm rounded-md border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-300"
           rows="2"
         ></textarea>
+
 
         {/* Upload Preview */}
         {selectedMedia.length > 0 && (
@@ -101,7 +153,7 @@ export const NewPost = () => {
         {/* File Input */}
         <input
           type="file"
-          accept="image/*,video/*"
+          accept="image/,video/"
           ref={fileInputRef}
           className="hidden"
           multiple
@@ -131,10 +183,10 @@ export const NewPost = () => {
         </div>
 
         {/* Post Button */}
-        <button className="w-full bg-blue-500 text-white text-sm font-medium py-2 rounded-md mt-3 hover:bg-blue-600 transition">
+        <button onClick={handleSubmit} className="w-full bg-blue-500 text-white text-sm font-medium py-2 rounded-md mt-3 hover:bg-blue-600 transition">
           Post
         </button>
       </div>
-    </div>
-  );
+    </div>
+  );
 };
