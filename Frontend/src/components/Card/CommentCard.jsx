@@ -7,7 +7,11 @@ import {
   MoreHorizontal,
 } from "lucide-react";
 import { APIS } from "../../../config/Config";
+import { getTimeAgo } from "../../ReUsables/GetTimeAgo";
+
 function CommentCard(props) {
+
+
   const [agrees, setAgrees] = useState(props.comment.likes);
   const [disagrees, setDisagrees] = useState(props.comment.disLikes);
   const agreeOwner = props.agreeOwner;
@@ -55,9 +59,11 @@ function CommentCard(props) {
   };
 
   return (
-    <div className={`flex items-start space-x-3 p-4  rounded-lg shadow-sm transition ${
+    <div
+      className={`flex items-start space-x-3 p-4  rounded-lg shadow-sm transition ${
         isTemp ? "bg-gray-500" : "bg-gray-100"
-      }`}>
+      }`}
+    >
       <img
         src={`data:${
           props.comment.owner.image?.contentType
@@ -71,16 +77,16 @@ function CommentCard(props) {
             {props.comment.owner.user_name}
           </span>
           <span className="text-xs text-gray-500">
-            {props.comment.createdAt}
+            {getTimeAgo(props.comment.createdAt)}
           </span>
         </div>
         <p className="text-gray-800 mt-1">{props.comment.comment}</p>
         <div className="flex space-x-4 text-sm text-gray-500 mt-2">
           <button
             // className={`flex items-center space-x-1 ${
-            //   comment.userReaction === "like"
+            //   agreeOwner == props.comment.owner._id
             //     ? "text-blue-600"
-            //     : "hover:text-blue-600"
+            //     : "hover:text-blue-600 text-gray-300"
             // }`}
             onClick={handleAgree}
           >
@@ -88,7 +94,7 @@ function CommentCard(props) {
           </button>
           <button
             // className={`flex items-center space-x-1 ${
-            //   comment.userReaction === "dislike"
+            //   agreeOwner == props.comment.owner._id
             //     ? "text-red-600"
             //     : "hover:text-red-600"
             // }`}

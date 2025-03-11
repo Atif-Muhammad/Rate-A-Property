@@ -11,6 +11,7 @@ const PostCard = ({ post }) => {
   const [disagrees, setDisagrees] = useState(post.disLikes);
 
   useEffect(() => {
+    console.log(post)
     APIS.userWho()
       .then((res) => setAgreeOwner(res.data.id))
       .catch((err) => console.log(err));
@@ -26,7 +27,7 @@ const PostCard = ({ post }) => {
       await APIS.like(post._id);
       setAgrees((prevAgrees) => [
         ...prevAgrees,
-        { owner: agreeOwner, for_post: post._id },
+        { owner: agreeOwner, for_post: post._id },    
       ]);
 
       setDisagrees((prevDisagrees) => {
@@ -65,7 +66,7 @@ const PostCard = ({ post }) => {
   };
 
   return (
-    <div className="bg-white shadow-md rounded-lg p-3.5 w-full max-w-2xl border border-gray-200">
+    <div className="bg-white shadow-md rounded-lg p-3.5  w-full max-w-2xl border border-gray-200">
       {/* Profile & Post Info */}
       <div className="flex items-center justify-between">
         <div className="flex items-center justify-between w-full space-x-3">
@@ -143,7 +144,7 @@ const PostCard = ({ post }) => {
 
         <NavLink
           to={`/commentsection/${post._id}`}
-          state={{post}}
+          state={{ post }}
           className="flex items-center md:gap-x-2 hover:text-gray-700 transition"
         >
           <MessagesSquare size={22} />
