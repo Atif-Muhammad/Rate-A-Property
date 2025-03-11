@@ -3,10 +3,13 @@ import { Search } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { APIS } from "../../../config/Config";
 import { arrayBufferToBase64 } from "../../ReUsables/arrayTobuffer";
+import { NewPost } from "../../components/NewPost";
 
 export const Header = () => {
   const [user, setUser] = useState();
   const [loading, setLoading] = useState(true);
+  // open the new post model
+  const [isModalOpen, setIsModalOpen] = useState(false);
   useEffect(() => {
     APIS.userWho()
       .then((res) => {
@@ -58,13 +61,16 @@ export const Header = () => {
         ) : user && user.image ? ( // Ensure user and image exist
           <>
             {/* Button to Open Modal */}
-            <NavLink
-              // onClick={() => setIsModalOpen(true)}
-              to="/newPost"
+            <button
+              onClick={() => setIsModalOpen(true)}
               className="bg-blue-500 text-white px-4 py-2 rounded-md"
             >
               Create Post
-            </NavLink>
+            </button>
+            <NewPost
+              isOpen={isModalOpen}
+              onClose={() => setIsModalOpen(false)}
+            />
 
             <div className="w-12 h-12 rounded-full  flex items-center justify-center shadow-md transition-transform hover:scale-105">
               <img

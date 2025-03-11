@@ -37,7 +37,7 @@ export default function MediaGrid({ media }) {
     } else {
       await APIS.likeMedia(mediaId);
       setAgrees((prev) => [...prev, { owner: agreeOwner, of_post: mediaId }]);
-  
+
       // Remove from disagrees if user had already disliked
       setDisagrees((prev) => {
         if (prev.some((disagree) => disagree.owner === agreeOwner)) {
@@ -51,11 +51,16 @@ export default function MediaGrid({ media }) {
   const handleDisagree = async (mediaId) => {
     if (disagrees.some((disagree) => disagree.owner === agreeOwner)) {
       await APIS.unDisLikeMedia(mediaId);
-      setDisagrees((prev) => prev.filter((disagree) => disagree.owner !== agreeOwner));
+      setDisagrees((prev) =>
+        prev.filter((disagree) => disagree.owner !== agreeOwner)
+      );
     } else {
       await APIS.disLikeMedia(mediaId);
-      setDisagrees((prev) => [...prev, { owner: agreeOwner, of_post: mediaId }]);
-  
+      setDisagrees((prev) => [
+        ...prev,
+        { owner: agreeOwner, of_post: mediaId },
+      ]);
+
       // Remove from agrees if user had already liked
       setAgrees((prev) => {
         if (prev.some((agree) => agree.owner === agreeOwner)) {
@@ -66,7 +71,6 @@ export default function MediaGrid({ media }) {
       });
     }
   };
-  
 
   // Handle swipe gestures
   let touchStartX = 0;
@@ -85,7 +89,7 @@ export default function MediaGrid({ media }) {
 
   return (
     <>
-      <div className="grid gap-2 py-2">
+      <div className="grid gap-2   py-2">
         {media.length >= 2 &&
         media[0].width > media[0].height &&
         media[1].width > media[1].height ? (
@@ -255,7 +259,9 @@ export default function MediaGrid({ media }) {
                         : "text-gray-500"
                     }`}
                   />
-                  <span className="text-lg font-semibold">({agrees.length})</span>
+                  <span className="text-lg font-semibold">
+                    ({agrees.length})
+                  </span>
                 </button>
 
                 {/* Dislike Button */}
@@ -284,33 +290,6 @@ export default function MediaGrid({ media }) {
                   </span>
                 </button>
               </div>
-              {/* Footer Actions */}
-              {/* <div className="flex items-center gap-x-6 mt-4">
-                <button className="flex items-center gap-x-2">
-                  <ThumbsUp
-                    size={32}
-                    onClick={() => handleAgree(media._id)}
-                    className="text-gray-500 hover:text-green-600"
-                  />
-                  <span className="text-lg font-semibold">0</span>
-                </button>
-
-                <button className="flex items-center gap-x-2">
-                  <ThumbsDown
-                    size={32}
-                    onClick={() => handleDisagree(media._id)}
-                    className="text-gray-500 hover:text-red-600"
-                  />
-                  <span className="text-lg font-semibold">0</span>
-                </button>
-
-                <button className="flex items-center gap-x-2 hover:text-gray-700 transition">
-                  <MessagesSquare size={24} />
-                  <span className="text-lg font-medium hidden md:inline">
-                    Comment
-                  </span>
-                </button>
-              </div> */}
             </div>
           </div>
         </div>
