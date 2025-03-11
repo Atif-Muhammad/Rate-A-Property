@@ -23,4 +23,12 @@ router.put("/unLikeMedia", postController.unLikeMedia);
 router.put("/disLikeMedia", postController.disLikeMedia);
 router.put("/unDisLikeMedia", postController.unDisLikeMedia);
 
+router.post("/addComment", postController.addComment);
+router.get("/getComments", postController.getComments);
+
+router.put("/likeComment", postController.likeComment);
+router.put("/unLikeComment", postController.unLikeComment);
+router.put("/disLikeComment", postController.disLikeComment);
+router.put("/unDisLikeComment", postController.unDisLikeComment);
+
 module.exports = router;

@@ -19,7 +19,7 @@ function App() {
           <Route path="/signin" element={<Sign_In />} />
           <Route path="/signup" element={<Sign_Up />} />
           <Route path="/newPost" element={<NewPost />} />
-          <Route path="/commentsection" element={<CommentSection />} />
+          <Route path="/commentsection/:postId" element={<CommentSection />} />
         </Routes>
       </BrowserRouter>
           {/* </State> */}

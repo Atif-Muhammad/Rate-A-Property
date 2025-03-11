@@ -255,7 +255,7 @@ export default function MediaGrid({ media }) {
                         : "text-gray-500"
                     }`}
                   />
-                  <span className="text-lg font-semibold">{agrees.length}</span>
+                  <span className="text-lg font-semibold">({agrees.length})</span>
                 </button>
 
                 {/* Dislike Button */}
@@ -272,7 +272,7 @@ export default function MediaGrid({ media }) {
                     }`}
                   />
                   <span className="text-lg font-semibold">
-                    {disagrees.length}
+                    ({disagrees.length})
                   </span>
                 </button>
 

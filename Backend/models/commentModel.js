@@ -3,6 +3,7 @@ const post = require("./postModel");
 const user = require("./userModel")
 const comment = require("./commentModel")
 const like = require("./likesModel")
+const disLike = require("./disLikeModel")
 
 const commentSchema = mongoose.Schema({
     comment: String,
@@ -17,6 +18,10 @@ const commentSchema = mongoose.Schema({
     likes: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'like'
+    }],
+    disLikes: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'disLike'
     }],
     comments: [{
         type: mongoose.Schema.Types.ObjectId,

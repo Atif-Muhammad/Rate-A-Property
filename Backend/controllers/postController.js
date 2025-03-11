@@ -3,6 +3,7 @@ const post = require("../models/postModel")
 const like = require("../models/likesModel")
 const disLike = require("../models/disLikeModel")
 const media = require("../models/mediaModel")
+const comment = require("../models/commentModel")
 const checkUser = require("./checkUser");
 const mongoose = require("mongoose");
 // const {gfs} = require("../app")
@@ -143,6 +144,7 @@ const postController = {
             res.send(error);
         }
     },
+
     likePost: async (req, res) => {
         const post_id = req.body.postId;
         const user_token = req.cookies;
@@ -356,6 +358,159 @@ const postController = {
             res.send(error);
         }
     },
+
+    addComment: async (req, res)=>{
+        // console.log(req.body)
+        const owner = req.body.data.owner;
+        const content = req.body.data.content;
+        const for_post = req.body.data.for_post;
+        const commentData = {
+            comment: content,
+            for_post,
+            owner,
+            likes: [],
+            disLikes: [],
+            comments: []
+        }
+        // console.log(commentData)
+        try {
+            const newComment = await comment.create(commentData);
+            // console.log(newComment)
+            if(newComment){
+                // update the user, post models
+                const updated_post = await post.updateOne({_id: for_post}, {$push: {comments: newComment._id}});
+                if(updated_post){
+                    await user.updateOne({_id: owner}, {$push: {comments: newComment._id}})
+                    const cmnt = await comment.findOne({_id: newComment._id}).populate("owner").populate("likes").populate("disLikes");
+                    res.status(200).send(cmnt)
+                }
+            }
+        } catch (error) {
+            res.send(error);
+        }
+
+    },
+
+    getComments: async (req, res)=>{
+        const postId = req.query.post;
+        try {
+            const comments = await comment.find({for_post: postId}).populate("owner").populate("likes").populate("disLikes");
+            res.send(comments)
+        } catch (error) {
+            res.send(error);
+        }
+    },
+
+    likeComment: async (req, res) => {
+        const comntId = req.body.comntId;
+        const user_token = req.cookies;
+        // console.log(comntId)
+
+        try {
+            const user_detail = checkUser(user_token.jwtToken);
+            // console.log(user_detail)
+            const owner_id = user_detail.id;
+            const data = {
+                for_post: comntId,
+                owner: owner_id
+            }
+            const dis_liked_remove = await disLike.findOneAndDelete({ $and: [{ for_post: comntId }, { owner: owner_id }] });
+
+            if (dis_liked_remove) {
+                await user.updateOne({ _id: owner_id }, { $pull: { disLikes: dis_liked_remove._id } });
+                await comment.updateOne({ _id: comntId }, { $pull: { disLikes: dis_liked_remove._id } });
+            }
+            const liked = await like.create(data);
+            // console.log(liked)
+            if (liked) {
+                await user.updateOne({ _id: owner_id }, { $push: { likes: liked._id } });
+                await comment.updateOne({ _id: comntId }, { $push: { likes: liked._id } });
+                res.status(200).send(liked)
+            }
+        } catch (error) {
+            res.send(error);
+        }
+    },
+    unLikeComment: async (req, res) => {
+        const comntId = req.body.comntId;
+        const user_token = req.cookies;
+
+        try {
+            const user_detail = checkUser(user_token.jwtToken);
+            const owner_id = user_detail.id;
+            const data = {
+                for_post: comntId,
+                owner: owner_id
+            }
+            const like_removed = await like.findOneAndDelete({ $and: [{ for_post: comntId }, { owner: owner_id }] });
+            // console.log(like_removed)
+            if (like_removed) {
+                await user.updateOne({ _id: owner_id }, { $pull: { likes: like_removed._id } });
+                await comment.updateOne({ _id: comntId }, { $pull: { likes: like_removed._id } });
+                res.send(like_removed)
+            }
+
+
+        } catch (error) {
+            res.send(error);
+        }
+    },
+    disLikeComment: async (req, res) => {
+        const comntId = req.body.comntId;
+        const user_token = req.cookies;
+
+        try {
+            const user_detail = checkUser(user_token.jwtToken);
+            const owner_id = user_detail.id;
+            const data = {
+                for_post: comntId,
+                owner: owner_id
+            }
+
+            const un_liked = await like.findOneAndDelete({ $and: [{ for_post: comntId }, { owner: owner_id }] });
+            if (un_liked) {
+                await user.updateOne({ _id: owner_id }, { $pull: { likes: un_liked._id } });
+                await post.updateOne({ _id: comntId }, { $pull: { likes: un_liked._id } });
+                
+            }
+            const disLiked = await disLike.create(data);
+            // console.log(disLiked)
+            if (disLiked) {
+                await user.updateOne({ _id: owner_id }, { $push: { disLikes: disLiked._id } });
+                await comment.updateOne({ _id: comntId }, { $push: { disLikes: disLiked._id } });
+                res.status(200).send(data)
+            }
+
+        } catch (error) {
+            res.send(error);
+        }
+    },
+    unDisLikeComment: async (req, res) => {
+        const comntId = req.body.comntId;
+        const user_token = req.cookies;
+
+        try {
+            const user_detail = checkUser(user_token.jwtToken);
+            const owner_id = user_detail.id;
+            const data = {
+                for_post: comntId,
+                owner: owner_id
+            }
+
+            const dis_like_removed = await disLike.findOneAndDelete({ $and: [{ for_post: comntId }, { owner: owner_id }] });
+            // console.log(dis_like_removed)
+            if (dis_like_removed) {
+                await user.updateOne({ _id: owner_id }, { $pull: { disLikes: dis_like_removed._id } });
+                await comment.updateOne({ _id: comntId }, { $pull: { disLikes: dis_like_removed._id } });
+                res.send(dis_like_removed)
+            }
+
+
+        } catch (error) {
+            res.send(error);
+        }
+    },
+
 }
 
 module.exports = postController;

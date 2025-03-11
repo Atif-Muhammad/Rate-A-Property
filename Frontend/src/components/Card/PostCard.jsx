@@ -65,7 +65,7 @@ const PostCard = ({ post }) => {
   };
 
   return (
-    <div className="bg-white shadow-md rounded-lg p-4 w-full max-w-2xl border border-gray-200">
+    <div className="bg-white shadow-md rounded-lg p-3.5 w-full max-w-2xl border border-gray-200">
       {/* Profile & Post Info */}
       <div className="flex items-center justify-between">
         <div className="flex items-center justify-between w-full space-x-3">
@@ -91,7 +91,7 @@ const PostCard = ({ post }) => {
       </div>
 
       {/* Location Section - Moved Up */}
-      <div className="bg-gray-100 lg:text-sm md:text-sm text-[0.8rem] font-semibold text-blue-600 flex items-center  tracking-wide justify-center lg:px-5 md:px-3 px-2 py-2 mt-2 rounded-md hover:underline cursor-pointer">
+      <div className="bg-gray-100 lg:text-sm md:text-sm text-[0.9rem] font-semibold text-blue-600 flex items-center  tracking-wide justify-center lg:px-5 md:px-3 px-2 py-2 mt-2 rounded-md hover:underline cursor-pointer">
         <MapPin size={16} className="text-blue-500 mr-1" />
         <a
           href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
@@ -121,7 +121,7 @@ const PostCard = ({ post }) => {
             >
               Agree
             </span>
-            <span className="text-base font-medium">{agrees.length}</span>
+            <span className="text-base font-medium">({agrees.length})</span>
           </button>
 
           <button
@@ -137,12 +137,13 @@ const PostCard = ({ post }) => {
             >
               Disagree
             </span>
-            <span className="text-base font-medium">{disagrees.length}</span>
+            <span className="text-base font-medium">({disagrees.length})</span>
           </button>
         </div>
 
         <NavLink
-          to="/commentsection"
+          to={`/commentsection/${post._id}`}
+          state={{post}}
           className="flex items-center md:gap-x-2 hover:text-gray-700 transition"
         >
           <MessagesSquare size={22} />

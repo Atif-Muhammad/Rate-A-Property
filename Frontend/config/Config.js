@@ -101,7 +101,6 @@ const like = async (postId) => {
     return error;
   }
 };
-
 const unLike = async (postId) => {
   try {
     const response = await axios.put(
@@ -114,7 +113,6 @@ const unLike = async (postId) => {
     return error;
   }
 };
-
 const disLike = async (postId) => {
   try {
     const response = await axios.put(
@@ -139,6 +137,8 @@ const unDisLike = async (postId) => {
     return error;
   }
 };
+
+
 const likeMedia = async (postId) => {
   try {
     const response = await axios.put(
@@ -151,7 +151,6 @@ const likeMedia = async (postId) => {
     return error;
   }
 };
-
 const unLikeMedia = async (postId) => {
   try {
     const response = await axios.put(
@@ -164,7 +163,6 @@ const unLikeMedia = async (postId) => {
     return error;
   }
 };
-
 const disLikeMedia = async (postId) => {
   try {
     const response = await axios.put(
@@ -190,6 +188,80 @@ const unDisLikeMedia = async (postId) => {
   }
 };
 
+const addComment = async (data) => {
+  try {
+    const response = await axios.post(
+      `${Baseurl}/posts/addComment`,
+      { data },
+      { withCredentials: true }
+    );
+    return response;
+  } catch (error) {
+    return error;
+  }
+};
+const getcomments = async (postId) => {
+  try {
+    const response = await axios.get(
+      `${Baseurl}/posts/getComments?post=${postId}`,
+      { withCredentials: true }
+    );
+    return response;
+  } catch (error) {
+    return error;
+  }
+};
+
+const likeComment = async (comntId) => {
+  try {
+    const response = await axios.put(
+      `${Baseurl}/posts/likeComment`,
+      { comntId },
+      { withCredentials: true }
+    );
+    return response;
+  } catch (error) {
+    return error;
+  }
+};
+const unLikeComment = async (comntId) => {
+  try {
+    const response = await axios.put(
+      `${Baseurl}/posts/unLikeComment`,
+      { comntId },
+      { withCredentials: true }
+    );
+    return response;
+  } catch (error) {
+    return error;
+  }
+};
+const disLikeComment = async (comntId) => {
+  try {
+    const response = await axios.put(
+      `${Baseurl}/posts/disLikeComment`,
+      { comntId },
+      { withCredentials: true }
+    );
+    return response;
+  } catch (error) {
+    return error;
+  }
+};
+const unDisLikeComment = async (comntId) => {
+  try {
+    const response = await axios.put(
+      `${Baseurl}/posts/unDisLikeComment`,
+      { comntId },
+      { withCredentials: true }
+    );
+    return response;
+  } catch (error) {
+    return error;
+  }
+};
+
+
 export const APIS = {
   userWho,
   signup,
@@ -206,5 +278,12 @@ export const APIS = {
   likeMedia,
   unLikeMedia,
   disLikeMedia,
-  unDisLikeMedia
+  unDisLikeMedia,
+  addComment,
+  getcomments,
+  likeComment,
+  unLikeComment,
+  disLikeComment,
+  unDisLikeComment
+
 };
