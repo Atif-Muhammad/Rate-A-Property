@@ -97,13 +97,12 @@ const PostCard = (props) => {
       <div className="flex items-center justify-between">
         <div className="flex items-center justify-between w-full space-x-3">
           <div className="flex items-center gap-x-3">
-           
             <img
               src={post?.owner?.image}
               alt="profile"
               className="w-12 h-12 rounded-full border-2 border-blue-500"
             />
-            
+
             <div className="leading-tight">
               <p className="text-sm font-semibold text-black">
                 {post?.owner?.user_name}
@@ -170,7 +169,7 @@ const PostCard = (props) => {
         </div>
 
         <NavLink
-          to={`/commentsection/${post._id}`}
+          to={`/post/${post._id}`}
           state={{ post }}
           className="flex items-center md:gap-x-2 hover:text-gray-700 transition"
         >

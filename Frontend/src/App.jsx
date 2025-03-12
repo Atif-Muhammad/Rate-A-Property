@@ -28,7 +28,7 @@ function App() {
           </Route>
           {/* others components */}
           {/* <Route path="/newPost" element={<NewPost />} /> */}
-          <Route path="/commentsection/:postId" element={<CommentSection />} />
+          <Route path="/post/:postId" element={<CommentSection />} />
           <Route path="/signin" element={<Sign_In />} />
           <Route path="/signup" element={<Sign_Up />} />
         </Routes>

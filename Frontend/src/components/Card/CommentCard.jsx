@@ -66,8 +66,8 @@ function CommentCard(props) {
     >
       <img
         src={`data:${
-          props.comment.owner.image?.contentType
-        };base64,${arrayBufferToBase64(props.comment.owner.image?.data?.data)}`}
+          props.comment.owner?.image?.contentType
+        };base64,${arrayBufferToBase64(props.comment.owner?.image?.data?.data)}`}
         alt="avatar"
         className="w-12 h-12 rounded-full"
       />
@@ -90,7 +90,7 @@ function CommentCard(props) {
             // }`}
             onClick={handleAgree}
           >
-            <ThumbsUp size={16} /> <span>Like ({agrees?.length || 0})</span>
+            <ThumbsUp size={16} /> <span>({agrees?.length || 0})</span>
           </button>
           <button
             // className={`flex items-center space-x-1 ${
@@ -101,7 +101,7 @@ function CommentCard(props) {
             onClick={handleDisagree}
           >
             <ThumbsDown size={16} />{" "}
-            <span>Dislike ({disagrees?.length || 0})</span>
+            <span>({disagrees?.length || 0})</span>
           </button>
           <button className="flex items-center space-x-1 hover:text-blue-600">
             <MessageCircle size={16} /> <span>Reply</span>
