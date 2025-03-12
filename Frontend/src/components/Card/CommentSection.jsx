@@ -13,21 +13,22 @@ const CommentSection = () => {
   const [currentUser, setCurrentUser] = useState({});
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
-  const [selectedFile, setSelectedFile] = useState(null); // State for file
+  const [selectedFiles, setSelectedFiles] = useState([]);
 
   // Handle file selection
   const handleFileUpload = (event) => {
-    const file = event.target.files[0];
+    const file = event.target.files;
     if (file) {
-      setSelectedFile(file);
-      console.log("Selected file:", file);
+      setSelectedFiles(Array.from(file));
+      // console.log("Selected file:", file);
     }
   };
 
   const handleAddComment = async () => {
-    if (!newComment.trim() && !selectedFile) return;
-
+    if (!newComment.trim() && selectedFiles.length === 0) return;
     const tempId = `temp-${Date.now()}`;
+    const mediaPreviews = selectedFiles.map((file) => URL.createObjectURL(file)); // Preview images/videos
+
     const newCommentData = {
       _id: tempId,
       owner: {
@@ -40,20 +41,25 @@ const CommentSection = () => {
       createdAt: new Date().toISOString(),
       likes: [],
       disLikes: [],
-      media: selectedFile ? URL.createObjectURL(selectedFile) : null, // Preview image/video
+      media: mediaPreviews, // Show previews in UI
     };
 
+    // Add temporary comment to UI
     setComments((prevComments) => [newCommentData, ...prevComments]);
-    setNewComment("");
-    setSelectedFile(null);
+    // setNewComment("");
+    // setSelectedFiles([]); // Reset file selection
 
+    
     try {
       const formData = new FormData();
       formData.append("owner", currentUser.id);
       formData.append("content", newComment);
       formData.append("for_post", postId);
-      if (selectedFile) formData.append("media", selectedFile);
+      selectedFiles.forEach((file) => formData.append("files", file)); 
 
+      for (let [key, value] of formData.entries()) {
+        console.log(`${key}:`, value);
+      }
       const res = await APIS.addComment(formData);
 
       if (res.status === 200) {
@@ -63,8 +69,8 @@ const CommentSection = () => {
           )
         );
       }
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error("Error adding comment:", error);
       setComments((prevComments) =>
         prevComments.filter((comment) => comment._id !== tempId)
       );
@@ -151,6 +157,7 @@ const CommentSection = () => {
           {/* File Input (Hidden) */}
           <input
             type="file"
+            multiple
             id="fileInput"
             accept="image/*,video/*"
             className="hidden"

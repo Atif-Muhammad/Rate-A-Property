@@ -3,6 +3,7 @@ const user = require("./userModel");
 const like = require("./likesModel");
 const disLike = require("./disLikeModel");
 const post = require("./postModel");
+const comment = require("./commentModel")
 
 const mediaSchema = mongoose.Schema({
   identifier: {
@@ -13,6 +14,10 @@ const mediaSchema = mongoose.Schema({
   of_post: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "post",
+  },
+  of_comment:{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "comment",
   },
   owner: {
     type: mongoose.Schema.Types.ObjectId,

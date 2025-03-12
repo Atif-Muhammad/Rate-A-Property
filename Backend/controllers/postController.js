@@ -412,36 +412,81 @@ const postController = {
         }
     },
 
-    addComment: async (req, res)=>{
-        // console.log(req.body)
-        const owner = req.body.data.owner;
-        const content = req.body.data.content;
-        const for_post = req.body.data.for_post;
-        const commentData = {
-            comment: content,
-            for_post,
-            owner,
-            likes: [],
-            disLikes: [],
-            comments: []
-        }
-        // console.log(commentData)
-        try {
+    addComment: async (req, res) => {
+        try {   
+            const { owner, content, for_post } = req.body;
+            console.log(for_post)
+            const ownerId = new mongoose.Types.ObjectId(owner);
+    
+            // Extract filenames from uploaded files and determine type
+            const fileNames = req.files?.map(file => {
+                const ext = path.extname(file.filename);
+                const type = [".mp4", ".webm", ".MOV"].includes(ext) ? "video" : "image";
+                return {
+                    filename: file.filename.toString(),
+                    type,
+                    path: `/uploads/comments/${file.filename}`
+                };
+            });
+    
+            // Create comment data (excluding media initially)
+            const commentData = {
+                comment: content,
+                for_post,
+                owner: ownerId,
+                likes: [],
+                disLikes: [],
+                comments: []
+            };
+    
+            // Create the comment first
             const newComment = await comment.create(commentData);
-            // console.log(newComment)
-            if(newComment){
-                // update the user, post models
-                const updated_post = await post.updateOne({_id: for_post}, {$push: {comments: newComment._id}});
-                if(updated_post){
-                    await user.updateOne({_id: owner}, {$push: {comments: newComment._id}})
-                    const cmnt = await comment.findOne({_id: newComment._id}).populate("owner").populate("likes").populate("disLikes");
-                    res.status(200).send(cmnt)
-                }
+    
+            if (!newComment) {
+                return res.status(500).json({ error: "Failed to create comment" });
             }
+            
+    
+            // Store media files separately
+            const mediaDocs = await Promise.all(
+                fileNames.map(file => {
+                    const mediaDoc = new media({
+                        identifier: {
+                            filename: file.filename,
+                            type: file.type,
+                            path: file.path
+                        },
+                        owner: ownerId,
+                        of_comment: newComment._id,
+                        likes: [],
+                        disLikes: []
+                    });
+                    return mediaDoc.save();
+                })
+            );
+            
+            // console.log(newComment._id)
+            // Associate media with comment
+            const mediaIds = mediaDocs.map(doc => doc._id);
+            await comment.updateOne({ _id: newComment._id }, { $push: { media: { $each: mediaIds } } });
+    
+            // Update post & user models
+            await post.updateOne({ _id: for_post }, { $push: { comments: newComment._id } });
+            await user.updateOne({ _id: ownerId }, { $push: { comments: newComment._id } });
+    
+            // Fetch and return populated comment
+            const populatedComment = await comment
+                .findOne({ _id: newComment._id })
+                .populate("owner")
+                .populate("likes")
+                .populate("disLikes")
+                .populate("media"); 
+            // console.log(populatedComment)
+            res.status(200).send(populatedComment);
         } catch (error) {
-            res.send(error);
+            console.error("Error adding comment:", error);
+            res.status(500).json({ error: "Internal Server Error", details: error.message });
         }
-
     },
 
     getComments: async (req, res)=>{

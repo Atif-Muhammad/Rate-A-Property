@@ -18,6 +18,7 @@ function CommentCard(props) {
   const isTemp = props.comment._id.startsWith("temp");
 
   useEffect(() => {
+    // console.log(props.comment)
     setAgrees(props.comment.likes);
     setDisagrees(props.comment.disLikes);
   }, [props.comment.likes, props.comment.disLikes]);
@@ -74,7 +75,7 @@ function CommentCard(props) {
       <div className="flex-1">
         <div className="flex items-center space-x-2">
           <span className="font-semibold text-gray-900">
-            {props.comment.owner.user_name}
+            {props.comment.owner?.user_name}
           </span>
           <span className="text-xs text-gray-500">
             {getTimeAgo(props.comment.createdAt)}

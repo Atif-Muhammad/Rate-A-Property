@@ -191,9 +191,10 @@ const unDisLikeMedia = async (postId) => {
 const addComment = async (data) => {
   try {
     const response = await axios.post(
-      `${Baseurl}/posts/addComment`,
-      { data },
-      { withCredentials: true }
+      `${Baseurl}/posts/addComment`, data, {
+        headers: { "Content-Type": "multipart/form-data" },
+        withCredentials: true,
+      }
     );
     return response;
   } catch (error) {
