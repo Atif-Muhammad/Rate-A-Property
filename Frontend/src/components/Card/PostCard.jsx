@@ -11,11 +11,14 @@ const PostCard = ({ post }) => {
   const [disagrees, setDisagrees] = useState(post.disLikes);
 
   useEffect(() => {
-    console.log(post)
+    // console.log(post)
     APIS.userWho()
       .then((res) => setAgreeOwner(res.data.id))
       .catch((err) => console.log(err));
   }, []);
+  useEffect(()=>{
+
+  }, [agrees,disagrees])
 
   const handleAgree = async () => {
     if (agrees.some((agree) => agree.owner === agreeOwner)) {
