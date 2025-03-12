@@ -135,22 +135,66 @@ const postController = {
         
     },
     getSingPost: async (req, res) => {
-        const postId = req.query.post
-        // console.log(postId)
+        const postId = req.query.post;
+    
         try {
-            const sngpost = await post.findOne({ _id: postId }).populate("owner")
-            .populate("likes")
-            .populate("disLikes")
-            .populate({
-                path: "media",
-                populate: [
-                  { path: "likes" },
-                  { path: "disLikes" }, 
-                ],
-              })
-            res.send(sngpost)
+            const sngpost = await post
+                .findOne({ _id: postId })
+                .populate("owner")
+                .populate("likes")
+                .populate("disLikes")
+                .populate({
+                    path: "media",
+                    populate: [
+                        { path: "likes" },
+                        { path: "disLikes" },
+                    ],
+                });
+    
+            if (!sngpost) {
+                return res.status(404).send({ error: "Post not found" });
+            }
+    
+            const mediaUrls = sngpost.media
+                .map(file => {
+                    const fileData = file.toObject();
+                    const fileExt = fileData.identifier.filename.split(".").pop()?.toLowerCase();
+                    const mediaType = ["mp4", "webm", "mov"].includes(fileExt) ? "video" : "image";
+                    const ownerId = sngpost.owner?._id?.toString() || sngpost.owner?.toString();
+    
+                    if (!ownerId) {
+                        console.error("Missing owner ID for post:", sngpost._id);
+                        return null;
+                    }
+    
+                    return {
+                        url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${fileData.identifier.filename}`,
+                        type: mediaType,
+                        filename: fileData.identifier.filename,
+                        likes: file.likes,
+                        disLikes: file.disLikes,
+                        of_post: file.of_post,
+                        owner: file.owner,
+                        _id: file._id
+                    };
+                })
+                .filter(Boolean);
+    
+            const updatedPost = {
+                ...sngpost.toObject(),
+                media: mediaUrls,
+                owner: {
+                    ...sngpost.owner.toObject(),
+                    image: sngpost.owner.image?.data
+                        ? `data:image/png;base64,${sngpost.owner.image.data.toString("base64")}`
+                        : null
+                }
+            };
+    
+            res.send(updatedPost);
         } catch (error) {
-            res.send(error);
+            console.error("Error fetching single post:", error);
+            res.status(500).send({ error: "Internal Server Error" });
         }
     },
 

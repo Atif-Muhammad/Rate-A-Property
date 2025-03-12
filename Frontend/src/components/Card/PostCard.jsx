@@ -97,22 +97,13 @@ const PostCard = (props) => {
       <div className="flex items-center justify-between">
         <div className="flex items-center justify-between w-full space-x-3">
           <div className="flex items-center gap-x-3">
-            {props.post ? (
-              <img
-                src={post?.owner?.image}
-                alt="profile"
-                className="w-12 h-12 rounded-full border-2 border-blue-500"
-              />
-            ) : (
-              <img
-                src={`data:${
-                  post?.owner?.image.contentType
-                };base64,${arrayBufferToBase64(post?.owner?.image.data.data)}`}
-                alt="profile"
-                className="w-12 h-12 rounded-full border-2 border-blue-500"
-              />
-            )}
-
+           
+            <img
+              src={post?.owner?.image}
+              alt="profile"
+              className="w-12 h-12 rounded-full border-2 border-blue-500"
+            />
+            
             <div className="leading-tight">
               <p className="text-sm font-semibold text-black">
                 {post?.owner?.user_name}
