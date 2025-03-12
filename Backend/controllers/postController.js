@@ -492,7 +492,13 @@ const postController = {
     getComments: async (req, res)=>{
         const postId = req.query.post;
         try {
-            const comments = await comment.find({for_post: postId}).populate("owner").populate("likes").populate("disLikes").sort({createdAt: -1});
+            const comments = await comment.find({for_post: postId}).populate("owner").populate("likes").populate("disLikes").populate({
+                path: "media",
+                populate: [
+                  { path: "likes" },
+                  { path: "disLikes" }, 
+                ],
+              }).sort({createdAt: -1});
             res.send(comments)
         } catch (error) {
             res.send(error);
