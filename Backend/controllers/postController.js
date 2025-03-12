@@ -138,8 +138,17 @@ const postController = {
         const postId = req.query.post
         // console.log(postId)
         try {
-            const post = await post.find({ _id: postId }).populate("owner").populate("likes").populate("disLikes");
-            res.send(post)
+            const sngpost = await post.findOne({ _id: postId }).populate("owner")
+            .populate("likes")
+            .populate("disLikes")
+            .populate({
+                path: "media",
+                populate: [
+                  { path: "likes" },
+                  { path: "disLikes" }, 
+                ],
+              })
+            res.send(sngpost)
         } catch (error) {
             res.send(error);
         }

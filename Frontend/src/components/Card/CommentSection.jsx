@@ -119,7 +119,7 @@ const CommentSection = () => {
 
   return (
     <div className="flex pt-14 lg:flex-row items-center gap-2 flex-col h-screen ">
-      <PostCard post={post} />
+      <PostCard postId={postId} />
       <div className="w-full max-w-lg mx-auto bg-white shadow-md rounded-lg p-4 flex flex-col h-screen">
         {/* Header */}
         <h2 className="text-lg font-semibold mb-3 border-b pb-2">Comments</h2>

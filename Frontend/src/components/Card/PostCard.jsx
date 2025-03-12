@@ -4,21 +4,44 @@ import { APIS } from "../../../config/Config";
 import { getTimeAgo } from "../../ReUsables/GetTimeAgo";
 import MediaGrid from "./MediaGrid";
 import { NavLink } from "react-router-dom";
+import { arrayBufferToBase64 } from "../../ReUsables/arrayTobuffer";
 
-const PostCard = ({ post }) => {
+const PostCard = (props) => {
+  const postId = props.postId;
+
+  const [post, setPost] = useState({});
+
   const [agreeOwner, setAgreeOwner] = useState("");
-  const [agrees, setAgrees] = useState(post.likes);
-  const [disagrees, setDisagrees] = useState(post.disLikes);
+  const [agrees, setAgrees] = useState([]);
+  const [disagrees, setDisagrees] = useState([]);
 
+  const fetchPost = () => {
+    APIS.getSinglePost(postId)
+      .then((res) => {
+        console.log(res);
+        setPost(res.data);
+        setAgrees(res.data.likes);
+        setDisagrees(res.data.disLikes);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  };
+  const postFromprop = () => {
+    setPost(props.post);
+    setAgrees(props.post.likes);
+    setDisagrees(props.post.disLikes);
+  };
   useEffect(() => {
-    // console.log(post)
+    // console.log("id:",props.postId)
+    // console.log("post:",props.post)
+    postId ? fetchPost() : props.post ? postFromprop() : setPost({});
     APIS.userWho()
       .then((res) => setAgreeOwner(res.data.id))
       .catch((err) => console.log(err));
   }, []);
-  useEffect(()=>{
 
-  }, [agrees,disagrees])
+  useEffect(() => {}, [agrees, disagrees]);
 
   const handleAgree = async () => {
     if (agrees.some((agree) => agree.owner === agreeOwner)) {
@@ -30,7 +53,7 @@ const PostCard = ({ post }) => {
       await APIS.like(post._id);
       setAgrees((prevAgrees) => [
         ...prevAgrees,
-        { owner: agreeOwner, for_post: post._id },    
+        { owner: agreeOwner, for_post: post._id },
       ]);
 
       setDisagrees((prevDisagrees) => {
@@ -74,15 +97,25 @@ const PostCard = ({ post }) => {
       <div className="flex items-center justify-between">
         <div className="flex items-center justify-between w-full space-x-3">
           <div className="flex items-center gap-x-3">
-            <img
-              src={post.owner.image}
-              alt="profile"
-              className="w-12 h-12 rounded-full border-2 border-blue-500"
-            />
+            {props.post ? (
+              <img
+                src={post?.owner?.image}
+                alt="profile"
+                className="w-12 h-12 rounded-full border-2 border-blue-500"
+              />
+            ) : (
+              <img
+                src={`data:${
+                  post?.owner?.image.contentType
+                };base64,${arrayBufferToBase64(post?.owner?.image.data.data)}`}
+                alt="profile"
+                className="w-12 h-12 rounded-full border-2 border-blue-500"
+              />
+            )}
 
             <div className="leading-tight">
               <p className="text-sm font-semibold text-black">
-                {post.owner.user_name}
+                {post?.owner?.user_name}
               </p>
               <span className="text-xs text-gray-500">
                 {getTimeAgo(post.createdAt)}
@@ -111,7 +144,7 @@ const PostCard = ({ post }) => {
       {/* Post Content */}
       <p className="text-gray-800 text-sm mt-2">{post.description}</p>
 
-      <MediaGrid media={post.media} />
+      {post.media && <MediaGrid media={post.media} />}
       {/* Action Buttons */}
       <div className="flex justify-between gap-2 p-2 border-t border-gray-300 pt-3 items-center mt-4 text-gray-600 text-sm">
         <div className="flex items-center gap-x-4">
