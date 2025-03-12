@@ -498,7 +498,7 @@ const postController = {
                   { path: "likes" },
                   { path: "disLikes" }, 
                 ],
-              }).sort({createdAt: -1});
+              }).sort({createdAt: -1})
             res.send(comments)
         } catch (error) {
             res.send(error);
