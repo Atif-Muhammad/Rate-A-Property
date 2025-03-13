@@ -14,36 +14,42 @@ const CommentSection = () => {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
   const [selectedFiles, setSelectedFiles] = useState([]);
+  const [mediaPreviews, setMediaPreviews] = useState([]);
 
   // Handle file selection
   const handleFileUpload = (event) => {
-    const file = event.target.files;
-    if (file) {
-      setSelectedFiles(Array.from(file));
-      // console.log("Selected file:", file);
+    const files = Array.from(event.target.files);
+    if (files.length > 0) {
+      setSelectedFiles((prevFiles) => [...prevFiles, ...files]);
     }
+  };
+  
+  const removeFile = (index) => {
+    setSelectedFiles((prevFiles) => prevFiles.filter((_, i) => i !== index));
   };
 
   const handleAddComment = async () => {
     if (!newComment.trim() && selectedFiles.length === 0) return;
     const tempId = `temp-${Date.now()}`;
-  
+
     // Store media previews correctly
     const mediaPreviews = selectedFiles.map((file) => {
       const fileExt = file.name.split(".").pop().toLowerCase();
-      const mediaType = ["mp4", "webm", "mov"].includes(fileExt) ? "video" : "image";
+      const mediaType = ["mp4", "webm", "mov"].includes(fileExt)
+        ? "video"
+        : "image";
       const url = URL.createObjectURL(file); // Create blob URL for preview
-  
+
       return {
         _id: `temp-media-${Date.now()}`, // Temporary ID for UI
         filename: file.name,
         type: mediaType,
         url, // Store the generated URL
         likes: [],
-        disLikes: []
+        disLikes: [],
       };
     });
-  
+
     const newCommentData = {
       _id: tempId,
       owner: {
@@ -56,26 +62,27 @@ const CommentSection = () => {
       createdAt: new Date().toISOString(),
       likes: [],
       disLikes: [],
-      media: mediaPreviews, 
+      media: mediaPreviews,
     };
-  
+
     // Add temporary comment to UI
     setComments((prevComments) => [newCommentData, ...prevComments]);
-  
+
     try {
       const formData = new FormData();
       formData.append("owner", currentUser.id);
       formData.append("content", newComment);
       formData.append("for_post", postId);
       selectedFiles.forEach((file) => formData.append("files", file));
-  
+
       for (let [key, value] of formData.entries()) {
         console.log(`${key}:`, value);
       }
-  
+
       const res = await APIS.addComment(formData);
-  
+
       if (res.status === 200) {
+        setSelectedFiles([])
         setComments((prevComments) =>
           prevComments.map((comment) =>
             comment._id === tempId ? res.data : comment
@@ -89,8 +96,6 @@ const CommentSection = () => {
       );
     }
   };
-  
-  
 
   const getUserDetails = async () => {
     try {
@@ -151,6 +156,36 @@ const CommentSection = () => {
             />
           ))}
         </div>
+        {selectedFiles.length > 0 && (
+          <div className="bg-red-400 w-full p-2 flex flex-wrap gap-2">
+            {selectedFiles.map((file, index) => (
+              <div
+                key={index}
+                className="relative w-24 h-24 bg-gray-200 rounded-md overflow-hidden"
+              >
+                <button
+                  className="z-10 absolute top-1 right-1 bg-black text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+                  onClick={() => removeFile(index)}
+                >
+                  ✕
+                </button>
+                {file.type.startsWith("image") ? (
+                  <img
+                    src={URL.createObjectURL(file)}
+                    alt="Preview"
+                    className="w-full h-full object-cover"
+                  />
+                ) : file.type.startsWith("video") ? (
+                  <video
+                    src={URL.createObjectURL(file)}
+                    className="w-full h-full object-cover"
+                    controls
+                  />
+                ) : null}
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Fixed Input Box */}
         <div className="border-t bg-gray-100 p-3 rounded-lg flex items-center sticky bottom-0 w-full">
