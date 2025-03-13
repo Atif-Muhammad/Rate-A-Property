@@ -27,8 +27,23 @@ const CommentSection = () => {
   const handleAddComment = async () => {
     if (!newComment.trim() && selectedFiles.length === 0) return;
     const tempId = `temp-${Date.now()}`;
-    const mediaPreviews = selectedFiles.map((file) => URL.createObjectURL(file)); // Preview images/videos
-
+  
+    // Store media previews correctly
+    const mediaPreviews = selectedFiles.map((file) => {
+      const fileExt = file.name.split(".").pop().toLowerCase();
+      const mediaType = ["mp4", "webm", "mov"].includes(fileExt) ? "video" : "image";
+      const url = URL.createObjectURL(file); // Create blob URL for preview
+  
+      return {
+        _id: `temp-media-${Date.now()}`, // Temporary ID for UI
+        filename: file.name,
+        type: mediaType,
+        url, // Store the generated URL
+        likes: [],
+        disLikes: []
+      };
+    });
+  
     const newCommentData = {
       _id: tempId,
       owner: {
@@ -41,27 +56,25 @@ const CommentSection = () => {
       createdAt: new Date().toISOString(),
       likes: [],
       disLikes: [],
-      media: mediaPreviews, // Show previews in UI
+      media: mediaPreviews, 
     };
-
+  
     // Add temporary comment to UI
     setComments((prevComments) => [newCommentData, ...prevComments]);
-    // setNewComment("");
-    // setSelectedFiles([]); // Reset file selection
-
-    
+  
     try {
       const formData = new FormData();
       formData.append("owner", currentUser.id);
       formData.append("content", newComment);
       formData.append("for_post", postId);
-      selectedFiles.forEach((file) => formData.append("files", file)); 
-
+      selectedFiles.forEach((file) => formData.append("files", file));
+  
       for (let [key, value] of formData.entries()) {
         console.log(`${key}:`, value);
       }
+  
       const res = await APIS.addComment(formData);
-
+  
       if (res.status === 200) {
         setComments((prevComments) =>
           prevComments.map((comment) =>
@@ -76,6 +89,8 @@ const CommentSection = () => {
       );
     }
   };
+  
+  
 
   const getUserDetails = async () => {
     try {
@@ -102,6 +117,7 @@ const CommentSection = () => {
     try {
       const res = await APIS.getcomments(postId);
       if (res.status === 200) {
+        // console.log("comments: ",res)
         setComments(res.data);
       }
     } catch (err) {

@@ -19,7 +19,7 @@ const postController = {
             const file_names = req.fileNames.map(filename => {
                 const ext = path.extname(filename);
                 const type = ext === ".mp4" || ext === ".webm" || ext === ".MOV" ? "video" : "image";
-            
+
                 return {
                     filename: filename.toString(),
                     type: type.toString(),
@@ -59,10 +59,10 @@ const postController = {
                     return mediaDoc.save(); // Returns a promise
                 })
             );
-            
+
             // console.log(mediaDocs)
-            const ids = mediaDocs.map(doc=> doc._id);
-            await post.updateOne({_id: created_post._id}, {$push: {media: {$each: ids} }})
+            const ids = mediaDocs.map(doc => doc._id);
+            await post.updateOne({ _id: created_post._id }, { $push: { media: { $each: ids } } })
             // Step 6: Update user with the new post
             await user.updateOne({ _id: ownerId }, { $push: { posts: created_post._id } });
 
@@ -82,12 +82,12 @@ const postController = {
                 .populate({
                     path: "media",
                     populate: [
-                      { path: "likes" },
-                      { path: "disLikes" }, 
+                        { path: "likes" },
+                        { path: "disLikes" },
                     ],
-                  })
+                })
                 .sort({ createdAt: -1 });
-        
+
             const updatedPosts = posts.map(post => {
                 const mediaUrls = post.media
                     .map(file => {
@@ -96,12 +96,12 @@ const postController = {
                         const fileExt = fileData.identifier.filename.split(".").pop()?.toLowerCase();
                         const mediaType = ["mp4", "webm", "mov"].includes(fileExt) ? "video" : "image";
                         const ownerId = post.owner?._id?.toString() || post.owner?.toString();
-        
+
                         if (!ownerId) {
                             console.error("Missing owner ID for post:", post._id);
                             return null;
                         }
-        
+
                         return {
                             url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${fileData.identifier.filename}`,
                             type: mediaType,
@@ -114,7 +114,7 @@ const postController = {
                         };
                     })
                     .filter(Boolean);
-        
+
                 return {
                     ...post.toObject(),
                     media: mediaUrls,
@@ -126,17 +126,17 @@ const postController = {
                     }
                 };
             });
-        
+
             res.send(updatedPosts);
         } catch (error) {
             console.error("Error fetching posts:", error);
             res.status(500).send({ error: "Internal Server Error" });
         }
-        
+
     },
     getSingPost: async (req, res) => {
         const postId = req.query.post;
-    
+
         try {
             const sngpost = await post
                 .findOne({ _id: postId })
@@ -150,23 +150,23 @@ const postController = {
                         { path: "disLikes" },
                     ],
                 });
-    
+
             if (!sngpost) {
                 return res.status(404).send({ error: "Post not found" });
             }
-    
+
             const mediaUrls = sngpost.media
                 .map(file => {
                     const fileData = file.toObject();
                     const fileExt = fileData.identifier.filename.split(".").pop()?.toLowerCase();
                     const mediaType = ["mp4", "webm", "mov"].includes(fileExt) ? "video" : "image";
                     const ownerId = sngpost.owner?._id?.toString() || sngpost.owner?.toString();
-    
+
                     if (!ownerId) {
                         console.error("Missing owner ID for post:", sngpost._id);
                         return null;
                     }
-    
+
                     return {
                         url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${fileData.identifier.filename}`,
                         type: mediaType,
@@ -179,7 +179,7 @@ const postController = {
                     };
                 })
                 .filter(Boolean);
-    
+
             const updatedPost = {
                 ...sngpost.toObject(),
                 media: mediaUrls,
@@ -190,7 +190,7 @@ const postController = {
                         : null
                 }
             };
-    
+
             res.send(updatedPost);
         } catch (error) {
             console.error("Error fetching single post:", error);
@@ -413,11 +413,11 @@ const postController = {
     },
 
     addComment: async (req, res) => {
-        try {   
+        try {
             const { owner, content, for_post } = req.body;
             console.log(for_post)
             const ownerId = new mongoose.Types.ObjectId(owner);
-    
+
             // Extract filenames from uploaded files and determine type
             const fileNames = req.files?.map(file => {
                 const ext = path.extname(file.filename);
@@ -428,7 +428,7 @@ const postController = {
                     path: `/uploads/comments/${file.filename}`
                 };
             });
-    
+
             // Create comment data (excluding media initially)
             const commentData = {
                 comment: content,
@@ -438,15 +438,15 @@ const postController = {
                 disLikes: [],
                 comments: []
             };
-    
+
             // Create the comment first
             const newComment = await comment.create(commentData);
-    
+
             if (!newComment) {
                 return res.status(500).json({ error: "Failed to create comment" });
             }
-            
-    
+
+
             // Store media files separately
             const mediaDocs = await Promise.all(
                 fileNames.map(file => {
@@ -464,23 +464,23 @@ const postController = {
                     return mediaDoc.save();
                 })
             );
-            
+
             // console.log(newComment._id)
             // Associate media with comment
             const mediaIds = mediaDocs.map(doc => doc._id);
             await comment.updateOne({ _id: newComment._id }, { $push: { media: { $each: mediaIds } } });
-    
+
             // Update post & user models
             await post.updateOne({ _id: for_post }, { $push: { comments: newComment._id } });
             await user.updateOne({ _id: ownerId }, { $push: { comments: newComment._id } });
-    
+
             // Fetch and return populated comment
             const populatedComment = await comment
                 .findOne({ _id: newComment._id })
                 .populate("owner")
                 .populate("likes")
                 .populate("disLikes")
-                .populate("media"); 
+                .populate("media");
             // console.log(populatedComment)
             res.status(200).send(populatedComment);
         } catch (error) {
@@ -489,17 +489,63 @@ const postController = {
         }
     },
 
-    getComments: async (req, res)=>{
+    getComments: async (req, res) => {
         const postId = req.query.post;
         try {
-            const comments = await comment.find({for_post: postId}).populate("owner").populate("likes").populate("disLikes").populate({
-                path: "media",
-                populate: [
-                  { path: "likes" },
-                  { path: "disLikes" }, 
-                ],
-              }).sort({createdAt: -1})
-            res.send(comments)
+            const comments = await comment
+                .find({ for_post: postId })
+                .populate("owner")
+                .populate("likes")
+                .populate("disLikes")
+                .populate({
+                    path: "media",
+                    populate: [
+                        { path: "likes" },
+                        { path: "disLikes" },
+                    ],
+                })
+                .sort({ createdAt: -1 });
+
+            const updatedComments = comments.map(comment => {
+                const mediaUrls = comment.media
+                    .map(file => {
+                        const fileData = file.toObject();
+                        const fileExt = fileData.identifier.filename.split(".").pop()?.toLowerCase();
+                        const mediaType = ["mp4", "webm", "mov"].includes(fileExt) ? "video" : "image";
+                        const ownerId = comment.owner?._id?.toString() || comment.owner?.toString();
+
+                        if (!ownerId) {
+                            console.error("Missing owner ID for comment:", comment._id);
+                            return null;
+                        }
+
+                        return {
+                            url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${fileData.identifier.filename}`,
+                            type: mediaType,
+                            filename: fileData.identifier.filename,
+                            likes: file.likes,
+                            disLikes: file.disLikes,
+                            of_comment: file.of_comment,
+                            owner: file.owner,
+                            _id: file._id
+                        };
+                    })
+                    .filter(Boolean);
+
+                return {
+                    ...comment.toObject(),
+                    media: mediaUrls,
+                    owner: {
+                        ...comment.owner.toObject(),
+                        image: comment.owner.image?.data
+                            ? `data:image/png;base64,${comment.owner.image.data.toString("base64")}`
+                            : null
+                    }
+                };
+            });
+
+            res.send(updatedComments)
+
         } catch (error) {
             res.send(error);
         }
@@ -575,7 +621,7 @@ const postController = {
             if (un_liked) {
                 await user.updateOne({ _id: owner_id }, { $pull: { likes: un_liked._id } });
                 await post.updateOne({ _id: comntId }, { $pull: { likes: un_liked._id } });
-                
+
             }
             const disLiked = await disLike.create(data);
             // console.log(disLiked)
@@ -617,4 +663,4 @@ const postController = {
 
 }
 
-module.exports = postController;
+module.exports = postController;

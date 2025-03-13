@@ -131,7 +131,7 @@ export default function MediaGrid({ media }) {
                     setIsModalOpen(true);
                   }}
                 >
-                  {item.type === "image" ? (
+                  {item.type.startsWith("image") ? (
                     <img
                       src={item.url}
                       alt="Post"
@@ -166,7 +166,7 @@ export default function MediaGrid({ media }) {
                   setIsModalOpen(true);
                 }}
               >
-                {item.type === "image" ? (
+                {item.type?.startsWith("image") ? (
                   <img
                     src={item.url}
                     alt="Post"
@@ -226,7 +226,7 @@ export default function MediaGrid({ media }) {
           <div className="relative bg-white rounded-xl p-6 max-w-4xl w-full max-h-[90vh] overflow-auto shadow-xl">
             {/* Media Display */}
             <div className="flex flex-col items-center">
-              {media[selectedIndex]?.type === "image" ? (
+              {media[selectedIndex]?.type.startsWith("image") ? (
                 <>
                   <img
                     src={media[selectedIndex].url}

@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { APIS } from "../../../config/Config";
 import { getTimeAgo } from "../../ReUsables/GetTimeAgo";
+import MediaGrid from "./MediaGrid";
 
 function CommentCard(props) {
   const [agrees, setAgrees] = useState(props.comment.likes);
@@ -64,15 +65,23 @@ function CommentCard(props) {
       }`}
     >
       {/* User Avatar */}
-      <img
-        src={`data:${
-          props.comment.owner?.image?.contentType
-        };base64,${arrayBufferToBase64(
-          props.comment.owner?.image?.data?.data
-        )}`}
-        alt="avatar"
-        className="w-12 h-12 rounded-full"
-      />
+      {props.comment.owner?.image.contentType ? (
+        <img
+          className="w-12 h-12 rounded-full"
+          src={`data:${
+            props.comment.owner?.image.contentType
+          };base64,${arrayBufferToBase64(
+            props.comment.owner?.image.data?.data
+          )}`}
+          alt="user profile"
+        />
+      ) : (
+        <img
+          src={props.comment.owner?.image}
+          alt="avatar"
+          className="w-12 h-12 rounded-full"
+        />
+      )}
 
       <div className="flex-1">
         {/* User Info */}
@@ -89,19 +98,22 @@ function CommentCard(props) {
         <p className="text-gray-800 mt-1">{props.comment.comment}</p>
 
         {/* Comment Media (Images) */}
-        {props.comment.media && props.comment.media.length > 0 && (
+        {/* {props.comment.media && props.comment.media.length > 0 && (
           <div className="grid grid-cols-2 gap-2 mt-2">
             {props.comment.media?.map((media, index) => (
               <img
                 key={index}
-                src={`data:${media.contentType};base64,${arrayBufferToBase64(
-                  media.data?.data
+                src={`data:${media.image?.contentType};base64,${arrayBufferToBase64(
+                  media.image?.data?.data
                 )}`}
                 alt="comment-media"
                 className="rounded-lg w-full h-32 object-cover"
               />
             ))}
           </div>
+        )} */}
+        {props.comment.media && props.comment.media.length > 0 && (
+          <MediaGrid media={props.comment.media} />
         )}
 
         {/* Action Buttons */}

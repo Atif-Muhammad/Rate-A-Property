@@ -18,7 +18,7 @@ const PostCard = (props) => {
   const fetchPost = () => {
     APIS.getSinglePost(postId)
       .then((res) => {
-        console.log(res);
+        // console.log(res);
         setPost(res.data);
         setAgrees(res.data.likes);
         setDisagrees(res.data.disLikes);
@@ -36,6 +36,7 @@ const PostCard = (props) => {
     // console.log("id:",props.postId)
     // console.log("post:",props.post)
     postId ? fetchPost() : props.post ? postFromprop() : setPost({});
+    // console.log(post)
     APIS.userWho()
       .then((res) => setAgreeOwner(res.data.id))
       .catch((err) => console.log(err));
