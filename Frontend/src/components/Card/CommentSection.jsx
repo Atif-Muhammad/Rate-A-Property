@@ -23,7 +23,7 @@ const CommentSection = () => {
       setSelectedFiles((prevFiles) => [...prevFiles, ...files]);
     }
   };
-  
+
   const removeFile = (index) => {
     setSelectedFiles((prevFiles) => prevFiles.filter((_, i) => i !== index));
   };
@@ -83,7 +83,7 @@ const CommentSection = () => {
       const res = await APIS.addComment(formData);
 
       if (res.status === 200) {
-        setSelectedFiles([])
+        setSelectedFiles([]);
         setComments((prevComments) =>
           prevComments.map((comment) =>
             comment._id === tempId ? res.data : comment
@@ -137,18 +137,21 @@ const CommentSection = () => {
   }, []);
 
   return (
-    <div className="flex pt-14 lg:flex-row justify-center items-center gap-4 flex-col h-screen">
-      <PostCard postId={postId} />
+    <div className="flex flex-col lg:flex-row items-start   w-full justify-center  lg:gap-3 gap-6 p-4  ">
+      {/* Left Side - Post Card */}
+      <div className="w-full lg:w-1/2">
+        <PostCard postId={postId} />
+      </div>
 
-      {/* Comments Section */}
-      <div className="w-full max-w-lg mx-auto bg-white shadow-md rounded-lg p-4 flex flex-col h-[90vh]">
+      {/* Right Side - Comments Section */}
+      <div className="w-full lg:w-1/2  bg-white shadow-md rounded-lg p-4 flex flex-col h-full lg:h-[90vh]">
         {/* Header */}
         <h2 className="text-lg font-semibold mb-3 border-b pb-2 text-center">
           Comments
         </h2>
 
-        {/* Scrollable Comments List */}
-        <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2 max-h-[70vh]">
+        
+        <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2 lg:max-h-[65vh] h-full">
           {comments?.map((comment) => (
             <CommentCard
               comment={comment}
@@ -157,39 +160,43 @@ const CommentSection = () => {
             />
           ))}
         </div>
+
+        {/* Selected File Previews */}
         {selectedFiles.length > 0 && (
-          <div className="bg-gray-300 w-full p-2 flex gap-2 rounded-t-lg">
-            {selectedFiles.map((file, index) => (
-              <div
-                key={index}
-                className="relative w-24 h-24 bg-gray-200 rounded-md overflow-hidden"
-              >
-                <button
-                  className="z-10 absolute top-1 right-1 bg-black text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
-                  onClick={() => removeFile(index)}
+          <div className="bg-gray-300 w-full p-2 rounded-t-lg overflow-x-auto">
+            <div className="flex gap-2 flex-nowrap">
+              {selectedFiles.map((file, index) => (
+                <div
+                  key={index}
+                  className="relative w-24 h-24 bg-gray-200 rounded-md overflow-hidden flex-shrink-0"
                 >
-                  ✕
-                </button>
-                {file.type.startsWith("image") ? (
-                  <img
-                    src={URL.createObjectURL(file)}
-                    alt="Preview"
-                    className="w-full h-full object-cover"
-                  />
-                ) : file.type.startsWith("video") ? (
-                  <video
-                    src={URL.createObjectURL(file)}
-                    className="w-full h-full object-cover"
-                    controls
-                  />
-                ) : null}
-              </div>
-            ))}
+                  <button
+                    className="z-10 absolute top-1 right-1 bg-black text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+                    onClick={() => removeFile(index)}
+                  >
+                    ✕
+                  </button>
+                  {file.type.startsWith("image") ? (
+                    <img
+                      src={URL.createObjectURL(file)}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : file.type.startsWith("video") ? (
+                    <video
+                      src={URL.createObjectURL(file)}
+                      className="w-full h-full object-cover"
+                      controls
+                    />
+                  ) : null}
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
         {/* Fixed Input Box */}
-        <div className="bg-gray-100 p-3 rounded-lg flex items-center sticky bottom-0 w-full">
+        <div className="bg-gray-100 p-3 sticky lg:flex bottom-0 rounded-lg flex items-center">
           <img
             src={`data:${
               currentUser.image?.contentType

@@ -5,7 +5,7 @@ import { Sidebar } from "./Sidebar";
 export const LayoutForLanding = () => {
   return (
     <>
-      <div className="flex pt-14 h-screen overflow-y-hidden">
+      <div className="flex  h-screen overflow-y-hidden">
         <Sidebar />
         <Outlet />
       </div>
