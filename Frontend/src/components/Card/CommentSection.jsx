@@ -75,10 +75,11 @@ const CommentSection = () => {
       formData.append("for_post", postId);
       selectedFiles.forEach((file) => formData.append("files", file));
 
-      for (let [key, value] of formData.entries()) {
-        console.log(`${key}:`, value);
-      }
+      // for (let [key, value] of formData.entries()) {
+      //   console.log(`${key}:`, value);
+      // }
 
+      setNewComment("");
       const res = await APIS.addComment(formData);
 
       if (res.status === 200) {
@@ -157,7 +158,7 @@ const CommentSection = () => {
           ))}
         </div>
         {selectedFiles.length > 0 && (
-          <div className="bg-red-400 w-full p-2 flex flex-wrap gap-2">
+          <div className="bg-gray-300 w-full p-2 flex gap-2 rounded-t-lg">
             {selectedFiles.map((file, index) => (
               <div
                 key={index}
@@ -188,7 +189,7 @@ const CommentSection = () => {
         )}
 
         {/* Fixed Input Box */}
-        <div className="border-t bg-gray-100 p-3 rounded-lg flex items-center sticky bottom-0 w-full">
+        <div className="bg-gray-100 p-3 rounded-lg flex items-center sticky bottom-0 w-full">
           <img
             src={`data:${
               currentUser.image?.contentType

@@ -415,7 +415,7 @@ const postController = {
     addComment: async (req, res) => {
         try {
             const { owner, content, for_post } = req.body;
-            console.log(for_post)
+            // console.log(for_post)
             const ownerId = new mongoose.Types.ObjectId(owner);
 
             // Extract filenames from uploaded files and determine type
@@ -480,9 +480,57 @@ const postController = {
                 .populate("owner")
                 .populate("likes")
                 .populate("disLikes")
-                .populate("media");
-            // console.log(populatedComment)
-            res.status(200).send(populatedComment);
+                .populate({
+                    path: "media",
+                    populate: [
+                        { path: "likes" },
+                        { path: "disLikes" },
+                    ],
+                });
+
+            if (!populatedComment) {
+                return res.status(404).json({ error: "Comment not found" });
+            }
+
+            const formattedMedia = populatedComment.media
+                .map(file => {
+                    const fileData = file.toObject();
+                    const fileExt = fileData.identifier.filename.split(".").pop()?.toLowerCase();
+                    const mediaType = ["mp4", "webm", "mov"].includes(fileExt) ? "video" : "image";
+                    const ownerId = populatedComment.owner?._id?.toString() || populatedComment.owner?.toString();
+
+                    if (!ownerId) {
+                        console.error("Missing owner ID for comment:", populatedComment._id);
+                        return null;
+                    }
+
+                    return {
+                        url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${fileData.identifier.filename}`,
+                        type: mediaType,
+                        filename: fileData.identifier.filename,
+                        likes: file.likes,
+                        disLikes: file.disLikes,
+                        of_comment: file.of_comment,
+                        owner: file.owner,
+                        _id: file._id
+                    };
+                })
+                .filter(Boolean);
+
+            const formattedComment = {
+                ...populatedComment.toObject(),
+                media: formattedMedia,
+                owner: {
+                    ...populatedComment.owner.toObject(),
+                    image: populatedComment.owner.image?.data
+                        ? `data:image/png;base64,${populatedComment.owner.image.data.toString("base64")}`
+                        : null
+                }
+            };
+
+            // console.log(formattedComment);
+            res.status(200).send(formattedComment);
+
         } catch (error) {
             console.error("Error adding comment:", error);
             res.status(500).json({ error: "Internal Server Error", details: error.message });

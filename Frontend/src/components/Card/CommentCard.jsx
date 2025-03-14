@@ -15,7 +15,8 @@ function CommentCard(props) {
   const [disagrees, setDisagrees] = useState(props.comment.disLikes);
   const agreeOwner = props.agreeOwner;
   const isTemp = props.comment._id.startsWith("temp");
-
+  const [isExpanded, setIsExpanded] = useState(false);
+  const MAX_LENGTH = 200;
   useEffect(() => {
     // console.log(props.comment)
     setAgrees(props.comment.likes);
@@ -60,7 +61,7 @@ function CommentCard(props) {
 
   return (
     <div
-      className={`relative flex items-start space-x-3 p-4 rounded-lg shadow-sm transition ${
+      className={`relative flex items-start space-x-3 p-4 rounded-lg shadow-sm transition  ${
         isTemp ? "bg-gray-500" : "bg-gray-100"
       }`}
     >
@@ -95,8 +96,19 @@ function CommentCard(props) {
         </div>
 
         {/* Comment Text */}
-        <p className="text-gray-800 mt-1">{props.comment.comment}</p>
-
+        <p className="text-gray-800 mt-1 break-all">
+          {isExpanded || props.comment.comment.length <= MAX_LENGTH
+            ? props.comment.comment
+            : `${props.comment.comment.slice(0, MAX_LENGTH)}... `}
+          {props.comment.comment.length > MAX_LENGTH && (
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="text-blue-600 ms-2 cursor-pointer"
+            >
+              {isExpanded ? "Show Less" : "Read More"}
+            </button>
+          )}
+        </p>
         {/* Comment Media (Images) */}
         {/* {props.comment.media && props.comment.media.length > 0 && (
           <div className="grid grid-cols-2 gap-2 mt-2">
