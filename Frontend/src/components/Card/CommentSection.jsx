@@ -150,7 +150,7 @@ const CommentSection = () => {
           Comments
         </h2>
 
-        {/* Scrollable Comments List */}
+        
         <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2 lg:max-h-[65vh] h-full">
           {comments?.map((comment) => (
             <CommentCard
