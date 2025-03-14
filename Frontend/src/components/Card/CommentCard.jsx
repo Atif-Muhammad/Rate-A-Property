@@ -109,21 +109,7 @@ function CommentCard(props) {
             </button>
           )}
         </p>
-        {/* Comment Media (Images) */}
-        {/* {props.comment.media && props.comment.media.length > 0 && (
-          <div className="grid grid-cols-2 gap-2 mt-2">
-            {props.comment.media?.map((media, index) => (
-              <img
-                key={index}
-                src={`data:${media.image?.contentType};base64,${arrayBufferToBase64(
-                  media.image?.data?.data
-                )}`}
-                alt="comment-media"
-                className="rounded-lg w-full h-32 object-cover"
-              />
-            ))}
-          </div>
-        )} */}
+
         {props.comment.media && props.comment.media.length > 0 && (
           <MediaGrid media={props.comment.media} />
         )}

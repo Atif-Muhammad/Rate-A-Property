@@ -93,7 +93,7 @@ const PostCard = (props) => {
   };
 
   return (
-    <div className="bg-white shadow-md rounded-lg p-3.5  w-full max-w-2xl border border-gray-200">
+    <div className="bg-white shadow-md rounded-lg p-3.5  w-full lg:max-w-3xl border border-gray-200">
       {/* Profile & Post Info */}
       <div className="flex items-center justify-between">
         <div className="flex items-center justify-between w-full space-x-3">
