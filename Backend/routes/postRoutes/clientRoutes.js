@@ -31,4 +31,7 @@ router.put("/unLikeComment", postController.unLikeComment);
 router.put("/disLikeComment", postController.disLikeComment);
 router.put("/unDisLikeComment", postController.unDisLikeComment);
 
+router.post("/addReply", upload_disk.array("files"),postController.addReply);
+router.get("/getReplies", postController.getReplies);
+
 module.exports = router;

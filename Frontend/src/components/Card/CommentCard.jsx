@@ -15,17 +15,33 @@ function CommentCard(props) {
   const [agrees, setAgrees] = useState(props.comment.likes);
   const [disagrees, setDisagrees] = useState(props.comment.disLikes);
   const agreeOwner = props.agreeOwner;
-  const isTemp = props.comment._id.startsWith("temp");
+  const isTemp = props.comment?._id?.startsWith("temp");
   const [isExpanded, setIsExpanded] = useState(false);
   const [showReplyBox, setShowReplyBox] = useState(false);
-  const [replies, setReplies] = useState(props.comment.replies || []);
+  const [replies, setReplies] = useState(props.comment.comments || []);
+  const [currentUser, setCurrentUser] = useState({});
 
   const MAX_LENGTH = 200;
 
   useEffect(() => {
+    // console.log("comment:", props.comment)
     setAgrees(props.comment.likes);
     setDisagrees(props.comment.disLikes);
   }, [props.comment.likes, props.comment.disLikes]);
+
+  const getReplies = async ()=>{
+    await APIS.getReplies(props.comment._id).then(res=>{
+      if(res.status === 200){
+        setReplies(res.data)
+      }
+    }).catch(err=>{
+      console.log(err)
+    })
+  }
+
+  useEffect(()=>{
+    getReplies();
+  }, [])
 
   const handleAgree = async () => {
     if (isTemp) return;
@@ -60,21 +76,94 @@ function CommentCard(props) {
       setAgrees((prev) => prev.filter((like) => like.owner !== agreeOwner));
     }
   };
+  
+  const handleSendReply = async (text, media) => {    
+    if (!text.trim() && media.length === 0) return;
+    const tempId = `temp-${Date.now()}`;
 
-  const handleSendReply = (text, media) => {
-    const newReply = {
-      _id: "temp_" + Date.now(),
-      owner: props.currentUser,
+    const mediaPreviews = media.map((file) => {
+      const fileExt = file.name.split(".").pop().toLowerCase();
+      const mediaType = ["mp4", "webm", "mov"].includes(fileExt) ? "video" : "image";
+      const url = URL.createObjectURL(file);
+
+      return {
+        _id: `temp-media-${Date.now()}`,
+        filename: file.name,
+        type: mediaType,
+        url,
+        likes: [],
+        disLikes: [],
+      };
+    });
+
+    const newReplyData = {
+      _id: tempId,
+      owner: {
+        id: currentUser.id,
+        user_name: currentUser.user_name,
+        image: currentUser.image,
+      },
       comment: text,
-      media: media || [],
+      for_post: props.comment._id,
+      createdAt: new Date().toISOString(),
       likes: [],
       disLikes: [],
-      createdAt: new Date().toISOString(),
-      replies: [],
+      media: mediaPreviews,
     };
-    setReplies((prev) => [...prev, newReply]);
-    setShowReplyBox(false);
+
+    setReplies((prevReplies) => [newReplyData, ...prevReplies]);
+
+      const formData = new FormData();
+      formData.append("owner", currentUser.id);
+      formData.append("content", text);
+      formData.append("for_post", props.comment._id);
+
+      media.forEach((file) => formData.append("files", file));
+      
+      // for (let [key, value] of formData.entries()) {
+      //   console.log(`${key}:`, value);
+      // }
+
+      await APIS.addReply(formData).then(res=>{
+        if (res.status === 200) {
+          setReplies(prevReplies =>
+            prevReplies.map(reply => reply._id === tempId ? res.data : reply)
+          );
+        }
+      }).catch(err=>{
+        console.log(err)
+        setReplies(prevReplies => prevReplies.filter(reply => reply._id !== tempId));
+      })
+
+};
+
+
+  const getUserDetails = async () => {
+    try {
+      const res = await APIS.userWho();
+      if (res.status === 200) {
+        const userRes = await APIS.getUser(res.data.id);
+        // console.log(userRes)
+        if (userRes.status === 200) {
+          const details = {
+            owner: userRes.data.user_name,
+            id: userRes.data._id,
+            image: userRes.data.image,
+            user_name: userRes.data.user_name,
+            posts: userRes.data.posts || [],
+          };
+          setCurrentUser(details);
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
+
+  useEffect(()=>{
+    getUserDetails();
+  }, [])
+
 
   return (
     <div
@@ -115,10 +204,10 @@ function CommentCard(props) {
 
           {/* Comment Text */}
           <p className="text-gray-800 mt-1 break-all">
-            {isExpanded || props.comment.comment.length <= MAX_LENGTH
-              ? props.comment.comment
-              : `${props.comment.comment.slice(0, MAX_LENGTH)}... `}
-            {props.comment.comment.length > MAX_LENGTH && (
+            {isExpanded || props.comment?.comment?.length <= MAX_LENGTH
+              ? props.comment?.comment
+              : `${props.comment?.comment?.slice(0, MAX_LENGTH)}... `}
+            {props.comment?.comment?.length > MAX_LENGTH && (
               <button
                 onClick={() => setIsExpanded(!isExpanded)}
                 className="text-blue-600 ms-2 cursor-pointer"

@@ -192,9 +192,9 @@ const addComment = async (data) => {
   try {
     const response = await axios.post(
       `${Baseurl}/posts/addComment`, data, {
-        headers: { "Content-Type": "multipart/form-data" },
-        withCredentials: true,
-      }
+      headers: { "Content-Type": "multipart/form-data" },
+      withCredentials: true,
+    }
     );
     return response;
   } catch (error) {
@@ -262,6 +262,25 @@ const unDisLikeComment = async (comntId) => {
   }
 };
 
+const addReply = async (data) => {
+  // console.log(data)
+  try {
+    const response = await axios.post(`${Baseurl}/posts/addReply`, data, {withCredentials: true });
+    return response
+  } catch (error) {
+    return error;
+  }
+}
+
+const getReplies = async (comntId)=>{
+  try {
+    const response = await axios.get(`${Baseurl}/posts/getReplies?comment=${comntId}`);
+    return response
+  } catch (error) {
+    return error
+  }
+}
+
 
 export const APIS = {
   userWho,
@@ -285,6 +304,8 @@ export const APIS = {
   likeComment,
   unLikeComment,
   disLikeComment,
-  unDisLikeComment
+  unDisLikeComment,
+  addReply,
+  getReplies
 
 };

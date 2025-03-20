@@ -413,6 +413,7 @@ const postController = {
     },
 
     addComment: async (req, res) => {
+        // console.log(req.body)
         try {
             const { owner, content, for_post } = req.body;
             // console.log(for_post)
@@ -551,7 +552,7 @@ const postController = {
                         { path: "likes" },
                         { path: "disLikes" },
                     ],
-                })
+                }).populate("comments")
                 .sort({ createdAt: -1 });
 
             const updatedComments = comments.map(comment => {
@@ -708,6 +709,193 @@ const postController = {
             res.send(error);
         }
     },
+
+    addReply: async (req, res) => {
+        try {
+            const { owner, content, for_post } = req.body;
+            // console.log(for_post)
+            const ownerId = new mongoose.Types.ObjectId(owner);
+
+            // Extract filenames from uploaded files and determine type
+            const fileNames = req.files?.map(file => {
+                const ext = path.extname(file.filename);
+                const type = [".mp4", ".webm", ".MOV"].includes(ext) ? "video" : "image";
+                return {
+                    filename: file.filename.toString(),
+                    type,
+                    path: `/uploads/comments/${file.filename}`
+                };
+            });
+
+            // Create comment data (excluding media initially)
+            const commentData = {
+                comment: content,
+                for_post,
+                owner: ownerId,
+                likes: [],
+                disLikes: [],
+                comments: []
+            };
+
+            // Create the comment first
+            const newComment = await comment.create(commentData);
+
+            if (!newComment) {
+                return res.status(500).json({ error: "Failed to create comment" });
+            }
+
+
+            // Store media files separately
+            const mediaDocs = await Promise.all(
+                fileNames.map(file => {
+                    const mediaDoc = new media({
+                        identifier: {
+                            filename: file.filename,
+                            type: file.type,
+                            path: file.path
+                        },
+                        owner: ownerId,
+                        of_comment: newComment._id,
+                        likes: [],
+                        disLikes: []
+                    });
+                    return mediaDoc.save();
+                })
+            );
+
+            // console.log(newComment._id)
+            // Associate media with comment
+            const mediaIds = mediaDocs.map(doc => doc._id);
+            await comment.updateOne({ _id: newComment._id }, { $push: { media: { $each: mediaIds } } });
+
+            // Update post & user models
+            await comment.updateOne({ _id: for_post }, { $push: { comments: newComment._id } });
+            await user.updateOne({ _id: ownerId }, { $push: { comments: newComment._id } });
+
+            // Fetch and return populated comment
+            const populatedComment = await comment
+                .findOne({ _id: newComment._id })
+                .populate("owner")
+                .populate("likes")
+                .populate("disLikes")
+                .populate({
+                    path: "media",
+                    populate: [
+                        { path: "likes" },
+                        { path: "disLikes" },
+                    ],
+                });
+
+            if (!populatedComment) {
+                return res.status(404).json({ error: "Comment not found" });
+            }
+
+            const formattedMedia = populatedComment.media
+                .map(file => {
+                    const fileData = file.toObject();
+                    const fileExt = fileData.identifier.filename.split(".").pop()?.toLowerCase();
+                    const mediaType = ["mp4", "webm", "mov"].includes(fileExt) ? "video" : "image";
+                    const ownerId = populatedComment.owner?._id?.toString() || populatedComment.owner?.toString();
+
+                    if (!ownerId) {
+                        console.error("Missing owner ID for comment:", populatedComment._id);
+                        return null;
+                    }
+
+                    return {
+                        url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${fileData.identifier.filename}`,
+                        type: mediaType,
+                        filename: fileData.identifier.filename,
+                        likes: file.likes,
+                        disLikes: file.disLikes,
+                        of_comment: file.of_comment,
+                        owner: file.owner,
+                        _id: file._id
+                    };
+                })
+                .filter(Boolean);
+
+            const formattedComment = {
+                ...populatedComment.toObject(),
+                media: formattedMedia,
+                owner: {
+                    ...populatedComment.owner.toObject(),
+                    image: populatedComment.owner.image?.data
+                        ? `data:image/png;base64,${populatedComment.owner.image.data.toString("base64")}`
+                        : null
+                }
+            };
+
+            // console.log(formattedComment);
+            res.status(200).send(formattedComment);
+
+        } catch (error) {
+            console.error("Error adding comment:", error);
+            res.status(500).json({ error: "Internal Server Error", details: error.message });
+        }
+        
+    },
+    getReplies: async (req, res)=>{
+        const comntId = req.query.comment;
+        try {
+            const comments = await comment
+                .find({ for_post: comntId })
+                .populate("owner")
+                .populate("likes")
+                .populate("disLikes")
+                .populate({
+                    path: "media",
+                    populate: [
+                        { path: "likes" },
+                        { path: "disLikes" },
+                    ],
+                }).populate("comments")
+                .sort({ createdAt: -1 });
+
+            const updatedComments = comments.map(comment => {
+                const mediaUrls = comment.media
+                    .map(file => {
+                        const fileData = file.toObject();
+                        const fileExt = fileData.identifier.filename.split(".").pop()?.toLowerCase();
+                        const mediaType = ["mp4", "webm", "mov"].includes(fileExt) ? "video" : "image";
+                        const ownerId = comment.owner?._id?.toString() || comment.owner?.toString();
+
+                        if (!ownerId) {
+                            console.error("Missing owner ID for comment:", comment._id);
+                            return null;
+                        }
+
+                        return {
+                            url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${fileData.identifier.filename}`,
+                            type: mediaType,
+                            filename: fileData.identifier.filename,
+                            likes: file.likes,
+                            disLikes: file.disLikes,
+                            of_comment: file.of_comment,
+                            owner: file.owner,
+                            _id: file._id
+                        };
+                    })
+                    .filter(Boolean);
+
+                return {
+                    ...comment.toObject(),
+                    media: mediaUrls,
+                    owner: {
+                        ...comment.owner?.toObject(),
+                        image: comment.owner?.image?.data
+                            ? `data:image/png;base64,${comment.owner?.image?.data.toString("base64")}`
+                            : null
+                    }
+                };
+            });
+
+            res.send(updatedComments)
+
+        } catch (error) {
+            res.send(error);
+        }
+    }
 
 }
 

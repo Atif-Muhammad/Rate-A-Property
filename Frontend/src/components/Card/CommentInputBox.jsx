@@ -15,6 +15,8 @@ export function CommentInputBox({ currentUser, onSendReply, onCancel }) {
     setReplyMedia((prev) => prev.filter((_, i) => i !== index));
   };
 
+  
+
   return (
     <div className="flex flex-col w-full mt-3 space-y-2">
       {/* Media Previews */}
