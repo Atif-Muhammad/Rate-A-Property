@@ -1,3 +1,4 @@
+import React, { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
   Home,
@@ -18,6 +19,7 @@ const navLinks = [
 ];
 
 export const Sidebar = () => {
+  const [isScrolled, setIsScrolled] = useState(false);
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -28,6 +30,20 @@ export const Sidebar = () => {
       })
       .catch((err) => console.log("Logout error:", err));
   };
+
+
+  // use for top scroller
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 0) {
+        setIsScrolled(true);
+      } else {
+        setIsScrolled(false);
+      }
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   return (
     <>
@@ -61,7 +77,11 @@ export const Sidebar = () => {
       </div>
 
       {/* Small & Medium Screens Navbar */}
-      <div className="flex lg:hidden w-full bg-white shadow-md py-3 px-4 justify-around fixed top-16 left-0 z-40">
+      <div
+        className={`flex lg:hidden w-full bg-white py-3 px-4 justify-around fixed left-0 z-40 transition-all duration-300 ${
+          isScrolled ? "top-0 shadow-lg" : "top-16 shadow-md"
+        }`}
+      >
         {navLinks.map(({ to, icon }) => (
           <NavLink
             key={to}

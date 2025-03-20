@@ -73,42 +73,44 @@ export const NewPost = ({ isOpen, onClose }) => {
 
   return createPortal(
     <div
-      className="fixed inset-0 bg-white/30 backdrop-blur-sm bg-opacity-50 flex justify-center items-center p-4 z-50"
+      className="fixed inset-0 bg-black/30 backdrop-blur-sm flex justify-center items-center z-50 p-6"
       onClick={onClose}
     >
       <div
-        className="bg-white shadow-lg shadow-black rounded-lg p-4  md:max-w-xl w-full border border-gray-300"
+        className="bg-white shadow-2xl rounded-2xl p-6 w-full max-w-2xl border border-gray-300"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex justify-between items-center border-b pb-2">
-          <h2 className="text-lg font-semibold">Create Post</h2>
+        <div className="flex justify-between items-center border-b pb-4 mb-4">
+          <h2 className="text-2xl text-center w-full font-bold text-gray-800">Create Post</h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:bg-gray-200 rounded-full p-1"
+            className="bg-gray-200 rounded-full p-1"
           >
-            <X size={18} />
+            <X size={20} />
           </button>
         </div>
 
         {/* Profile & Input Box */}
-        <div className="flex items-center space-x-3 my-3">
+        <div className="flex items-center space-x-4 mb-4">
           {user.image && (
             <img
               src={`data:${user.image.contentType};base64,${arrayBufferToBase64(
                 user.image.data.data
               )}`}
               alt="user profile"
-              className="w-10 h-10 rounded-full border-2 border-blue-500"
+              className="w-12 h-12 rounded-full border-2 border-blue-500"
             />
           )}
           <div>
-            <p className="text-sm font-semibold">{user.user_name}</p>
+            <p className="text-sm font-semibold text-gray-800">
+              {user.user_name}
+            </p>
             <button
-              className="text-xs flex items-center text-gray-600 bg-gray-200 px-2 py-1 rounded-md"
+              className="text-xs flex items-center text-gray-600 bg-gray-100 px-3 py-1 rounded-md hover:bg-gray-200"
               onClick={handleSelectLocation}
             >
-              <MapPin className="w-3 h-3 mr-1" />
+              <MapPin className="w-4 h-4 mr-1" />
               {location}
             </button>
           </div>
@@ -117,27 +119,27 @@ export const NewPost = ({ isOpen, onClose }) => {
         {/* Post Input */}
         <textarea
           ref={textRef}
-          placeholder="Say something about these photos..."
-          className="w-full p-3 text-gray-700 text-sm rounded-md border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-300"
-          rows="2"
+          placeholder="What's on your mind?"
+          className="w-full p-4 text-gray-700 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none mb-4"
+          rows="4"
         ></textarea>
 
         {/* Upload Preview */}
         {selectedMedia.length > 0 && (
-          <div className="mt-3 overflow-x-auto whitespace-nowrap flex space-x-2 p-2 border rounded-md">
+          <div className="mt-4 overflow-x-auto whitespace-nowrap flex space-x-3 p-2 border rounded-md mb-4">
             {selectedMedia.map((media, index) => (
-              <div key={index} className="relative w-24 h-24 flex-shrink-0">
+              <div key={index} className="relative w-28 h-28 flex-shrink-0">
                 {media.file.type.startsWith("image/") ? (
                   <img
                     src={media.url}
                     alt="Selected"
-                    className="w-full h-full object-cover rounded-md"
+                    className="w-full h-full object-cover rounded-lg"
                   />
                 ) : (
                   <video
                     src={media.url}
                     controls
-                    className="w-full h-full rounded-md"
+                    className="w-full h-full rounded-lg"
                   />
                 )}
                 <button
@@ -154,7 +156,7 @@ export const NewPost = ({ isOpen, onClose }) => {
         {/* File Input */}
         <input
           type="file"
-          accept="image/,video/"
+          accept="image/*,video/*"
           ref={fileInputRef}
           className="hidden"
           multiple
@@ -162,23 +164,27 @@ export const NewPost = ({ isOpen, onClose }) => {
         />
 
         {/* Add to Post */}
-        <div className="border-t mt-3 pt-2">
-          <p className="text-sm text-gray-600 mb-2">Add to your post</p>
-          <div className="flex justify-between">
+        <div className="border-t pt-4 mb-6">
+          <div className="text-center mb-4">
+            <p className="text-sm text-gray-600 font-semibold tracking-wide">
+              Add to your post
+            </p>
+          </div>
+          <div className="flex justify-center gap-6">
             <button
-              className="flex items-center gap-1 hover:bg-gray-100 p-2 rounded-lg transition"
+              className="flex flex-col items-center gap-1 hover:bg-gray-100 p-3 rounded-xl transition w-24"
               onClick={() => fileInputRef.current.click()}
             >
-              <Image className="text-green-500" size={20} />
+              <Image className="text-green-500" size={26} />
+              <span className="text-xs text-gray-700">Photo/Video</span>
             </button>
-            <button className="flex items-center gap-1 hover:bg-gray-100 p-2 rounded-lg transition">
-              <UserPlus className="text-blue-500" size={20} />
+            <button className="flex flex-col items-center gap-1 hover:bg-gray-100 p-3 rounded-xl transition w-24">
+              <UserPlus className="text-blue-500" size={26} />
+              <span className="text-xs text-gray-700">Tag People</span>
             </button>
-            <button className="flex items-center gap-1 hover:bg-gray-100 p-2 rounded-lg transition">
-              <Smile className="text-yellow-500" size={20} />
-            </button>
-            <button className="flex items-center gap-1 hover:bg-gray-100 p-2 rounded-lg transition">
-              <MapPin className="text-red-500" size={20} />
+            <button className="flex flex-col items-center gap-1 hover:bg-gray-100 p-3 rounded-xl transition w-24">
+              <Smile className="text-yellow-500" size={26} />
+              <span className="text-xs text-gray-700">Feeling</span>
             </button>
           </div>
         </div>
@@ -186,14 +192,14 @@ export const NewPost = ({ isOpen, onClose }) => {
         {/* Post Button */}
         <button
           onClick={handleSubmit}
-          disabled={isPosting} // ✅ Disable button when posting
-          className={`w-full text-white text-sm font-medium py-2 rounded-md mt-3 transition ${
+          disabled={isPosting}
+          className={`w-full text-white text-base font-semibold py-3 rounded-lg transition ${
             isPosting
               ? "bg-blue-300 cursor-not-allowed"
               : "bg-blue-500 hover:bg-blue-600"
           }`}
         >
-          {isPosting ? "Posting..." : "Post"} {/* ✅ Show loading text */}
+          {isPosting ? "Posting..." : "Post"}
         </button>
       </div>
     </div>,

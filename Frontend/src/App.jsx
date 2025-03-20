@@ -10,6 +10,7 @@ import { Header } from "./pages/header/Header";
 import { LayoutForLanding } from "./pages/LayoutForLanding";
 import { Notifications } from "./pages/notification/Notifications";
 import { Messages } from "./pages/messages/Messages";
+import { UserInfo } from "./pages/profile/UserInfo";
 // import State from "./context/state";
 
 function App() {
@@ -24,6 +25,7 @@ function App() {
             <Route index element={<Home />} />
             <Route path="*" element={<NotFound />} />
             <Route path="/notifications" element={<Notifications />} />
+            <Route path="/profile" element={<UserInfo />} />
             <Route path="/messages" element={<Messages />} />
           </Route>
           {/* others components */}

@@ -8,9 +8,16 @@
   }
 } */
 
-.scrollbar-hide::-webkit-scrollbar {
+/* global.css ya index.css me */
+.no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
 
 
 
