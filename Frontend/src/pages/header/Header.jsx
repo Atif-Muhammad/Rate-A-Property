@@ -36,7 +36,9 @@ export const Header = () => {
   return (
     <header className="h-16 md:px-4 px-2 bg-white border-b border-gray-400  w-full relative top-0 left-0 z-50 flex justify-between items-center">
       {/* Logo */}
-      <h1 className="text-xl font-bold text-gray-900">RateAProperty</h1>
+      <NavLink className="text-xl font-bold text-gray-900" to="/">
+        RateAProperty
+      </NavLink>
 
       {/* Search Box (Hidden in sm, Shown in md+) */}
       <div className="relative hidden md:block">

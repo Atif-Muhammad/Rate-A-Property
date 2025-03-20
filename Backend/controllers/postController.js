@@ -584,9 +584,9 @@ const postController = {
                     ...comment.toObject(),
                     media: mediaUrls,
                     owner: {
-                        ...comment.owner.toObject(),
-                        image: comment.owner.image?.data
-                            ? `data:image/png;base64,${comment.owner.image.data.toString("base64")}`
+                        ...comment.owner?.toObject(),
+                        image: comment.owner?.image?.data
+                            ? `data:image/png;base64,${comment.owner?.image?.data.toString("base64")}`
                             : null
                     }
                 };

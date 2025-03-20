@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { MoreHorizontal, MapPin, MessagesSquare, Share2 } from "lucide-react";
+import { MapPin, MessagesSquare, Share2 } from "lucide-react";
 import { APIS } from "../../../config/Config";
 import { getTimeAgo } from "../../ReUsables/GetTimeAgo";
 import MediaGrid from "./MediaGrid";
 import { NavLink } from "react-router-dom";
+import { PostOptions } from "./PostOption";
 import { arrayBufferToBase64 } from "../../ReUsables/arrayTobuffer";
 
 const PostCard = (props) => {
@@ -114,7 +115,16 @@ const PostCard = (props) => {
             </div>
           </div>
 
-          <MoreHorizontal size={22} className="text-gray-500 cursor-pointer" />
+          <PostOptions
+            onDelete={() => {
+              console.log("delete post", post._id);
+              // yahan aap delete ka API call ya modal laga sakte ho
+            }}
+            onEdit={() => {
+              console.log("edit post", post._id);
+              // yahan aap edit modal open karo ya edit page le jao
+            }}
+          />
         </div>
       </div>
 
