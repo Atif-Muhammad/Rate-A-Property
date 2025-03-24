@@ -4,7 +4,7 @@ import { APIS } from "../../../config/Config";
 import { getTimeAgo } from "../../ReUsables/GetTimeAgo";
 import MediaGrid from "./MediaGrid";
 import { NavLink } from "react-router-dom";
-import { PostOptions } from "./PostOption";
+import { PostOptions } from "../post/PostOption";
 import { arrayBufferToBase64 } from "../../ReUsables/arrayTobuffer";
 
 const PostCard = (props) => {

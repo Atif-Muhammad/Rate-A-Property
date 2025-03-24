@@ -5,7 +5,7 @@ import { NotFound } from "./pages/notfound/NotFound";
 import { Sign_In } from "./pages/authentication/Sign_In";
 import { Sign_Up } from "./pages/authentication/Sign_Up";
 // import { NewPost } from "./components/NewPost";
-import CommentSection from "./components/Card/CommentSection";
+import CommentSection from "./components/CommentSection";
 import { Header } from "./pages/header/Header";
 import { LayoutForLanding } from "./pages/LayoutForLanding";
 import { Notifications } from "./pages/notification/Notifications";

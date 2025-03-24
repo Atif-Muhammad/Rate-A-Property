@@ -1,7 +1,7 @@
 import React, { useState,useEffect } from "react";
 
 import { APIS } from "../../../config/Config";
-import PostCard from "../../components/Card/PostCard";
+import PostCard from "../../components/post/PostCard";
 
 export const PostDesign = () => {
   const [posts, setPosts] = useState([]);
