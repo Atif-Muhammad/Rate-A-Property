@@ -8,8 +8,9 @@ import {
 } from "lucide-react";
 import { APIS } from "../../../config/Config";
 import { getTimeAgo } from "../../ReUsables/GetTimeAgo";
-import MediaGrid from "./MediaGrid";
+import MediaGrid from "../post/MediaGrid";
 import { CommentInputBox } from "./CommentInputBox";
+import { CommentOptions } from "./CommentOption";
 
 function CommentCard(props) {
   const [agrees, setAgrees] = useState(props.comment.likes);
@@ -253,10 +254,16 @@ function CommentCard(props) {
           </div>
         </div>
 
-        {/* More Options */}
-        <button className="absolute top-2 right-2 text-gray-500 hover:text-gray-700">
-          <MoreHorizontal size={20} />
-        </button>
+        <CommentOptions
+          onDelete={() => {
+            console.log("delete post", post._id);
+            // yahan aap delete ka API call ya modal laga sakte ho
+          }}
+          onEdit={() => {
+            console.log("edit post", post._id);
+            // yahan aap edit modal open karo ya edit page le jao
+          }}
+        />
       </div>
 
       {/* Replies */}

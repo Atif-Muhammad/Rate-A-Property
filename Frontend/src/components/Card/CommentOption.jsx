@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import { MoreHorizontal, Trash2, Pencil } from "lucide-react";
-import { ConfirmationModal } from "../ConfirmationModel";
+import { ConfirmationModal } from "../models/ConfirmationModel";
 import { motion, AnimatePresence } from "framer-motion";
 
-export const PostOptions = ({ onDelete, onEdit }) => {
+export const CommentOptions = ({ onDelete, onEdit }) => {
   const [open, setOpen] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false); // Modal control
   const dropdownRef = useRef(null);

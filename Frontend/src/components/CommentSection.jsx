@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { Send, ImagePlus } from "lucide-react";
 import { useLocation, useParams } from "react-router-dom";
-import { APIS } from "../../../config/Config";
-import { arrayBufferToBase64 } from "../../ReUsables/arrayTobuffer";
-import CommentCard from "./CommentCard";
-import PostCard from "./PostCard";
+import { APIS } from "../../config/Config";
+import { arrayBufferToBase64 } from "../ReUsables/arrayTobuffer";
+import CommentCard from "./Card/CommentCard";
+import PostCard from "./post/PostCard";
 
 const CommentSection = () => {
   const location = useLocation();
