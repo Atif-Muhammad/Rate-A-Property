@@ -20,6 +20,7 @@ function CommentCard(props) {
   const [showReplyBox, setShowReplyBox] = useState(false);
   const [replies, setReplies] = useState(props.comment.comments || []);
   const [currentUser, setCurrentUser] = useState({});
+  const [showReplies, setShowReplies] = useState(false);
 
   const MAX_LENGTH = 200;
 
@@ -29,19 +30,21 @@ function CommentCard(props) {
     setDisagrees(props.comment.disLikes);
   }, [props.comment.likes, props.comment.disLikes]);
 
-  const getReplies = async ()=>{
-    await APIS.getReplies(props.comment._id).then(res=>{
-      if(res.status === 200){
-        setReplies(res.data)
-      }
-    }).catch(err=>{
-      console.log(err)
-    })
-  }
+  const getReplies = async () => {
+    await APIS.getReplies(props.comment._id)
+      .then((res) => {
+        if (res.status === 200) {
+          setReplies(res.data);
+        }
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  };
 
-  useEffect(()=>{
+  useEffect(() => {
     getReplies();
-  }, [])
+  }, []);
 
   const handleAgree = async () => {
     if (isTemp) return;
@@ -76,14 +79,16 @@ function CommentCard(props) {
       setAgrees((prev) => prev.filter((like) => like.owner !== agreeOwner));
     }
   };
-  
-  const handleSendReply = async (text, media) => {    
+
+  const handleSendReply = async (text, media) => {
     if (!text.trim() && media.length === 0) return;
     const tempId = `temp-${Date.now()}`;
 
     const mediaPreviews = media.map((file) => {
       const fileExt = file.name.split(".").pop().toLowerCase();
-      const mediaType = ["mp4", "webm", "mov"].includes(fileExt) ? "video" : "image";
+      const mediaType = ["mp4", "webm", "mov"].includes(fileExt)
+        ? "video"
+        : "image";
       const url = URL.createObjectURL(file);
 
       return {
@@ -113,30 +118,34 @@ function CommentCard(props) {
 
     setReplies((prevReplies) => [newReplyData, ...prevReplies]);
 
-      const formData = new FormData();
-      formData.append("owner", currentUser.id);
-      formData.append("content", text);
-      formData.append("for_post", props.comment._id);
+    const formData = new FormData();
+    formData.append("owner", currentUser.id);
+    formData.append("content", text);
+    formData.append("for_post", props.comment._id);
 
-      media.forEach((file) => formData.append("files", file));
-      
-      // for (let [key, value] of formData.entries()) {
-      //   console.log(`${key}:`, value);
-      // }
+    media.forEach((file) => formData.append("files", file));
 
-      await APIS.addReply(formData).then(res=>{
+    // for (let [key, value] of formData.entries()) {
+    //   console.log(`${key}:`, value);
+    // }
+
+    await APIS.addReply(formData)
+      .then((res) => {
         if (res.status === 200) {
-          setReplies(prevReplies =>
-            prevReplies.map(reply => reply._id === tempId ? res.data : reply)
+          setReplies((prevReplies) =>
+            prevReplies.map((reply) =>
+              reply._id === tempId ? res.data : reply
+            )
           );
         }
-      }).catch(err=>{
-        console.log(err)
-        setReplies(prevReplies => prevReplies.filter(reply => reply._id !== tempId));
       })
-
-};
-
+      .catch((err) => {
+        console.log(err);
+        setReplies((prevReplies) =>
+          prevReplies.filter((reply) => reply._id !== tempId)
+        );
+      });
+  };
 
   const getUserDetails = async () => {
     try {
@@ -160,10 +169,9 @@ function CommentCard(props) {
     }
   };
 
-  useEffect(()=>{
+  useEffect(() => {
     getUserDetails();
-  }, [])
-
+  }, []);
 
   return (
     <div
@@ -251,6 +259,42 @@ function CommentCard(props) {
         </button>
       </div>
 
+      {/* Replies */}
+      {replies.length > 0 && (
+        <div className="w-full mt-4 pl-8 relative">
+          {!showReplies ? (
+            <button
+              onClick={() => setShowReplies(true)}
+              className="text-blue-600 text-sm hover:underline"
+            >
+              View Replies ({replies.length})
+            </button>
+          ) : (
+            <>
+              <button
+                onClick={() => setShowReplies(false)}
+                className="text-blue-600 text-sm mb-2 hover:underline"
+              >
+                Hide Replies
+              </button>
+              {/* Vertical Line */}
+              <div className="absolute top-0 left-4 h-full border-l-2 border-gray-300"></div>
+
+              <div className="space-y-3 pl-6">
+                {replies.map((reply) => (
+                  <CommentCard
+                    key={reply._id}
+                    comment={reply}
+                    agreeOwner={props.agreeOwner}
+                    currentUser={props.currentUser}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
       {/* Nested Reply Input */}
       {showReplyBox && (
         <CommentInputBox
@@ -258,20 +302,6 @@ function CommentCard(props) {
           onSendReply={handleSendReply}
           onCancel={() => setShowReplyBox(false)}
         />
-      )}
-
-      {/* Replies */}
-      {replies.length > 0 && (
-        <div className="w-full space-y-3 mt-4 pl-8 border-l-2 border-b-2  rounded-b-lg border-gray-300">
-          {replies.map((reply) => (
-            <CommentCard
-              key={reply._id}
-              comment={reply}
-              agreeOwner={props.agreeOwner}
-              currentUser={props.currentUser}
-            />
-          ))}
-        </div>
       )}
     </div>
   );
