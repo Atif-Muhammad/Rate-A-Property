@@ -59,7 +59,7 @@ export const NewPost = ({ isOpen, onClose }) => {
     APIS.createPost(formData)
       .then((res) => {
         if (res.status === 200) {
-          navigate("/");
+          // navigate("/");
           onClose(); // ✅ Close modal after successful post
         }
       })

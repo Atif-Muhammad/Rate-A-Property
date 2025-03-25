@@ -9,9 +9,7 @@ import { arrayBufferToBase64 } from "../../ReUsables/arrayTobuffer";
 
 const PostCard = (props) => {
   const postId = props.postId;
-
   const [post, setPost] = useState({});
-
   const [agreeOwner, setAgreeOwner] = useState("");
   const [agrees, setAgrees] = useState([]);
   const [disagrees, setDisagrees] = useState([]);
@@ -124,14 +122,16 @@ const PostCard = (props) => {
               </span>
             </div>
           </div>
-          {agreeOwner == post.owner?._id && <PostOptions
-            onDelete={() => {
-              handlePostDel(post._id);
-            }}
-            onEdit={() => {
-              console.log("edit post", post._id);
-            }}
-          />}
+          {agreeOwner == post.owner?._id && (
+            <PostOptions
+              onDelete={() => {
+                props.onDelete(post._id); // Parent ko delete ID bhejna
+              }}
+              onEdit={() => {
+                console.log("edit post", post._id);
+              }}
+            />
+          )}
         </div>
       </div>
 
