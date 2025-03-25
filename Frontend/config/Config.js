@@ -69,6 +69,15 @@ const createPost = async (data) => {
   }
 };
 
+const delPost = async(postId)=>{
+  try {
+    const response = await axios.post(`${Baseurl}/posts/delPost?postId=${postId}`, {}, {withCredentials: true});
+    return response
+  } catch (error) {
+    return error
+  }
+}
+
 const getPosts = async () => {
   try {
     const response = await axios.get(`${Baseurl}/posts/getPosts`);
@@ -290,6 +299,7 @@ export const APIS = {
   logout,
   createPost,
   getPosts,
+  delPost,
   getSinglePost,
   like,
   disLike,

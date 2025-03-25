@@ -9,6 +9,7 @@ const mongoose = require("mongoose");
 // const {gfs} = require("../app")
 const path = require("path")
 const { upload_disk } = require("../multerConfig/multerConfig")
+const deleteCommentsRecursively = require("./deleteComments")
 
 
 const postController = {
@@ -16,7 +17,7 @@ const postController = {
         try {
             const { owner, location, description } = req.body;
             const ownerId = new mongoose.Types.ObjectId(owner);
-            const file_names = req.fileNames.map(filename => {
+            const file_names = req.fileNames?.map(filename => {
                 const ext = path.extname(filename);
                 const type = ext === ".mp4" || ext === ".webm" || ext === ".MOV" ? "video" : "image";
 
@@ -44,7 +45,7 @@ const postController = {
             // update media model for filenames
             // console.log(file_names)
             const mediaDocs = await Promise.all(
-                file_names.map((file) => {
+                (file_names || []).map((file) => {
                     const mediaDoc = new media({
                         identifier: {
                             filename: file.filename,
@@ -57,7 +58,7 @@ const postController = {
                         disLikes: []
                     });
                     return mediaDoc.save(); // Returns a promise
-                })
+                }).filter(Boolean)
             );
 
             // console.log(mediaDocs)
@@ -196,6 +197,32 @@ const postController = {
             console.error("Error fetching single post:", error);
             res.status(500).send({ error: "Internal Server Error" });
         }
+    },
+    delPost: async (req, res) => {
+        // console.log(req.query)
+        const { postId } = req.query;
+
+        const userjwt = req.cookies.jwtToken;
+        const userDets = checkUser(userjwt);
+        // console.log(userDets)
+        try {
+
+            const commentIds = await comment.distinct("_id", { for_post: postId });
+            
+            await deleteCommentsRecursively(commentIds)
+
+            // remove likes and dislikes
+            await like.deleteMany({ for_post: postId });
+            await disLike.deleteMany({ for_post: postId });
+            // remove post model
+            await post.deleteOne({ _id: postId });
+            await user.updateOne({_id: userDets.id}, {$pull: {posts: postId}});
+            res.send("post deleted")
+
+        } catch (error) {
+            res.send(error);
+        }
+
     },
 
     likePost: async (req, res) => {
@@ -833,9 +860,9 @@ const postController = {
             console.error("Error adding comment:", error);
             res.status(500).json({ error: "Internal Server Error", details: error.message });
         }
-        
+
     },
-    getReplies: async (req, res)=>{
+    getReplies: async (req, res) => {
         const comntId = req.query.comment;
         try {
             const comments = await comment

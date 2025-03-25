@@ -13,6 +13,8 @@ router.post(
 router.get("/getPosts", postController.getPosts);
 router.get("/getSinglePost", postController.getSingPost);
 
+router.post("/delPost", postController.delPost);
+
 router.put("/likePost", postController.likePost);
 router.put("/unLikePost", postController.unLikePost);
 router.put("/disLikePost", postController.disLikePost);
