@@ -1,10 +1,20 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ImagePlus, Send, X } from "lucide-react";
 import { arrayBufferToBase64 } from "../../ReUsables/arrayTobuffer";
 
-export function CommentInputBox({ currentUser, onSendReply, onCancel }) {
-  const [replyText, setReplyText] = useState("");
+export function CommentInputBox({
+  currentUser,
+  initialText = "",
+  onSendReply,
+  onCancel,
+}) {
+  const [replyText, setReplyText] = useState(initialText);
   const [replyMedia, setReplyMedia] = useState([]);
+
+  // Update replyText when initialText changes
+  useEffect(() => {
+    setReplyText(initialText);
+  }, [initialText]);
 
   const handleReplyFileUpload = (e) => {
     const files = Array.from(e.target.files);
@@ -15,7 +25,19 @@ export function CommentInputBox({ currentUser, onSendReply, onCancel }) {
     setReplyMedia((prev) => prev.filter((_, i) => i !== index));
   };
 
-  
+  const handleSendReply = () => {
+    if (replyText.trim() || replyMedia.length > 0) {
+      onSendReply(replyText, replyMedia);
+      setReplyText(""); // Reset text input
+      setReplyMedia([]); // Reset media files
+    }
+  };
+
+  const handleCancel = () => {
+    setReplyText(""); // Clear text input
+    setReplyMedia([]); // Clear media files
+    onCancel(); // Call parent cancel function
+  };
 
   return (
     <div className="flex flex-col w-full mt-3 space-y-2">
@@ -87,11 +109,7 @@ export function CommentInputBox({ currentUser, onSendReply, onCancel }) {
 
           {/* Send Button */}
           <button
-            onClick={() => {
-              onSendReply(replyText, replyMedia);
-              setReplyText("");
-              setReplyMedia([]);
-            }}
+            onClick={handleSendReply}
             className="text-blue-500 hover:text-blue-600"
           >
             <Send size={20} />
@@ -101,7 +119,7 @@ export function CommentInputBox({ currentUser, onSendReply, onCancel }) {
         {/* Cancel Button */}
         <button
           className="text-gray-400 hover:text-gray-600 text-xs"
-          onClick={onCancel}
+          onClick={handleCancel}
         >
           Cancel
         </button>

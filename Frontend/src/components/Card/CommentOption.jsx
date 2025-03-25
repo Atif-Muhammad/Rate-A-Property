@@ -57,13 +57,13 @@ export const CommentOptions = ({ onDelete, onEdit }) => {
                     setOpen(false);
                   }}
                 >
-                  <Pencil size={16} /> Edit post
+                  <Pencil size={16} /> Edit comment
                 </li>
                 <li
                   className="flex items-center px-4 py-2 text-sm hover:bg-gray-50 cursor-pointer gap-2 text-red-500 transition-colors"
                   onClick={handleDelete}
                 >
-                  <Trash2 size={16} /> Delete post
+                  <Trash2 size={16} /> Delete comment
                 </li>
               </ul>
             </div>
@@ -75,7 +75,7 @@ export const CommentOptions = ({ onDelete, onEdit }) => {
       {showConfirm && (
         <ConfirmationModal
           title="Are you sure?"
-          description="Do you really want to delete this post?"
+          description="Do you really want to delete this comment?"
           onCancel={() => setShowConfirm(false)}
           onConfirm={handleConfirmDelete}
         />
