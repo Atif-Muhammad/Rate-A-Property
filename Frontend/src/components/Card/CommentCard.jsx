@@ -22,8 +22,57 @@ function CommentCard(props) {
   const [replies, setReplies] = useState(props.comment.comments || []);
   const [currentUser, setCurrentUser] = useState({});
   const [showReplies, setShowReplies] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editText, setEditText] = useState(props.comment.comment);
 
   const MAX_LENGTH = 200;
+
+  const getUserDetails = async () => {
+    try {
+      const res = await APIS.userWho();
+      if (res.status === 200) {
+        const userRes = await APIS.getUser(res.data.id);
+        // console.log(userRes)
+        if (userRes.status === 200) {
+          const details = {
+            owner: userRes.data.user_name,
+            id: userRes.data._id,
+            image: userRes.data.image,
+            user_name: userRes.data.user_name,
+            posts: userRes.data.posts || [],
+          };
+          setCurrentUser(details);
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    getUserDetails();
+  }, []);
+
+  const handleEditComment = () => {
+    setIsEditing(true);
+    setEditText(props.comment.comment);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editText.trim()) return;
+
+    try {
+      const res = await APIS.updateComment(props.comment._id, {
+        content: editText,
+      });
+      if (res.status === 200) {
+        setIsEditing(false);
+        props.comment.comment = editText; // Update the UI
+      }
+    } catch (err) {
+      console.error("Error updating comment:", err);
+    }
+  };
 
   useEffect(() => {
     // console.log("comment:", props.comment)
@@ -117,18 +166,15 @@ function CommentCard(props) {
       media: mediaPreviews,
     };
 
+    // Add reply and ensure replies are visible
     setReplies((prevReplies) => [newReplyData, ...prevReplies]);
+    setShowReplies(true); // Show replies immediately
 
     const formData = new FormData();
     formData.append("owner", currentUser.id);
     formData.append("content", text);
     formData.append("for_post", props.comment._id);
-
     media.forEach((file) => formData.append("files", file));
-
-    // for (let [key, value] of formData.entries()) {
-    //   console.log(`${key}:`, value);
-    // }
 
     await APIS.addReply(formData)
       .then((res) => {
@@ -147,32 +193,6 @@ function CommentCard(props) {
         );
       });
   };
-
-  const getUserDetails = async () => {
-    try {
-      const res = await APIS.userWho();
-      if (res.status === 200) {
-        const userRes = await APIS.getUser(res.data.id);
-        // console.log(userRes)
-        if (userRes.status === 200) {
-          const details = {
-            owner: userRes.data.user_name,
-            id: userRes.data._id,
-            image: userRes.data.image,
-            user_name: userRes.data.user_name,
-            posts: userRes.data.posts || [],
-          };
-          setCurrentUser(details);
-        }
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  useEffect(() => {
-    getUserDetails();
-  }, []);
 
   return (
     <div
@@ -257,12 +277,8 @@ function CommentCard(props) {
         <CommentOptions
           onDelete={() => {
             console.log("delete post", post._id);
-            // yahan aap delete ka API call ya modal laga sakte ho
           }}
-          onEdit={() => {
-            console.log("edit post", post._id);
-            // yahan aap edit modal open karo ya edit page le jao
-          }}
+          onEdit={handleEditComment}
         />
       </div>
 
@@ -303,11 +319,24 @@ function CommentCard(props) {
       )}
 
       {/* Nested Reply Input */}
-      {showReplyBox && (
+      {(showReplyBox || isEditing) && (
         <CommentInputBox
           currentUser={props.currentUser}
-          onSendReply={handleSendReply}
-          onCancel={() => setShowReplyBox(false)}
+          initialText={isEditing ? editText : ""}
+          onSendReply={(text, media) => {
+            if (isEditing) {
+              setEditText(text);
+              handleSaveEdit(); // Save the edited reply
+              setIsEditing(false); // Exit edit mode after saving
+            } else {
+              handleSendReply(text, media); // Send new reply
+            }
+            setShowReplyBox(false); // Hide reply box
+          }}
+          onCancel={() => {
+            setShowReplyBox(false);
+            setIsEditing(false); // Exit edit mode if cancelled
+          }}
         />
       )}
     </div>

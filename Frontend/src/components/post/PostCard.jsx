@@ -93,6 +93,16 @@ const PostCard = (props) => {
     }
   };
 
+  const handlePostDel = (postId) => {
+    APIS.delPost(postId)
+      .then((res) => {
+        console.log(res.data);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  };
+
   return (
     <div className="bg-white shadow-md rounded-lg p-3.5  w-full lg:max-w-3xl border border-gray-200">
       {/* Profile & Post Info */}
@@ -117,8 +127,7 @@ const PostCard = (props) => {
 
           <PostOptions
             onDelete={() => {
-              console.log("delete post", post._id);
-              // yahan aap delete ka API call ya modal laga sakte ho
+              handlePostDel(post._id);
             }}
             onEdit={() => {
               console.log("edit post", post._id);
