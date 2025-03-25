@@ -210,6 +210,17 @@ const addComment = async (data) => {
     return error;
   }
 };
+
+const delComment = async (commentId)=>{
+  try {
+    const response = await axios.post(`${Baseurl}/posts/delComment?commentId=${commentId}`, {}, {withCredentials: true});
+    return response
+  } catch (error) {
+    return error;
+  }
+}
+
+
 const getcomments = async (postId) => {
   try {
     const response = await axios.get(
@@ -310,6 +321,7 @@ export const APIS = {
   disLikeMedia,
   unDisLikeMedia,
   addComment,
+  delComment,
   getcomments,
   likeComment,
   unLikeComment,

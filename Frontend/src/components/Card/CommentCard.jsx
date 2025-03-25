@@ -154,9 +154,9 @@ function CommentCard(props) {
     const newReplyData = {
       _id: tempId,
       owner: {
-        id: currentUser.id,
-        user_name: currentUser.user_name,
-        image: currentUser.image,
+        id: currentUser?.id,
+        user_name: currentUser?.user_name,
+        image: currentUser?.image,
       },
       comment: text,
       for_post: props.comment._id,
@@ -171,7 +171,7 @@ function CommentCard(props) {
     setShowReplies(true); // Show replies immediately
 
     const formData = new FormData();
-    formData.append("owner", currentUser.id);
+    formData.append("owner", currentUser?.id);
     formData.append("content", text);
     formData.append("for_post", props.comment._id);
     media.forEach((file) => formData.append("files", file));
@@ -193,6 +193,15 @@ function CommentCard(props) {
         );
       });
   };
+
+
+  const handleCommentDel = async (commentId)=>{
+    APIS.delComment(commentId).then(res=>{
+      console.log(res.data)
+    }).catch(err=>{
+      console.log(err)
+    })
+  }
 
   return (
     <div
@@ -273,13 +282,12 @@ function CommentCard(props) {
             </button>
           </div>
         </div>
-
-        <CommentOptions
+        {agreeOwner == props.comment.owner._id && <CommentOptions
           onDelete={() => {
-            console.log("delete post", post._id);
+            handleCommentDel(props.comment._id)
           }}
           onEdit={handleEditComment}
-        />
+        />}
       </div>
 
       {/* Replies */}
@@ -321,7 +329,7 @@ function CommentCard(props) {
       {/* Nested Reply Input */}
       {(showReplyBox || isEditing) && (
         <CommentInputBox
-          currentUser={props.currentUser}
+          currentUser={currentUser}
           initialText={isEditing ? editText : ""}
           onSendReply={(text, media) => {
             if (isEditing) {

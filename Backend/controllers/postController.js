@@ -565,6 +565,30 @@ const postController = {
         }
     },
 
+    delComment: async (req, res)=>{
+        const {commentId} = req.query;
+        // console.log(commentId)
+        const userjwt = req.cookies.jwtToken;
+        const userDets = checkUser(userjwt);
+
+        try {
+            const commentIds = await comment.distinct("_id", { for_post: commentId });
+            
+            await deleteCommentsRecursively(commentIds);
+
+            // remove likes and dislikes
+            await like.deleteMany({ for_post: commentId });
+            await disLike.deleteMany({ for_post: commentId });
+            // remove post model
+            await comment.deleteOne({ _id: commentId });
+            await user.updateOne({_id: userDets.id}, {$pull: {posts: commentId}});
+            res.send("post deleted");
+        } catch (error) {
+            res.send(error);
+        }
+        
+    },
+
     getComments: async (req, res) => {
         const postId = req.query.post;
         try {

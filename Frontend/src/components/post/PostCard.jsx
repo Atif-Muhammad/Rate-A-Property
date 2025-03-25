@@ -124,16 +124,14 @@ const PostCard = (props) => {
               </span>
             </div>
           </div>
-
-          <PostOptions
+          {agreeOwner == post.owner?._id && <PostOptions
             onDelete={() => {
               handlePostDel(post._id);
             }}
             onEdit={() => {
               console.log("edit post", post._id);
-              // yahan aap edit modal open karo ya edit page le jao
             }}
-          />
+          />}
         </div>
       </div>
 

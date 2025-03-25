@@ -26,6 +26,7 @@ router.put("/disLikeMedia", postController.disLikeMedia);
 router.put("/unDisLikeMedia", postController.unDisLikeMedia);
 
 router.post("/addComment", upload_disk.array("files"), postController.addComment);
+router.post("/delComment", postController.delComment);
 router.get("/getComments", postController.getComments);
 
 router.put("/likeComment", postController.likeComment);
