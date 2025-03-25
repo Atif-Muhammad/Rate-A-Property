@@ -131,6 +131,12 @@ const CommentSection = () => {
     }
   };
 
+  const handleCommentDelete = (commentId) => {
+    setComments((prevComments) =>
+      prevComments.filter((c) => c._id !== commentId)
+    );
+  };
+
   useEffect(() => {
     getUserDetails();
     getComments();
@@ -151,14 +157,18 @@ const CommentSection = () => {
         </h2>
 
         <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2 lg:max-h-[65vh] h-full">
-          {comments.length > 0 ?
+          {comments.length > 0 ? (
             comments?.map((comment) => (
               <CommentCard
-                comment={comment}
-                agreeOwner={currentUser.id}
                 key={comment._id}
+                comment={comment}
+                agreeOwner={currentUser.id} // Replace userId with currentUser.id
+                onCommentDelete={handleCommentDelete}
               />
-            )): <>No comments</>}
+            ))
+          ) : (
+            <>No comments</>
+          )}
         </div>
 
         {/* Selected File Previews */}

@@ -194,14 +194,17 @@ function CommentCard(props) {
       });
   };
 
-
-  const handleCommentDel = async (commentId)=>{
-    APIS.delComment(commentId).then(res=>{
-      console.log(res.data)
-    }).catch(err=>{
-      console.log(err)
-    })
-  }
+  const handleCommentDel = async (commentId) => {
+    try {
+      await APIS.delComment(commentId);
+      props.onCommentDelete(commentId); // Parent ko notify karein
+      setReplies((prevReplies) =>
+        prevReplies.filter((reply) => reply._id !== commentId)
+      ); // Remove from UI
+    } catch (err) {
+      console.log(err);
+    }
+  };
 
   return (
     <div
@@ -282,12 +285,14 @@ function CommentCard(props) {
             </button>
           </div>
         </div>
-        {agreeOwner == props.comment.owner._id && <CommentOptions
-          onDelete={() => {
-            handleCommentDel(props.comment._id)
-          }}
-          onEdit={handleEditComment}
-        />}
+        {agreeOwner == props.comment.owner._id && (
+          <CommentOptions
+            onDelete={() => {
+              handleCommentDel(props.comment._id);
+            }}
+            onEdit={handleEditComment}
+          />
+        )}
       </div>
 
       {/* Replies */}
@@ -318,6 +323,7 @@ function CommentCard(props) {
                     comment={reply}
                     agreeOwner={props.agreeOwner}
                     currentUser={props.currentUser}
+                    onCommentDelete={handleCommentDel} // Pass delete function
                   />
                 ))}
               </div>
