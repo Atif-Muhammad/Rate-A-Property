@@ -74,9 +74,16 @@ const postController = {
         }
     },
     getPosts: async (req, res) => {
+        // console.log(req.query); // Check page and limit values
+        const page = parseInt(req.query.page);
+        const limit = parseInt(req.query.limit);
+        const skip = (page - 1) * limit;
+
         try {
             const posts = await post
-                .find({})
+                .find({}).sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit)
                 .populate("owner")
                 .populate("likes")
                 .populate("disLikes")
@@ -87,7 +94,12 @@ const postController = {
                         { path: "disLikes" },
                     ],
                 })
-                .sort({ createdAt: -1 });
+                
+            // console.log(posts)
+            const total = await post.countDocuments();
+            // console.log(total, posts.length, skip)
+            const hasMore = (skip + posts.length) < total;
+            // console.log(hasMore)
 
             const updatedPosts = posts.map(post => {
                 const mediaUrls = post.media
@@ -128,7 +140,7 @@ const postController = {
                 };
             });
 
-            res.send(updatedPosts);
+            res.json({ data: updatedPosts, hasMore });
         } catch (error) {
             console.error("Error fetching posts:", error);
             res.status(500).send({ error: "Internal Server Error" });
@@ -208,7 +220,7 @@ const postController = {
         try {
 
             const commentIds = await comment.distinct("_id", { for_post: postId });
-            
+
             await deleteCommentsRecursively(commentIds)
 
             // remove likes and dislikes
@@ -216,7 +228,7 @@ const postController = {
             await disLike.deleteMany({ for_post: postId });
             // remove post model
             await post.deleteOne({ _id: postId });
-            await user.updateOne({_id: userDets.id}, {$pull: {posts: postId}});
+            await user.updateOne({ _id: userDets.id }, { $pull: { posts: postId } });
             res.send("post deleted")
 
         } catch (error) {
@@ -565,15 +577,15 @@ const postController = {
         }
     },
 
-    delComment: async (req, res)=>{
-        const {commentId} = req.query;
+    delComment: async (req, res) => {
+        const { commentId } = req.query;
         // console.log(commentId)
         const userjwt = req.cookies.authToken;
         const userDets = checkUser(userjwt);
 
         try {
             const commentIds = await comment.distinct("_id", { for_post: commentId });
-            
+
             await deleteCommentsRecursively(commentIds);
 
             // remove likes and dislikes
@@ -581,12 +593,12 @@ const postController = {
             await disLike.deleteMany({ for_post: commentId });
             // remove post model
             await comment.deleteOne({ _id: commentId });
-            await user.updateOne({_id: userDets.id}, {$pull: {posts: commentId}});
+            await user.updateOne({ _id: userDets.id }, { $pull: { posts: commentId } });
             res.send("post deleted");
         } catch (error) {
             res.send(error);
         }
-        
+
     },
 
     getComments: async (req, res) => {

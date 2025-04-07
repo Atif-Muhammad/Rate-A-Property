@@ -78,9 +78,10 @@ const delPost = async(postId)=>{
   }
 }
 
-const getPosts = async () => {
+const getPosts = async ({page, limit}) => {
+  console.log(page, limit)
   try {
-    const response = await axios.get(`${Baseurl}/posts/getPosts`);
+    const response = await axios.get(`${Baseurl}/posts/getPosts?page=${page}&limit=${limit}`);
     return response;
   } catch (error) {
     return error;

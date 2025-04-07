@@ -12,7 +12,7 @@
   "dependencies": {
     "@react-google-maps/api": "^2.20.6",
     "@tailwindcss/vite": "^4.0.6",
-    "axios": "^1.8.1",
+    "axios": "^1.8.4",
     "axois": "^0.0.1-security",
     "formik": "^2.4.6",
     "framer-motion": "^12.5.0",
@@ -21,6 +21,7 @@
     "react-dom": "^19.0.0",
     "react-hot-toast": "^2.5.2",
     "react-router-dom": "^7.2.0",
+    "react-window": "^1.8.11",
     "tailwindcss": "^4.0.6",
     "yup": "^1.6.1"
   },
