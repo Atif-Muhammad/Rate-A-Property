@@ -56,7 +56,7 @@ const userController = {
 
                     // (3) set cookies for client browser
 
-                    // res.clearCookie("jwtToken");
+                    // res.clearCookie("authToken");
                     const token = jwt.sign(payload, secretKey, {
                         algorithm: "HS256",
                         expiresIn: process.env.JWT_EXP,
@@ -82,7 +82,7 @@ const userController = {
                         //  console.log(sentMail)
                         if (sentMail.accepted != null) {
                             // console.log("sending cookie:", token)
-                            res.cookie("jwtToken", token, { httpOnly: true, sameSite: "strict", secure: false })
+                            res.cookie("authToken", token, { httpOnly: true, sameSite: "strict", secure: false })
                                 .send("Successfully logged in-cookies sent");
                         } else {
                             res.sendStatus(404)
@@ -116,10 +116,10 @@ const userController = {
                     };
                     // check the jwtToken on client, whether it is out-dated or not?
                     const secretKey = process.env.SECRET_KEY;
-                    const jwtTokenCheck = req.cookies.jwtToken;
+                    const jwtTokenCheck = req.cookies.authToken;
                     jwt.verify(jwtTokenCheck, secretKey, async (err, result) => {
                         if (err) {
-                            res.clearCookie("jwtToken");
+                            res.clearCookie("authToken");
                             const token = jwt.sign(payload, secretKey, {
                                 algorithm: "HS256",
                                 expiresIn: "7d",
@@ -146,7 +146,7 @@ const userController = {
                                 //  console.log(sentMail)
                                 if (sentMail.accepted != null) {
                                     res
-                                        .cookie("jwtToken", token, { httpOnly: true, sameSite: "strict", secure: false, maxAge: 7 * 24 * 60 * 60 * 1000 })
+                                        .cookie("authToken", token, { httpOnly: true, sameSite: "strict", secure: false, maxAge: 7 * 24 * 60 * 60 * 1000 })
                                         .send("Successfully logged in-cookies sent");
                                 } else {
                                     res.sendStatus(404)
@@ -170,7 +170,7 @@ const userController = {
         }
     },
     logoutUser: (req, res) => {
-        res.clearCookie("jwtToken", {
+        res.clearCookie("authToken", {
             path: "/",
             sameSite: "strict",
             httpOnly: true,
@@ -178,7 +178,7 @@ const userController = {
         }).send("successfully logged out--Redirecting to index page");
     },
     userWho: (req, res) => {
-        const user_jwt = req.cookies.jwtToken;
+        const user_jwt = req.cookies.authToken;
         const secret_key = process.env.SECRET_KEY;
         res.send(jwt.verify(user_jwt, secret_key, (err, decoded) => {
             if (err) {

@@ -202,7 +202,7 @@ const postController = {
         // console.log(req.query)
         const { postId } = req.query;
 
-        const userjwt = req.cookies.jwtToken;
+        const userjwt = req.cookies.authToken;
         const userDets = checkUser(userjwt);
         // console.log(userDets)
         try {
@@ -230,7 +230,7 @@ const postController = {
         const user_token = req.cookies;
 
         try {
-            const user_detail = checkUser(user_token.jwtToken);
+            const user_detail = checkUser(user_token.authToken);
             const owner_id = user_detail.id;
             const data = {
                 for_post: post_id,
@@ -258,7 +258,7 @@ const postController = {
         const user_token = req.cookies;
 
         try {
-            const user_detail = checkUser(user_token.jwtToken);
+            const user_detail = checkUser(user_token.authToken);
             const owner_id = user_detail.id;
             const data = {
                 for_post: post_id,
@@ -282,7 +282,7 @@ const postController = {
         const user_token = req.cookies;
 
         try {
-            const user_detail = checkUser(user_token.jwtToken);
+            const user_detail = checkUser(user_token.authToken);
             const owner_id = user_detail.id;
             const data = {
                 for_post: post_id,
@@ -311,7 +311,7 @@ const postController = {
         const user_token = req.cookies;
 
         try {
-            const user_detail = checkUser(user_token.jwtToken);
+            const user_detail = checkUser(user_token.authToken);
             const owner_id = user_detail.id;
             const data = {
                 for_post: post_id,
@@ -337,7 +337,7 @@ const postController = {
         const user_token = req.cookies;
         // console.log(post_id)
         try {
-            const user_detail = checkUser(user_token.jwtToken);
+            const user_detail = checkUser(user_token.authToken);
             const owner_id = user_detail.id;
             const data = {
                 for_post: post_id,
@@ -365,7 +365,7 @@ const postController = {
         const user_token = req.cookies;
 
         try {
-            const user_detail = checkUser(user_token.jwtToken);
+            const user_detail = checkUser(user_token.authToken);
             const owner_id = user_detail.id;
             const data = {
                 for_post: post_id,
@@ -389,7 +389,7 @@ const postController = {
         const user_token = req.cookies;
 
         try {
-            const user_detail = checkUser(user_token.jwtToken);
+            const user_detail = checkUser(user_token.authToken);
             const owner_id = user_detail.id;
             const data = {
                 for_post: post_id,
@@ -418,7 +418,7 @@ const postController = {
         const user_token = req.cookies;
 
         try {
-            const user_detail = checkUser(user_token.jwtToken);
+            const user_detail = checkUser(user_token.authToken);
             const owner_id = user_detail.id;
             const data = {
                 for_post: post_id,
@@ -568,7 +568,7 @@ const postController = {
     delComment: async (req, res)=>{
         const {commentId} = req.query;
         // console.log(commentId)
-        const userjwt = req.cookies.jwtToken;
+        const userjwt = req.cookies.authToken;
         const userDets = checkUser(userjwt);
 
         try {
@@ -603,7 +603,7 @@ const postController = {
                         { path: "likes" },
                         { path: "disLikes" },
                     ],
-                }).populate("comments")
+                })
                 .sort({ createdAt: -1 });
 
             const updatedComments = comments.map(comment => {
@@ -657,7 +657,7 @@ const postController = {
         // console.log(comntId)
 
         try {
-            const user_detail = checkUser(user_token.jwtToken);
+            const user_detail = checkUser(user_token.authToken);
             // console.log(user_detail)
             const owner_id = user_detail.id;
             const data = {
@@ -686,7 +686,7 @@ const postController = {
         const user_token = req.cookies;
 
         try {
-            const user_detail = checkUser(user_token.jwtToken);
+            const user_detail = checkUser(user_token.authToken);
             const owner_id = user_detail.id;
             const data = {
                 for_post: comntId,
@@ -710,7 +710,7 @@ const postController = {
         const user_token = req.cookies;
 
         try {
-            const user_detail = checkUser(user_token.jwtToken);
+            const user_detail = checkUser(user_token.authToken);
             const owner_id = user_detail.id;
             const data = {
                 for_post: comntId,
@@ -740,7 +740,7 @@ const postController = {
         const user_token = req.cookies;
 
         try {
-            const user_detail = checkUser(user_token.jwtToken);
+            const user_detail = checkUser(user_token.authToken);
             const owner_id = user_detail.id;
             const data = {
                 for_post: comntId,
@@ -900,7 +900,7 @@ const postController = {
                         { path: "likes" },
                         { path: "disLikes" },
                     ],
-                }).populate("comments")
+                })
                 .sort({ createdAt: -1 });
 
             const updatedComments = comments.map(comment => {

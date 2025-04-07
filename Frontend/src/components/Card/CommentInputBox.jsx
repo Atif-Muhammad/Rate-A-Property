@@ -74,10 +74,8 @@ export function CommentInputBox({
       <div className="flex items-center space-x-2 w-full">
         {/* User Avatar */}
         <img
-          src={`data:${
-            currentUser?.image?.contentType
-          };base64,${arrayBufferToBase64(currentUser?.image?.data?.data)}`}
-          alt="user-avatar"
+            src={currentUser?.image}          
+            alt="user-avatar"
           className="w-9 h-9 rounded-full"
         />
 

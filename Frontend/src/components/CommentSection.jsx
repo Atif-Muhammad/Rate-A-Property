@@ -5,6 +5,7 @@ import { APIS } from "../../config/Config";
 import { arrayBufferToBase64 } from "../ReUsables/arrayTobuffer";
 import CommentCard from "./Card/CommentCard";
 import PostCard from "./post/PostCard";
+import CommentSkeleton from "./skeletons/CommentSkeleton";
 
 const CommentSection = () => {
   const location = useLocation();
@@ -123,7 +124,7 @@ const CommentSection = () => {
     try {
       const res = await APIS.getcomments(postId);
       if (res.status === 200) {
-        // console.log("comments: ",res)
+        // console.log("comments: ",res.data)
         setComments(res.data);
       }
     } catch (err) {
@@ -155,10 +156,10 @@ const CommentSection = () => {
             comments?.map((comment) => (
               <CommentCard
                 comment={comment}
-                agreeOwner={currentUser.id}
+                agreeOwner={currentUser}
                 key={comment._id}
               />
-            )): <>No comments</>}
+            )): <CommentSkeleton/>}
         </div>
 
         {/* Selected File Previews */}

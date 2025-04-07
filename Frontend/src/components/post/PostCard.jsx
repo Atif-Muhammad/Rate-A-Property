@@ -6,6 +6,8 @@ import MediaGrid from "./MediaGrid";
 import { NavLink } from "react-router-dom";
 import { PostOptions } from "../post/PostOption";
 import { arrayBufferToBase64 } from "../../ReUsables/arrayTobuffer";
+import PostSkeleton from "../skeletons/PostSkeleton";
+import DiscoverSkeleton from "../skeletons/DiscoverSkeleton";
 
 const PostCard = (props) => {
   const postId = props.postId;
@@ -15,19 +17,24 @@ const PostCard = (props) => {
   const [agreeOwner, setAgreeOwner] = useState("");
   const [agrees, setAgrees] = useState([]);
   const [disagrees, setDisagrees] = useState([]);
+  const [loading, setLoading] = useState(false)
 
   const fetchPost = () => {
+    setLoading(true)
     APIS.getSinglePost(postId)
       .then((res) => {
         // console.log(res);
         setPost(res.data);
+        setLoading(false)
         setAgrees(res.data.likes);
         setDisagrees(res.data.disLikes);
       })
       .catch((err) => {
+        setLoading(false)
         console.log(err);
       });
   };
+  
   const postFromprop = () => {
     setPost(props.post);
     setAgrees(props.post.likes);
@@ -104,8 +111,8 @@ const PostCard = (props) => {
   };
 
   return (
-    <div className="bg-white shadow-md rounded-lg p-3.5  w-full lg:max-w-3xl border border-gray-200">
-      {/* Profile & Post Info */}
+    <>
+    {!loading? post? <div className="bg-white shadow-md rounded-lg p-3.5  w-full lg:max-w-3xl border border-gray-200">
       <div className="flex items-center justify-between">
         <div className="flex items-center justify-between w-full space-x-3">
           <div className="flex items-center gap-x-3">
@@ -200,7 +207,8 @@ const PostCard = (props) => {
           <span className="text-base font-medium hidden md:flex">Share</span>
         </button>
       </div>
-    </div>
+    </div>: <>Error Fetching post</> : <PostSkeleton/>}
+    </>
   );
 };
 

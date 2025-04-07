@@ -11,6 +11,7 @@ import { getTimeAgo } from "../../ReUsables/GetTimeAgo";
 import MediaGrid from "../post/MediaGrid";
 import { CommentInputBox } from "./CommentInputBox";
 import { CommentOptions } from "./CommentOption";
+import CommentSkeleton from "../skeletons/CommentSkeleton";
 
 function CommentCard(props) {
   const [agrees, setAgrees] = useState(props.comment.likes);
@@ -24,29 +25,31 @@ function CommentCard(props) {
   const [showReplies, setShowReplies] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(props.comment.comment);
+  const [loading, setLoading] = useState(false)
 
   const MAX_LENGTH = 200;
 
   const getUserDetails = async () => {
-    try {
-      const res = await APIS.userWho();
-      if (res.status === 200) {
-        const userRes = await APIS.getUser(res.data.id);
-        // console.log(userRes)
-        if (userRes.status === 200) {
-          const details = {
-            owner: userRes.data.user_name,
-            id: userRes.data._id,
-            image: userRes.data.image,
-            user_name: userRes.data.user_name,
-            posts: userRes.data.posts || [],
-          };
-          setCurrentUser(details);
-        }
-      }
-    } catch (err) {
-      console.error(err);
-    }
+    console.log(agreeOwner)
+    // try {
+    //   const res = await APIS.userWho();
+    //   if (res.status === 200) {
+    //     const userRes = await APIS.getUser(res.data.id);
+    //     // console.log(userRes)
+    //     if (userRes.status === 200) {
+    //       const details = {
+    //         owner: userRes.data.user_name,
+    //         id: userRes.data._id,
+    //         image: userRes.data.image,
+    //         user_name: userRes.data.user_name,
+    //         posts: userRes.data.posts || [],
+    //       };
+    //       setCurrentUser(details);
+    //     }
+    //   }
+    // } catch (err) {
+    //   console.error(err);
+    // }
   };
 
   useEffect(() => {
@@ -80,20 +83,24 @@ function CommentCard(props) {
     setDisagrees(props.comment.disLikes);
   }, [props.comment.likes, props.comment.disLikes]);
 
-  const getReplies = async () => {
-    await APIS.getReplies(props.comment._id)
+  const getReplies = async (cmntId) => {
+    setLoading(true)
+    await APIS.getReplies(cmntId)
       .then((res) => {
         if (res.status === 200) {
+          // console.log("replies:", res.data)
           setReplies(res.data);
+          setLoading(false)
         }
       })
       .catch((err) => {
         console.log(err);
+        setLoading(false)
       });
   };
 
   useEffect(() => {
-    getReplies();
+    // getReplies(props.comment._id);
   }, []);
 
   const handleAgree = async () => {
@@ -194,16 +201,18 @@ function CommentCard(props) {
       });
   };
 
-
-  const handleCommentDel = async (commentId)=>{
-    APIS.delComment(commentId).then(res=>{
-      console.log(res.data)
-    }).catch(err=>{
-      console.log(err)
-    })
-  }
+  const handleCommentDel = async (commentId) => {
+    APIS.delComment(commentId)
+      .then((res) => {
+        console.log(res.data);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  };
 
   return (
+<>
     <div
       className={`relative flex flex-col items-start space-y-2 p-4 rounded-lg shadow-sm transition ${
         isTemp ? "bg-gray-500" : "bg-gray-100"
@@ -282,29 +291,34 @@ function CommentCard(props) {
             </button>
           </div>
         </div>
-        {agreeOwner == props.comment.owner._id && <CommentOptions
-          onDelete={() => {
-            handleCommentDel(props.comment._id)
-          }}
-          onEdit={handleEditComment}
-        />}
+        {agreeOwner.id == props.comment.owner._id && (
+          <CommentOptions
+            onDelete={() => {
+              handleCommentDel(props.comment._id);
+            }}
+            onEdit={handleEditComment}
+          />
+        )}
       </div>
 
       {/* Replies */}
-      {replies.length > 0 && (
+      {replies?.length > 0 && (
         <div className="w-full mt-4 pl-8 relative">
           {!showReplies ? (
             <button
-              onClick={() => setShowReplies(true)}
-              className="text-blue-600 text-sm hover:underline"
+              onClick={() => {
+                getReplies(props.comment?._id)
+                setShowReplies(true);
+              }}
+              className="text-blue-600 text-sm hover:underline cursor-pointer"
             >
-              View Replies ({replies.length})
+              View Replies ({replies?.length})
             </button>
           ) : (
             <>
               <button
                 onClick={() => setShowReplies(false)}
-                className="text-blue-600 text-sm mb-2 hover:underline"
+                className="text-blue-600 text-sm mb-2 hover:underline cursor-pointer"
               >
                 Hide Replies
               </button>
@@ -312,14 +326,14 @@ function CommentCard(props) {
               <div className="absolute top-0 left-4 h-full border-l-2 border-gray-300"></div>
 
               <div className="space-y-3 pl-6">
-                {replies.map((reply) => (
+                {!loading ? replies?.map((reply) => (
                   <CommentCard
                     key={reply._id}
                     comment={reply}
                     agreeOwner={props.agreeOwner}
                     currentUser={props.currentUser}
                   />
-                ))}
+                )): <CommentSkeleton/>}
               </div>
             </>
           )}
@@ -329,7 +343,7 @@ function CommentCard(props) {
       {/* Nested Reply Input */}
       {(showReplyBox || isEditing) && (
         <CommentInputBox
-          currentUser={currentUser}
+          currentUser={props.agreeOwner}
           initialText={isEditing ? editText : ""}
           onSendReply={(text, media) => {
             if (isEditing) {
@@ -348,6 +362,7 @@ function CommentCard(props) {
         />
       )}
     </div>
+    </>
   );
 }
 
