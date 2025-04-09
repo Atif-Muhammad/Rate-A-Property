@@ -1,66 +1,57 @@
-import React, { useState, useEffect, useCallback } from "react";
-import DiscoverSkeleton from "../../components/skeletons/DiscoverSkeleton";
-import { APIS } from "../../../config/Config";
-import PostCard from "../../components/post/PostCard";
+import React, { useState, useEffect } from 'react';
+import { useInfiniteQuery } from '@tanstack/react-query';
+import { APIS } from '../../../config/Config'; // Your API layer
+import PostCard from '../../components/post/PostCard';
+import DiscoverSkeleton from '../../components/skeletons/DiscoverSkeleton';
+import { Loader } from 'lucide-react';
+
+const LIMIT = 10;
+
+const fetchPosts = async ({ pageParam = 1 }) => {
+  const res = await APIS.getPosts({ page: pageParam, limit: LIMIT });
+  return { data: res.data.data, nextPage: pageParam + 1, hasMore: res.data.hasMore };
+};
 
 export const PostDesign = () => {
-  const [posts, setPosts] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [page, setPage] = useState(null);
-  const [hasMore, setHasMore] = useState(true);
-  const LIMIT = 10;
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    status,
+    isLoading,
+  } = useInfiniteQuery({
+    queryKey: ['posts'], 
+    queryFn: fetchPosts,
+    getNextPageParam: (lastPage) =>
+      lastPage.hasMore ? lastPage.nextPage : undefined,
+  });
 
-  const getPosts = async (pageToFetch) => {
-    if (loading || !hasMore || !pageToFetch) return;
-
-    setLoading(true);
-    try {
-      const res = await APIS.getPosts({ page: pageToFetch, limit: LIMIT });
-      if (res.status === 200) {
-        const { data, hasMore } = res.data;
-        setPosts((prev) => [...prev, ...data]);
-        setHasMore(hasMore);
-      }
-    } catch (err) {
-      console.error("Error fetching posts:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Infinite scroll
   useEffect(() => {
-    setPage(1)
-  }, []);
-
-  useEffect(() => {
-    
-    getPosts(page)
-  }, [page]);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrollTop = window.scrollY;
-      const windowHeight = window.innerHeight;
-      const fullHeight = document.body.scrollHeight;
-
-      if (scrollTop + windowHeight >= fullHeight - 100 && !loading && hasMore) {
-        const nextPage = page + 1;
-        setPage(nextPage);
+    const onScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
+      if (scrollTop + clientHeight >= scrollHeight - 100 && hasNextPage && !isFetchingNextPage) {
+        fetchNextPage();
       }
     };
 
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [loading, hasMore]);
+    window.addEventListener('scroll', onScroll);
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   return (
-    <div className="w-full flex flex-col gap-5 items-center overflow-auto">
-      {posts.map((post, index) => (
-        <PostCard key={post._id + index} post={post} />
-      ))}
+    <div className="w-full flex flex-col gap-5 items-center">
+      {data?.pages.map((page, pageIndex) =>
+        page.data.map((post, idx) => (
+          <PostCard key={post._id + '-' + pageIndex + '-' + idx} post={post} />
+        ))
+      )}
 
-      {loading && <DiscoverSkeleton />}
-      {!hasMore && posts.length > 0 && (
+      {(isLoading && !isFetchingNextPage) && <DiscoverSkeleton />}
+      {(!isLoading && isFetchingNextPage) && <Loader className="animate-spin text-blue-500 w-6 h-6"/>}
+
+      {!hasNextPage && (
         <p className="mt-4 text-gray-500">No more posts</p>
       )}
     </div>

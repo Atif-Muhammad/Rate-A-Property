@@ -48,7 +48,7 @@ export const Sidebar = () => {
   return (
     <>
       {/* Large Screens Sidebar */}
-      <div className="fixed top-0 left-0 h-full w-64 lg:w-1/5 bg-gray-900 text-white p-4 transition-transform z-50 lg:translate-x-0 lg:relative hidden lg:block">
+      <div className="h-full w-full bg-gray-900 text-white p-4 transition-transform z-50 lg:translate-x-0 lg:relative hidden lg:block">
         <nav className="space-y-4">
           {navLinks.map(({ to, label, icon }) => (
             <NavLink
