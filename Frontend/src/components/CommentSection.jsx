@@ -16,6 +16,8 @@ const CommentSection = () => {
   const [newComment, setNewComment] = useState("");
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [mediaPreviews, setMediaPreviews] = useState([]);
+  const [activeReplyCommentId, setActiveReplyCommentId] = useState(null);
+
 
   // Handle file selection
   const handleFileUpload = (event) => {
@@ -152,14 +154,19 @@ const CommentSection = () => {
         </h2>
 
         <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2 lg:max-h-[65vh] h-full">
-          {comments.length > 0 ?
-            comments?.map((comment) => (
+          {comments.length > 0 ? (
+            comments.map((comment) => (
               <CommentCard
+                key={comment._id}
                 comment={comment}
                 agreeOwner={currentUser}
-                key={comment._id}
+                activeReplyCommentId={activeReplyCommentId}
+                setActiveReplyCommentId={setActiveReplyCommentId}
               />
-            )): <CommentSkeleton/>}
+            ))
+          ) : (
+            <CommentSkeleton />
+          )}
         </div>
 
         {/* Selected File Previews */}

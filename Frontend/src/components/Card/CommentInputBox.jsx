@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { ImagePlus, Send, X } from "lucide-react";
-import { arrayBufferToBase64 } from "../../ReUsables/arrayTobuffer";
 
 export function CommentInputBox({
   currentUser,
@@ -74,8 +73,8 @@ export function CommentInputBox({
       <div className="flex items-center space-x-2 w-full">
         {/* User Avatar */}
         <img
-            src={currentUser?.image}          
-            alt="user-avatar"
+          src={currentUser.image?.data?.data}
+          alt="user-avatar"
           className="w-9 h-9 rounded-full"
         />
 
