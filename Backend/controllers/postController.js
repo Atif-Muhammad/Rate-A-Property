@@ -74,7 +74,7 @@ const postController = {
         }
     },
     getPosts: async (req, res) => {
-        // console.log(req.query); // Check page and limit values
+        console.log(req.query); 
         const page = parseInt(req.query.page);
         const limit = parseInt(req.query.limit);
         const skip = (page - 1) * limit;
@@ -97,7 +97,7 @@ const postController = {
                 
             // console.log(posts)
             const total = await post.countDocuments();
-            // console.log(total, posts.length, skip)
+            console.log(`total: ${total} || fetched: ${posts.length}`)
             const hasMore = (skip + posts.length) < total;
             // console.log(hasMore)
 

@@ -6,13 +6,13 @@ import PostCard from "../../components/post/PostCard";
 export const PostDesign = () => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(null);
   const [hasMore, setHasMore] = useState(true);
   const LIMIT = 10;
 
-  const getPosts = useCallback(async (pageToFetch) => {
-    if (loading || !hasMore) return;
-  
+  const getPosts = async (pageToFetch) => {
+    if (loading || !hasMore || !pageToFetch) return;
+
     setLoading(true);
     try {
       const res = await APIS.getPosts({ page: pageToFetch, limit: LIMIT });
@@ -26,42 +26,35 @@ export const PostDesign = () => {
     } finally {
       setLoading(false);
     }
-  }, [loading, hasMore]);
-  
-  
+  };
 
   useEffect(() => {
-    setPage(1);
+    setPage(1)
   }, []);
-  
 
   useEffect(() => {
-    getPosts(page);
+    
+    getPosts(page)
   }, [page]);
-  
+
   useEffect(() => {
     const handleScroll = () => {
       const scrollTop = window.scrollY;
       const windowHeight = window.innerHeight;
       const fullHeight = document.body.scrollHeight;
-  
-      if (
-        scrollTop + windowHeight >= fullHeight - 100 &&
-        !loading &&
-        hasMore
-      ) {
-        setPage((prev) => prev + 1);
+
+      if (scrollTop + windowHeight >= fullHeight - 100 && !loading && hasMore) {
+        const nextPage = page + 1;
+        setPage(nextPage);
       }
     };
-  
+
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, [loading, hasMore]);
-  
-  
 
   return (
-    <div className="w-full flex flex-col gap-5 items-center">
+    <div className="w-full flex flex-col gap-5 items-center overflow-auto">
       {posts.map((post, index) => (
         <PostCard key={post._id + index} post={post} />
       ))}

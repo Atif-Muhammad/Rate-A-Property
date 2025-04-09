@@ -40,6 +40,7 @@ const PostCard = (props) => {
     setAgrees(props.post.likes);
     setDisagrees(props.post.disLikes);
   };
+  
   useEffect(() => {
     // console.log("id:",props.postId)
     // console.log("post:",props.post)
