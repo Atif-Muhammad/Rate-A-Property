@@ -19,18 +19,20 @@ function CommentCard(props) {
   const agreeOwner = props.agreeOwner;
   const isTemp = props.comment?._id?.startsWith("temp");
   const [isExpanded, setIsExpanded] = useState(false);
-  const [showReplyBox, setShowReplyBox] = useState(false);
+  // const [showReplyBox, setShowReplyBox] = useState(false);
+  const showReplyBox = props.activeReplyCommentId === props.comment._id;
+
   const [replies, setReplies] = useState(props.comment.comments || []);
   const [currentUser, setCurrentUser] = useState({});
   const [showReplies, setShowReplies] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(props.comment.comment);
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(false);
 
   const MAX_LENGTH = 200;
 
   const getUserDetails = async () => {
-    console.log(agreeOwner)
+    console.log(agreeOwner);
     // try {
     //   const res = await APIS.userWho();
     //   if (res.status === 200) {
@@ -84,18 +86,18 @@ function CommentCard(props) {
   }, [props.comment.likes, props.comment.disLikes]);
 
   const getReplies = async (cmntId) => {
-    setLoading(true)
+    setLoading(true);
     await APIS.getReplies(cmntId)
       .then((res) => {
         if (res.status === 200) {
           // console.log("replies:", res.data)
           setReplies(res.data);
-          setLoading(false)
+          setLoading(false);
         }
       })
       .catch((err) => {
         console.log(err);
-        setLoading(false)
+        setLoading(false);
       });
   };
 
@@ -212,156 +214,163 @@ function CommentCard(props) {
   };
 
   return (
-<>
-    <div
-      className={`relative flex flex-col items-start space-y-2 p-4 rounded-lg shadow-sm transition ${
-        isTemp ? "bg-gray-500" : "bg-gray-100"
-      }`}
-    >
-      <div className="flex items-start space-x-3 w-full">
-        {/* User Avatar */}
-        {props.comment.owner?.image?.contentType ? (
-          <img
-            className="w-12 h-12 rounded-full"
-            src={`data:${
-              props.comment.owner?.image.contentType
-            };base64,${arrayBufferToBase64(
-              props.comment.owner?.image.data?.data
-            )}`}
-            alt="user profile"
-          />
-        ) : (
-          <img
-            src={props.comment.owner?.image}
-            alt="avatar"
-            className="w-12 h-12 rounded-full"
-          />
-        )}
-
-        <div className="flex-1">
-          {/* User Info */}
-          <div className="flex items-center space-x-2">
-            <span className="font-semibold text-gray-900">
-              {props.comment.owner?.user_name}
-            </span>
-            <span className="text-xs text-gray-500">
-              {getTimeAgo(props.comment.createdAt)}
-            </span>
-          </div>
-
-          {/* Comment Text */}
-          <p className="text-gray-800 mt-1 break-all">
-            {isExpanded || props.comment?.comment?.length <= MAX_LENGTH
-              ? props.comment?.comment
-              : `${props.comment?.comment?.slice(0, MAX_LENGTH)}... `}
-            {props.comment?.comment?.length > MAX_LENGTH && (
-              <button
-                onClick={() => setIsExpanded(!isExpanded)}
-                className="text-blue-600 ms-2 cursor-pointer"
-              >
-                {isExpanded ? "Show Less" : "Read More"}
-              </button>
-            )}
-          </p>
-
-          {/* Media */}
-          {props.comment.media && props.comment.media.length > 0 && (
-            <MediaGrid media={props.comment.media} />
+    <>
+      <div
+        className={`relative flex flex-col items-start space-y-2 p-4 rounded-lg shadow-sm transition ${
+          isTemp ? "bg-gray-500" : "bg-gray-100"
+        }`}
+      >
+        <div className="flex items-start space-x-3 w-full">
+          {/* User Avatar */}
+          {props.comment.owner?.image?.contentType ? (
+            <img
+              className="w-12 h-12 rounded-full"
+              src={`data:${
+                props.comment.owner?.image.contentType
+              };base64,${arrayBufferToBase64(
+                props.comment.owner?.image.data?.data
+              )}`}
+              alt="user profile"
+            />
+          ) : (
+            <img
+              src={props.comment.owner?.image}
+              alt="avatar"
+              className="w-12 h-12 rounded-full"
+            />
           )}
 
-          {/* Action Buttons */}
-          <div className="flex space-x-4 text-sm text-gray-500 mt-2">
-            <button
-              onClick={handleAgree}
-              className="flex items-center space-x-1 hover:text-blue-600"
-            >
-              <ThumbsUp size={16} /> <span>({agrees?.length || 0})</span>
-            </button>
-            <button
-              onClick={handleDisagree}
-              className="flex items-center space-x-1 hover:text-red-600"
-            >
-              <ThumbsDown size={16} /> <span>({disagrees?.length || 0})</span>
-            </button>
-            <button
-              onClick={() => setShowReplyBox(!showReplyBox)}
-              className="flex items-center space-x-1 hover:text-blue-600"
-            >
-              <MessageCircle size={16} /> <span>Reply</span>
-            </button>
+          <div className="flex-1">
+            {/* User Info */}
+            <div className="flex items-center space-x-2">
+              <span className="font-semibold text-gray-900">
+                {props.comment.owner?.user_name}
+              </span>
+              <span className="text-xs text-gray-500">
+                {getTimeAgo(props.comment.createdAt)}
+              </span>
+            </div>
+
+            {/* Comment Text */}
+            <p className="text-gray-800 mt-1 break-all">
+              {isExpanded || props.comment?.comment?.length <= MAX_LENGTH
+                ? props.comment?.comment
+                : `${props.comment?.comment?.slice(0, MAX_LENGTH)}... `}
+              {props.comment?.comment?.length > MAX_LENGTH && (
+                <button
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  className="text-blue-600 ms-2 cursor-pointer"
+                >
+                  {isExpanded ? "Show Less" : "Read More"}
+                </button>
+              )}
+            </p>
+
+            {/* Media */}
+            {props.comment.media && props.comment.media.length > 0 && (
+              <MediaGrid media={props.comment.media} />
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex space-x-4 text-sm text-gray-500 mt-2">
+              <button
+                onClick={handleAgree}
+                className="flex items-center space-x-1 hover:text-blue-600"
+              >
+                <ThumbsUp size={16} /> <span>({agrees?.length || 0})</span>
+              </button>
+              <button
+                onClick={handleDisagree}
+                className="flex items-center space-x-1 hover:text-red-600"
+              >
+                <ThumbsDown size={16} /> <span>({disagrees?.length || 0})</span>
+              </button>
+              <button
+                onClick={() =>
+                  props.setActiveReplyCommentId(
+                    showReplyBox ? null : props.comment._id
+                  )
+                }
+                className="flex items-center space-x-1 hover:text-blue-600"
+              >
+                <MessageCircle size={16} /> <span>Reply</span>
+              </button>
+            </div>
           </div>
+          {agreeOwner.id == props.comment.owner._id && (
+            <CommentOptions
+              onDelete={() => {
+                handleCommentDel(props.comment._id);
+              }}
+              onEdit={handleEditComment}
+            />
+          )}
         </div>
-        {agreeOwner.id == props.comment.owner._id && (
-          <CommentOptions
-            onDelete={() => {
-              handleCommentDel(props.comment._id);
+
+        {/* Replies */}
+        {replies?.length > 0 && (
+          <div className="w-full mt-4 pl-8 relative">
+            {!showReplies ? (
+              <button
+                onClick={() => {
+                  getReplies(props.comment?._id);
+                  setShowReplies(true);
+                }}
+                className="text-blue-600 text-sm hover:underline cursor-pointer"
+              >
+                View Replies ({replies?.length})
+              </button>
+            ) : (
+              <>
+                <button
+                  onClick={() => setShowReplies(false)}
+                  className="text-blue-600 text-sm mb-2 hover:underline cursor-pointer"
+                >
+                  Hide Replies
+                </button>
+                {/* Vertical Line */}
+                <div className="absolute top-0 left-4 h-full border-l-2 border-gray-300"></div>
+
+                <div className="space-y-3 pl-6">
+                  {!loading ? (
+                    replies?.map((reply) => (
+                      <CommentCard
+                        key={reply._id}
+                        comment={reply}
+                        agreeOwner={props.agreeOwner}
+                        currentUser={props.currentUser}
+                      />
+                    ))
+                  ) : (
+                    <CommentSkeleton />
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {(showReplyBox || isEditing) && (
+          <CommentInputBox
+            currentUser={props.agreeOwner}
+            initialText={isEditing ? editText : ""}
+            onSendReply={(text, media) => {
+              if (isEditing) {
+                setEditText(text);
+                handleSaveEdit();
+                setIsEditing(false);
+              } else {
+                handleSendReply(text, media);
+              }
+              props.setActiveReplyCommentId(null); // Close the input box
             }}
-            onEdit={handleEditComment}
+            onCancel={() => {
+              props.setActiveReplyCommentId(null);
+              setIsEditing(false);
+            }}
           />
         )}
       </div>
-
-      {/* Replies */}
-      {replies?.length > 0 && (
-        <div className="w-full mt-4 pl-8 relative">
-          {!showReplies ? (
-            <button
-              onClick={() => {
-                getReplies(props.comment?._id)
-                setShowReplies(true);
-              }}
-              className="text-blue-600 text-sm hover:underline cursor-pointer"
-            >
-              View Replies ({replies?.length})
-            </button>
-          ) : (
-            <>
-              <button
-                onClick={() => setShowReplies(false)}
-                className="text-blue-600 text-sm mb-2 hover:underline cursor-pointer"
-              >
-                Hide Replies
-              </button>
-              {/* Vertical Line */}
-              <div className="absolute top-0 left-4 h-full border-l-2 border-gray-300"></div>
-
-              <div className="space-y-3 pl-6">
-                {!loading ? replies?.map((reply) => (
-                  <CommentCard
-                    key={reply._id}
-                    comment={reply}
-                    agreeOwner={props.agreeOwner}
-                    currentUser={props.currentUser}
-                  />
-                )): <CommentSkeleton/>}
-              </div>
-            </>
-          )}
-        </div>
-      )}
-
-      {/* Nested Reply Input */}
-      {(showReplyBox || isEditing) && (
-        <CommentInputBox
-          currentUser={props.agreeOwner}
-          initialText={isEditing ? editText : ""}
-          onSendReply={(text, media) => {
-            if (isEditing) {
-              setEditText(text);
-              handleSaveEdit(); // Save the edited reply
-              setIsEditing(false); // Exit edit mode after saving
-            } else {
-              handleSendReply(text, media); // Send new reply
-            }
-            setShowReplyBox(false); // Hide reply box
-          }}
-          onCancel={() => {
-            setShowReplyBox(false);
-            setIsEditing(false); // Exit edit mode if cancelled
-          }}
-        />
-      )}
-    </div>
     </>
   );
 }

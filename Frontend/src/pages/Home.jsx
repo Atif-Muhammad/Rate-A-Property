@@ -1,7 +1,5 @@
 import React from "react";
 import { PostDesign } from "./postdesign/PostDesign";
-import { Sidebar } from "./Sidebar";
-// import { Header } from "./header/Header";
 
 export const Home = () => {
   return (

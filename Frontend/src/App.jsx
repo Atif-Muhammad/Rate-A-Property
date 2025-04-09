@@ -16,26 +16,28 @@ import { UserInfo } from "./pages/profile/UserInfo";
 function App() {
   return (
     <>
-      {/* <State> */}
-      <BrowserRouter>
-        <Header />
-        <Routes>
-          {/* using outlet in layout */}
-          <Route path="/" element={<LayoutForLanding />}>
-            <Route index element={<Home />} />
-            <Route path="*" element={<NotFound />} />
-            <Route path="/notifications" element={<Notifications />} />
-            <Route path="/profile" element={<UserInfo />} />
-            <Route path="/messages" element={<Messages />} />
-          </Route>
-          {/* others components */}
-          {/* <Route path="/newPost" element={<NewPost />} /> */}
-          <Route path="/post/:postId" element={<CommentSection />} />
-          <Route path="/signin" element={<Sign_In />} />
-          <Route path="/signup" element={<Sign_Up />} />
-        </Routes>
-      </BrowserRouter>
-      {/* </State> */}
+      {/* <div className=" h-screen"> */}
+        {/* <State> */}
+        <BrowserRouter>
+          <Header />
+          <Routes>
+            {/* using outlet in layout */}
+            <Route path="/" element={<LayoutForLanding />}>
+              <Route index element={<Home />} />
+              <Route path="*" element={<NotFound />} />
+              <Route path="/notifications" element={<Notifications />} />
+              <Route path="/profile" element={<UserInfo />} />
+              <Route path="/messages" element={<Messages />} />
+            </Route>
+            {/* others components */}
+            {/* <Route path="/newPost" element={<NewPost />} /> */}
+            <Route path="/post/:postId" element={<CommentSection />} />
+            <Route path="/signin" element={<Sign_In />} />
+            <Route path="/signup" element={<Sign_Up />} />
+          </Routes>
+        </BrowserRouter>
+        {/* </State> */}
+      {/* </div> */}
     </>
   );
 }
