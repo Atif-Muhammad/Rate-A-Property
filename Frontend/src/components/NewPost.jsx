@@ -5,28 +5,50 @@ import { arrayBufferToBase64 } from "../ReUsables/arrayTobuffer";
 import { useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 
-export const NewPost = ({ isOpen, onClose }) => {
+export const NewPost = ({
+  isOpen,
+  onClose,
+  editPostData = null,
+  onPostUpdated,
+}) => {
   const textRef = useRef(null);
   const fileInputRef = useRef(null);
   const [selectedMedia, setSelectedMedia] = useState([]);
   const [location, setLocation] = useState("Select Location");
   const [user, setUser] = useState({});
-  const [isPosting, setIsPosting] = useState(false); // ✅ New state for button disable
+  const [isPosting, setIsPosting] = useState(false);
   const navigate = useNavigate();
 
+  const isEdit = !!editPostData;
+
   useEffect(() => {
+    // Set user data
     APIS.userWho()
       .then((res) => {
         if (res.status === 200) {
           APIS.getUser(res.data.id)
-            .then((res) => {
-              setUser(res.data);
-            })
+            .then((res) => setUser(res.data))
             .catch((err) => console.log(err));
         }
       })
       .catch((err) => console.log(err));
   }, []);
+
+  useEffect(() => {
+    if (isEdit) {
+      textRef.current.value = editPostData.description || "";
+      setLocation(editPostData.location || "Select Location");
+
+      const existingMedia = (editPostData.media || []).map((mediaItem) => ({
+        file: null,
+        url: typeof mediaItem === "string" ? mediaItem : mediaItem.url,
+        existing: true,
+      }));
+
+
+      setSelectedMedia(existingMedia);
+    }
+  }, [editPostData]);
 
   const handleFileSelect = (event) => {
     const files = Array.from(event.target.files);
@@ -47,26 +69,38 @@ export const NewPost = ({ isOpen, onClose }) => {
   };
 
   const handleSubmit = () => {
-    setIsPosting(true); // ✅ Disable button
+    setIsPosting(true);
     const formData = new FormData();
     formData.append("owner", user._id);
     formData.append("description", textRef.current?.value);
     formData.append("location", location);
-    selectedMedia.forEach((element) => {
-      formData.append(`files`, element.file);
+
+    // Only append new media files (not existing)
+    selectedMedia.forEach((item) => {
+      if (item.file) {
+        formData.append(`files`, item.file);
+      }
     });
 
-    APIS.createPost(formData)
-      .then((res) => {
-        if (res.status === 200) {
+    if (isEdit) {
+      // Call update API
+      APIS.updatePost(editPostData._id, formData)
+        .then((res) => {
+          onPostUpdated?.(); // Refresh posts if needed
+          onClose();
+        })
+        .catch((err) => console.log(err))
+        .finally(() => setIsPosting(false));
+    } else {
+      // Create new post
+      APIS.createPost(formData)
+        .then((res) => {
           navigate("/");
-          onClose(); // ✅ Close modal after successful post
-        }
-      })
-      .catch((err) => console.log(err))
-      .finally(() => {
-        setIsPosting(false); // ✅ Re-enable button
-      });
+          onClose();
+        })
+        .catch((err) => console.log(err))
+        .finally(() => setIsPosting(false));
+    }
   };
 
   if (!isOpen) return null;
@@ -82,16 +116,15 @@ export const NewPost = ({ isOpen, onClose }) => {
       >
         {/* Header */}
         <div className="flex justify-between items-center border-b pb-4 mb-4">
-          <h2 className="text-2xl text-center w-full font-bold text-gray-800">Create Post</h2>
-          <button
-            onClick={onClose}
-            className="bg-gray-200 rounded-full p-1"
-          >
+          <h2 className="text-2xl text-center w-full font-bold text-gray-800">
+            {isEdit ? "Edit Post" : "Create Post"}
+          </h2>
+          <button onClick={onClose} className="bg-gray-200 rounded-full p-1">
             <X size={20} />
           </button>
         </div>
 
-        {/* Profile & Input Box */}
+        {/* Profile & Input */}
         <div className="flex items-center space-x-4 mb-4">
           {user.image && (
             <img
@@ -116,7 +149,6 @@ export const NewPost = ({ isOpen, onClose }) => {
           </div>
         </div>
 
-        {/* Post Input */}
         <textarea
           ref={textRef}
           placeholder="What's on your mind?"
@@ -124,36 +156,35 @@ export const NewPost = ({ isOpen, onClose }) => {
           rows="4"
         ></textarea>
 
-        {/* Upload Preview */}
-        {selectedMedia.length > 0 && (
-          <div className="mt-4 overflow-x-auto whitespace-nowrap flex space-x-3 p-2 border rounded-md mb-4">
-            {selectedMedia.map((media, index) => (
-              <div key={index} className="relative w-28 h-28 flex-shrink-0">
-                {media.file.type.startsWith("image/") ? (
-                  <img
-                    src={media.url}
-                    alt="Selected"
-                    className="w-full h-full object-cover rounded-lg"
-                  />
-                ) : (
-                  <video
-                    src={media.url}
-                    controls
-                    className="w-full h-full rounded-lg"
-                  />
-                )}
-                <button
-                  onClick={() => removeMedia(index)}
-                  className="absolute top-1 right-1 bg-black/60 p-1 rounded-full text-white"
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
+        {/* Preview */}
+        {selectedMedia.map((media, index) => {
+          const mediaUrl = String(media.url); // ensure it's a string
+          return (
+            <div key={index} className="relative w-28 h-28 flex-shrink-0">
+              {mediaUrl.endsWith(".mp4") ? (
+                <video
+                  src={mediaUrl}
+                  controls
+                  className="w-full h-full rounded-lg"
+                />
+              ) : (
+                <img
+                  src={mediaUrl}
+                  alt="Selected"
+                  className="w-full h-full object-cover rounded-lg"
+                />
+              )}
+              <button
+                onClick={() => removeMedia(index)}
+                className="absolute top-1 right-1 bg-black/60 p-1 rounded-full text-white"
+              >
+                <Trash2 size={16} />
+              </button>
+            </div>
+          );
+        })}
 
-        {/* File Input */}
+        {/* File input */}
         <input
           type="file"
           accept="image/*,video/*"
@@ -163,7 +194,7 @@ export const NewPost = ({ isOpen, onClose }) => {
           onChange={handleFileSelect}
         />
 
-        {/* Add to Post */}
+        {/* Actions */}
         <div className="border-t pt-4 mb-6">
           <div className="text-center mb-4">
             <p className="text-sm text-gray-600 font-semibold tracking-wide">
@@ -178,18 +209,9 @@ export const NewPost = ({ isOpen, onClose }) => {
               <Image className="text-green-500" size={26} />
               <span className="text-xs text-gray-700">Photo/Video</span>
             </button>
-            <button className="flex flex-col items-center gap-1 hover:bg-gray-100 p-3 rounded-xl transition w-24">
-              <UserPlus className="text-blue-500" size={26} />
-              <span className="text-xs text-gray-700">Tag People</span>
-            </button>
-            <button className="flex flex-col items-center gap-1 hover:bg-gray-100 p-3 rounded-xl transition w-24">
-              <Smile className="text-yellow-500" size={26} />
-              <span className="text-xs text-gray-700">Feeling</span>
-            </button>
           </div>
         </div>
 
-        {/* Post Button */}
         <button
           onClick={handleSubmit}
           disabled={isPosting}
@@ -199,10 +221,17 @@ export const NewPost = ({ isOpen, onClose }) => {
               : "bg-blue-500 hover:bg-blue-600"
           }`}
         >
-          {isPosting ? "Posting..." : "Post"}
+          {isPosting
+            ? isEdit
+              ? "Updating..."
+              : "Posting..."
+            : isEdit
+            ? "Update Post"
+            : "Post"}
         </button>
       </div>
     </div>,
     document.body
   );
 };
+
