@@ -354,6 +354,7 @@ function CommentCard(props) {
           <CommentInputBox
             currentUser={props.agreeOwner}
             initialText={isEditing ? editText : ""}
+            initialMedia={props.comment.media} // Pass existing media if it's being edited
             onSendReply={(text, media) => {
               if (isEditing) {
                 setEditText(text);

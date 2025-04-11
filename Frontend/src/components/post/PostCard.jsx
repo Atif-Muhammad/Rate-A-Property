@@ -8,6 +8,7 @@ import { PostOptions } from "../post/PostOption";
 import { arrayBufferToBase64 } from "../../ReUsables/arrayTobuffer";
 import PostSkeleton from "../skeletons/PostSkeleton";
 import DiscoverSkeleton from "../skeletons/DiscoverSkeleton";
+import { NewPost } from "../NewPost";
 
 const PostCard = (props) => {
   const postId = props.postId;
@@ -17,30 +18,33 @@ const PostCard = (props) => {
   const [agreeOwner, setAgreeOwner] = useState("");
   const [agrees, setAgrees] = useState([]);
   const [disagrees, setDisagrees] = useState([]);
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(false);
+  const [openPostModal, setOpenPostModal] = useState(false);
+  const [editData, setEditData] = useState(null);
+
 
   const fetchPost = () => {
-    setLoading(true)
+    setLoading(true);
     APIS.getSinglePost(postId)
       .then((res) => {
         // console.log(res);
         setPost(res.data);
-        setLoading(false)
+        setLoading(false);
         setAgrees(res.data.likes);
         setDisagrees(res.data.disLikes);
       })
       .catch((err) => {
-        setLoading(false)
+        setLoading(false);
         console.log(err);
       });
   };
-  
+
   const postFromprop = () => {
     setPost(props.post);
     setAgrees(props.post.likes);
     setDisagrees(props.post.disLikes);
   };
-  
+
   useEffect(() => {
     // console.log("id:",props.postId)
     // console.log("post:",props.post)
@@ -111,104 +115,136 @@ const PostCard = (props) => {
       });
   };
 
+  
+
   return (
     <>
-    {!loading? post? <div className="bg-white shadow-md rounded-lg p-3.5  w-full lg:max-w-3xl border border-gray-200">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center justify-between w-full space-x-3">
-          <div className="flex items-center gap-x-3">
-            <img
-              src={post?.owner?.image}
-              alt="profile"
-              className="w-12 h-12 rounded-full border-2 border-blue-500"
-            />
+      {!loading ? (
+        post ? (
+          <div className="bg-white shadow-md rounded-lg p-3.5  w-full lg:max-w-3xl border border-gray-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between w-full space-x-3">
+                <div className="flex items-center gap-x-3">
+                  <img
+                    src={post?.owner?.image}
+                    alt="profile"
+                    className="w-12 h-12 rounded-full border-2 border-blue-500"
+                  />
 
-            <div className="leading-tight">
-              <p className="text-sm font-semibold text-black">
-                {post?.owner?.user_name}
-              </p>
-              <span className="text-xs text-gray-500">
-                {getTimeAgo(post.createdAt)}
-              </span>
+                  <div className="leading-tight">
+                    <p className="text-sm font-semibold text-black">
+                      {post?.owner?.user_name}
+                    </p>
+                    <span className="text-xs text-gray-500">
+                      {getTimeAgo(post.createdAt)}
+                    </span>
+                  </div>
+                </div>
+                {agreeOwner == post.owner?._id && (
+                  <PostOptions
+                    onDelete={() => {
+                      handlePostDel(post._id);
+                    }}
+                    onEdit={() => {
+                      setEditData(post); // ← set post to edit in parent
+                      setOpenPostModal(true); // ← open modal
+                    }}
+                  />
+                )}
+              </div>
+            </div>
+
+            {/* Location Section - Moved Up */}
+            <div className="bg-gray-100 lg:text-sm md:text-sm text-[0.9rem] font-semibold text-blue-600 flex items-center  tracking-wide justify-center lg:px-5 md:px-3 px-2 py-2 mt-2 rounded-md hover:underline cursor-pointer">
+              <MapPin size={16} className="text-blue-500 mr-1" />
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                  post.location
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {post.location}
+              </a>
+            </div>
+
+            {/* Post Content */}
+            <p className="text-gray-800 text-sm mt-2">{post.description}</p>
+
+            {post.media && <MediaGrid media={post.media} />}
+            {/* Action Buttons */}
+            <div className="flex justify-between gap-2 p-2 border-t border-gray-300 pt-3 items-center mt-4 text-gray-600 text-sm">
+              <div className="flex items-center gap-x-4">
+                <button
+                  onClick={handleAgree}
+                  className="flex items-center gap-x-1"
+                >
+                  <span
+                    className={`cursor-pointer transition-colors text-base font-medium ${
+                      agrees.some((agree) => agree.owner === agreeOwner)
+                        ? "text-blue-500"
+                        : "text-gray-500"
+                    }`}
+                  >
+                    Agree
+                  </span>
+                  <span className="text-base font-medium">
+                    ({agrees.length})
+                  </span>
+                </button>
+
+                <button
+                  onClick={handleDisagree}
+                  className="flex items-center gap-x-1"
+                >
+                  <span
+                    className={`cursor-pointer transition-colors text-base font-medium ${
+                      disagrees.some(
+                        (disagree) => disagree.owner === agreeOwner
+                      )
+                        ? "text-red-500"
+                        : "text-gray-500"
+                    }`}
+                  >
+                    Disagree
+                  </span>
+                  <span className="text-base font-medium">
+                    ({disagrees.length})
+                  </span>
+                </button>
+              </div>
+
+              <NavLink
+                to={`/post/${post._id}`}
+                state={{ post }}
+                className="flex items-center md:gap-x-2 hover:text-gray-700 transition"
+              >
+                <MessagesSquare size={22} />
+                <span className="text-base hidden md:flex font-medium">
+                  Comment
+                </span>
+              </NavLink>
+
+              <button className="flex items-center md:gap-x-2 hover:text-green-500 transition">
+                <Share2 size={22} />
+                <span className="text-base font-medium hidden md:flex">
+                  Share
+                </span>
+              </button>
             </div>
           </div>
-          {agreeOwner == post.owner?._id && <PostOptions
-            onDelete={() => {
-              handlePostDel(post._id);
-            }}
-            onEdit={() => {
-              console.log("edit post", post._id);
-            }}
-          />}
-        </div>
-      </div>
+        ) : (
+          <>Error Fetching post</>
+        )
+      ) : (
+        <PostSkeleton />
+      )}
 
-      {/* Location Section - Moved Up */}
-      <div className="bg-gray-100 lg:text-sm md:text-sm text-[0.9rem] font-semibold text-blue-600 flex items-center  tracking-wide justify-center lg:px-5 md:px-3 px-2 py-2 mt-2 rounded-md hover:underline cursor-pointer">
-        <MapPin size={16} className="text-blue-500 mr-1" />
-        <a
-          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-            post.location
-          )}`}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          {post.location}
-        </a>
-      </div>
-
-      {/* Post Content */}
-      <p className="text-gray-800 text-sm mt-2">{post.description}</p>
-
-      {post.media && <MediaGrid media={post.media} />}
-      {/* Action Buttons */}
-      <div className="flex justify-between gap-2 p-2 border-t border-gray-300 pt-3 items-center mt-4 text-gray-600 text-sm">
-        <div className="flex items-center gap-x-4">
-          <button onClick={handleAgree} className="flex items-center gap-x-1">
-            <span
-              className={`cursor-pointer transition-colors text-base font-medium ${
-                agrees.some((agree) => agree.owner === agreeOwner)
-                  ? "text-blue-500"
-                  : "text-gray-500"
-              }`}
-            >
-              Agree
-            </span>
-            <span className="text-base font-medium">({agrees.length})</span>
-          </button>
-
-          <button
-            onClick={handleDisagree}
-            className="flex items-center gap-x-1"
-          >
-            <span
-              className={`cursor-pointer transition-colors text-base font-medium ${
-                disagrees.some((disagree) => disagree.owner === agreeOwner)
-                  ? "text-red-500"
-                  : "text-gray-500"
-              }`}
-            >
-              Disagree
-            </span>
-            <span className="text-base font-medium">({disagrees.length})</span>
-          </button>
-        </div>
-
-        <NavLink
-          to={`/post/${post._id}`}
-          state={{ post }}
-          className="flex items-center md:gap-x-2 hover:text-gray-700 transition"
-        >
-          <MessagesSquare size={22} />
-          <span className="text-base hidden md:flex font-medium">Comment</span>
-        </NavLink>
-
-        <button className="flex items-center md:gap-x-2 hover:text-green-500 transition">
-          <Share2 size={22} />
-          <span className="text-base font-medium hidden md:flex">Share</span>
-        </button>
-      </div>
-    </div>: <>Error Fetching post</> : <PostSkeleton/>}
+      <NewPost
+        isOpen={openPostModal}
+        onClose={() => setOpenPostModal(false)}
+        editPostData={editData}
+      />
     </>
   );
 };

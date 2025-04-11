@@ -34,7 +34,7 @@ export const Header = () => {
   }, []);
 
   return (
-    <header className="h-16 md:px-4 px-2 bg-white border-b border-gray-400  w-full fixed top-0 left-0 z-50 flex justify-between items-center">
+    <header className="h-16 md:px-4 px-2  bg-white border-b border-gray-400  w-full sticky top-0 left-0 z-50 flex justify-between items-center">
       {/* Logo */}
       <NavLink className="text-xl font-bold text-gray-900" to="/">
         RateAProperty

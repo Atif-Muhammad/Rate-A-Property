@@ -4,20 +4,23 @@ import { ImagePlus, Send, X } from "lucide-react";
 export function CommentInputBox({
   currentUser,
   initialText = "",
+  initialMedia = [], // Accept initial media as a prop
   onSendReply,
   onCancel,
 }) {
   const [replyText, setReplyText] = useState(initialText);
-  const [replyMedia, setReplyMedia] = useState([]);
+  const [replyMedia, setReplyMedia] = useState(initialMedia); // Initialize with existing media
 
-  // Update replyText when initialText changes
   useEffect(() => {
     setReplyText(initialText);
-  }, [initialText]);
+    setReplyMedia(initialMedia); // Update media when the initial media changes
+  }, [initialText, initialMedia]);
 
   const handleReplyFileUpload = (e) => {
     const files = Array.from(e.target.files);
-    setReplyMedia([...replyMedia, ...files]);
+    // Filter to make sure only valid file objects are added
+    const validFiles = files.filter((file) => file instanceof File);
+    setReplyMedia((prev) => [...prev, ...validFiles]);
   };
 
   const handleRemoveMedia = (index) => {
@@ -43,29 +46,37 @@ export function CommentInputBox({
       {/* Media Previews */}
       {replyMedia.length > 0 && (
         <div className="flex space-x-2 overflow-x-auto pb-1">
-          {replyMedia.map((file, index) => (
-            <div key={index} className="relative w-20 h-20 flex-shrink-0">
-              {file.type.startsWith("image/") ? (
-                <img
-                  src={URL.createObjectURL(file)}
-                  alt="preview"
-                  className="w-full h-full object-cover rounded"
-                />
-              ) : (
-                <video
-                  src={URL.createObjectURL(file)}
-                  className="w-full h-full object-cover rounded"
-                  controls
-                />
-              )}
-              <button
-                onClick={() => handleRemoveMedia(index)}
-                className="absolute -top-2 -right-2 bg-white rounded-full shadow p-1 hover:bg-gray-200"
-              >
-                <X size={14} />
-              </button>
-            </div>
-          ))}
+          {replyMedia.map((file, index) => {
+            // Ensure that file is a valid instance of File
+            if (file instanceof File) {
+              return (
+                <div key={index} className="relative w-20 h-20 flex-shrink-0">
+                  {file.type?.startsWith("image/") ? (
+                    <img
+                      src={URL.createObjectURL(file)}
+                      alt="preview"
+                      className="w-full h-full object-cover rounded"
+                    />
+                  ) : file.type?.startsWith("video/") ? (
+                    <video
+                      src={URL.createObjectURL(file)}
+                      className="w-full h-full object-cover rounded"
+                      controls
+                    />
+                  ) : null}
+                  <button
+                    onClick={() => handleRemoveMedia(index)}
+                    className="absolute -top-2 -right-2 bg-white rounded-full shadow p-1 hover:bg-gray-200"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              );
+            } else {
+              console.error("Invalid file object:", file);
+              return null; // Return nothing if file is invalid
+            }
+          })}
         </div>
       )}
 
