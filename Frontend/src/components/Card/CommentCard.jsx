@@ -32,7 +32,7 @@ function CommentCard(props) {
   const MAX_LENGTH = 200;
 
   const getUserDetails = async () => {
-    console.log(agreeOwner);
+    console.log("dasd",agreeOwner);
     // try {
     //   const res = await APIS.userWho();
     //   if (res.status === 200) {

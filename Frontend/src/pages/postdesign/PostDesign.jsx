@@ -17,6 +17,7 @@ const fetchPosts = async ({ pageParam = 1 }) => {
 };
 
 export const PostDesign = () => {
+  
   const {
     data,
     fetchNextPage,

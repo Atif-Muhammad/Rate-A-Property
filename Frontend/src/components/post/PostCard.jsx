@@ -9,6 +9,7 @@ import { arrayBufferToBase64 } from "../../ReUsables/arrayTobuffer";
 import PostSkeleton from "../skeletons/PostSkeleton";
 import DiscoverSkeleton from "../skeletons/DiscoverSkeleton";
 import { NewPost } from "../NewPost";
+import { useQuery } from "@tanstack/react-query";
 
 const PostCard = (props) => {
   const postId = props.postId;
@@ -22,23 +23,19 @@ const PostCard = (props) => {
   const [openPostModal, setOpenPostModal] = useState(false);
   const [editData, setEditData] = useState(null);
 
+  const {data: user} = useQuery({
+    queryKey: ["userWho"],
+    queryFn: async ()=>{
+      const res = await APIS.userWho();
+      setAgreeOwner(res.data.id);
+      console.log(res.data.id)
+      return res.data
+    }
+  })
 
-  const fetchPost = () => {
-    setLoading(true);
-    APIS.getSinglePost(postId)
-      .then((res) => {
-        // console.log(res);
-        setPost(res.data);
-        setLoading(false);
-        setAgrees(res.data.likes);
-        setDisagrees(res.data.disLikes);
-      })
-      .catch((err) => {
-        setLoading(false);
-        console.log(err);
-      });
-  };
+  
 
+  
   const postFromprop = () => {
     setPost(props.post);
     setAgrees(props.post.likes);
@@ -48,11 +45,9 @@ const PostCard = (props) => {
   useEffect(() => {
     // console.log("id:",props.postId)
     // console.log("post:",props.post)
-    postId ? fetchPost() : props.post ? postFromprop() : setPost({});
+    props.post && postFromprop()
     // console.log(post)
-    APIS.userWho()
-      .then((res) => setAgreeOwner(res.data.id))
-      .catch((err) => console.log(err));
+    
   }, []);
 
   useEffect(() => {}, [agrees, disagrees]);
@@ -115,11 +110,9 @@ const PostCard = (props) => {
       });
   };
 
-  
-
   return (
     <>
-      {!loading ? (
+      {
         post ? (
           <div className="bg-white shadow-md rounded-lg p-3.5  w-full lg:max-w-3xl border border-gray-200">
             <div className="flex items-center justify-between">
@@ -236,9 +229,7 @@ const PostCard = (props) => {
         ) : (
           <>Error Fetching post</>
         )
-      ) : (
-        <PostSkeleton />
-      )}
+      }
 
       <NewPost
         isOpen={openPostModal}
