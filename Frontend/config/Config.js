@@ -223,10 +223,10 @@ const delComment = async (commentId)=>{
 }
 
 
-const getcomments = async (postId) => {
+const getcomments = async ({postId, page, limit}) => {
   try {
     const response = await axios.get(
-      `${Baseurl}/posts/getComments?post=${postId}`,
+      `${Baseurl}/posts/getComments?post=${postId}&page=${page}&limit=${limit}`,
       { withCredentials: true }
     );
     return response;
@@ -294,14 +294,13 @@ const addReply = async (data) => {
   }
 }
 
-const getReplies = async (comntId)=>{
-  try {
-    const response = await axios.get(`${Baseurl}/posts/getReplies?comment=${comntId}`);
-    return response
-  } catch (error) {
-    return error
-  }
-}
+const getReplies = async ({ pageParam = 1, commentId }) => {
+  const response = await axios.get(
+    `${Baseurl}/posts/getReplies?comment=${commentId}&page=${pageParam}&limit=5`
+  );
+  return { data: response.data, nextPage: pageParam + 1, hasMore: response.data.length === 5 };
+};
+
 
 
 export const APIS = {

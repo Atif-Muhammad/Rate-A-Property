@@ -4,34 +4,28 @@ import { NavLink } from "react-router-dom";
 import { APIS } from "../../../config/Config";
 import { arrayBufferToBase64 } from "../../ReUsables/arrayTobuffer";
 import { NewPost } from "../../components/NewPost";
+import { useQuery } from "@tanstack/react-query";
 
 export const Header = () => {
-  const [user, setUser] = useState();
   const [loading, setLoading] = useState(true);
   // open the new post model
   const [isModalOpen, setIsModalOpen] = useState(false);
-  useEffect(() => {
-    APIS.userWho()
-      .then((res) => {
-        if (res.status === 200) {
-          APIS.getUser(res.data.id)
-            .then((res) => {
-              if (res.status === 200) {
-                setUser(res.data);
-                setLoading(false);
-              }
-            })
-            .catch((err) => {
-              setLoading(false);
-              console.log(err);
-            });
-        }
-      })
-      .catch((err) => {
-        console.log(err);
-        setLoading(false);
-      });
-  }, []);
+
+  const { data: currentUser = {}, isLoading } = useQuery({
+    queryKey: ["user"],
+    queryFn: async () => {
+      const who = await APIS.userWho();
+      const res = await APIS.getUser(who.data.id);
+      const user = res.data;
+      // console.log("user", res.data)
+      return {
+        id: user._id,
+        image: user.image,
+        user_name: user.user_name,
+        posts: user.posts || [],
+      };
+    },
+  });
 
   return (
     <header className="h-16 md:px-4 px-2  bg-white border-b border-gray-400  w-full sticky top-0 left-0 z-50 flex justify-between items-center">
@@ -58,9 +52,9 @@ export const Header = () => {
         <Search size={24} className="text-gray-700" />
       </NavLink>
       <div className="flex items-center gap-2 ">
-        {loading ? (
+        {isLoading ? (
           <>loading...</>
-        ) : user && user.image ? ( // Ensure user and image exist
+        ) : currentUser && currentUser.image ? ( // Ensure user and image exist
           <>
             {/* Button to Open Modal */}
             <button
@@ -78,8 +72,8 @@ export const Header = () => {
               <img
                 className="w-full h-full rounded-full object-cover border-2 border-white"
                 src={`data:${
-                  user.image.contentType
-                };base64,${arrayBufferToBase64(user.image.data.data)}`}
+                  currentUser.image.contentType
+                };base64,${arrayBufferToBase64(currentUser.image.data.data)}`}
                 alt="user profile"
               />
             </div>

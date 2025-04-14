@@ -74,7 +74,7 @@ const postController = {
         }
     },
     getPosts: async (req, res) => {
-        console.log(req.query); 
+        // console.log(req.query); 
         const page = parseInt(req.query.page);
         const limit = parseInt(req.query.limit);
         const skip = (page - 1) * limit;
@@ -94,7 +94,7 @@ const postController = {
                         { path: "disLikes" },
                     ],
                 })
-                
+
             // console.log(posts)
             const total = await post.countDocuments();
             console.log(`total: ${total} || fetched: ${posts.length}`)
@@ -603,9 +603,17 @@ const postController = {
 
     getComments: async (req, res) => {
         const postId = req.query.post;
+        const page = parseInt(req.query.page);
+        const limit = parseInt(req.query.limit);
+        const skip = (page - 1) * limit;
+        console.log(page, limit, skip)
+
         try {
             const comments = await comment
                 .find({ for_post: postId })
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit)
                 .populate("owner")
                 .populate("likes")
                 .populate("disLikes")
@@ -616,7 +624,7 @@ const postController = {
                         { path: "disLikes" },
                     ],
                 })
-                .sort({ createdAt: -1 });
+
 
             const updatedComments = comments.map(comment => {
                 const mediaUrls = comment.media
@@ -656,7 +664,10 @@ const postController = {
                 };
             });
 
-            res.send(updatedComments)
+            const total = await comment.countDocuments({ for_post: postId });
+            const hasMore = skip + comments.length < total;
+
+            res.status(200).json({ data: updatedComments, hasMore });
 
         } catch (error) {
             res.send(error);
@@ -900,20 +911,23 @@ const postController = {
     },
     getReplies: async (req, res) => {
         const comntId = req.query.comment;
+        const page = parseInt(req.query.page);
+        const limit = parseInt(req.query.limit);
+        const skip = (page - 1) * limit;
         try {
             const comments = await comment
                 .find({ for_post: comntId })
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit)
                 .populate("owner")
                 .populate("likes")
                 .populate("disLikes")
                 .populate({
                     path: "media",
-                    populate: [
-                        { path: "likes" },
-                        { path: "disLikes" },
-                    ],
-                })
-                .sort({ createdAt: -1 });
+                    populate: [{ path: "likes" }, { path: "disLikes" }],
+                });
+                
 
             const updatedComments = comments.map(comment => {
                 const mediaUrls = comment.media

@@ -1,5 +1,10 @@
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect, useRef } from "react";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  useInfiniteQuery,
+} from "@tanstack/react-query";
 import { Send, ImagePlus } from "lucide-react";
 import { useLocation, useParams } from "react-router-dom";
 import { APIS } from "../../config/Config";
@@ -7,44 +12,81 @@ import { arrayBufferToBase64 } from "../ReUsables/arrayTobuffer";
 import CommentCard from "./Card/CommentCard";
 import PostCard from "./post/PostCard";
 import CommentSkeleton from "./skeletons/CommentSkeleton";
+import Loader from "../Loaders/Loader";
+import DiscoverSkeleton from "./skeletons/DiscoverSkeleton";
 
 const CommentSection = () => {
   const location = useLocation();
   const { postId } = useParams();
   const post = location.state?.post;
+  const currentUser = location.state?.currentUser;
   const queryClient = useQueryClient();
 
   const [newComment, setNewComment] = useState("");
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [activeReplyCommentId, setActiveReplyCommentId] = useState(null);
 
-  // ================== Query: User ==================
-  const { data: currentUser } = useQuery({
-    queryKey: ["currentUser"],
-    queryFn: async () => {
-      const who = await APIS.userWho();
-      const res = await APIS.getUser(who.data.id);
-      const user = res.data;
-      return {
-        owner: user.user_name,
-        id: user._id,
-        image: user.image,
-        user_name: user.user_name,
-        posts: user.posts || [],
-      };
-    },
-  });
+  const scrollContainerRef = useRef(null);
 
-  // ================== Query: Comments ==================
-  const { data: comments = [], isLoading } = useQuery({
+  const LIMIT = 10;
+
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+  } = useInfiniteQuery({
     queryKey: ["comments", postId],
-    queryFn: async () => {
-      const res = await APIS.getcomments(postId);
+    queryFn: async ({ pageParam = 1 }) => {
+      const res = await APIS.getcomments({
+        postId,
+        page: pageParam,
+        limit: LIMIT,
+      });
+      // console.log(res.data)
       return res.data;
     },
+    getNextPageParam: (lastPage, allPages) => {
+      if (lastPage.hasMore) {
+        return allPages.length + 1;
+      }
+      return undefined;
+    },
   });
 
-  // ================== Mutation: Add Comment ==================
+  useEffect(() => {
+    const scrollContainer = scrollContainerRef.current;
+
+    const handleScroll = () => {
+      if (!scrollContainer) return;
+
+      const scrollTop = scrollContainer.scrollTop;
+      const containerHeight = scrollContainer.clientHeight;
+      const contentHeight = scrollContainer.scrollHeight;
+
+      if (
+        scrollTop + containerHeight >= contentHeight - 100 &&
+        hasNextPage &&
+        !isFetchingNextPage
+      ) {
+        fetchNextPage();
+      }
+    };
+
+    if (scrollContainer) {
+      scrollContainer.addEventListener("scroll", handleScroll);
+    }
+
+    window.addEventListener("scroll", handleScroll);
+    return () => {
+      if (scrollContainer) {
+        scrollContainer.removeEventListener("scroll", handleScroll);
+      }
+    };
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+
   const addCommentMutation = useMutation({
     mutationFn: async (formData) => {
       return await APIS.addComment(formData);
@@ -56,7 +98,6 @@ const CommentSection = () => {
     },
   });
 
-  // ================== Handlers ==================
   const handleFileUpload = (event) => {
     const files = Array.from(event.target.files);
     if (files.length > 0) {
@@ -71,6 +112,28 @@ const CommentSection = () => {
   const handleAddComment = () => {
     if (!newComment.trim() && selectedFiles.length === 0) return;
 
+    const newCommentObj = {
+      comment: newComment,
+      owner: currentUser,
+      for_post: postId,
+      createdAt: new Date().toISOString(),
+    };
+    // console.log(newCommentObj)
+    queryClient.setQueryData(["comments", postId], (old) => {
+      if(!old) return old;
+
+      return {
+        ...old,
+        pages: [
+          {
+            ...old.pages[0],
+            data: [newCommentObj, ...old.pages[0].data]
+          },
+          ...old.pages.slice(1)
+        ]
+      }
+    });
+
     const formData = new FormData();
     formData.append("owner", currentUser.id);
     formData.append("content", newComment);
@@ -81,30 +144,34 @@ const CommentSection = () => {
   };
 
   return (
-    <div className="flex flex-col lg:flex-row items-start w-full justify-center lg:gap-3 gap-6 p-4">
+    <div className="flex flex-col lg:flex-row items-start w-full h-full justify-center lg:gap-3 gap-6 p-3 overflow-hidden">
       {/* Left Side - Post Card */}
       <div className="w-full lg:w-1/2">
-        <PostCard post={post} />
+        <PostCard post={post} currentUser={currentUser} />
       </div>
 
       {/* Right Side - Comments Section */}
-      <div className="w-full lg:w-1/2 bg-white shadow-md rounded-lg p-4 flex flex-col h-full lg:h-[90vh]">
-        <h2 className="text-lg font-semibold mb-3 border-b pb-2 text-center">Comments</h2>
+      <div className="w-full lg:w-1/2 bg-white shadow-md rounded-lg p-4 flex flex-col h-full overflow-auto">
+        <h2 className="text-lg font-semibold mb-3 border-b pb-2 text-center">
+          Comments
+        </h2>
 
-        <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2 lg:max-h-[65vh] h-full">
-          {isLoading ? (
-            <CommentSkeleton />
-          ) : (
-            comments.map((comment) => (
+        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2 lg:max-h-[65vh] h-full ">
+          {/* {console.log("current user:", data)} */}
+
+          {data?.pages
+            .flatMap((page) => page.data)
+            ?.map((comment) => (
               <CommentCard
                 key={comment._id}
                 comment={comment}
-                agreeOwner={currentUser}
+                currentUser={currentUser}
                 activeReplyCommentId={activeReplyCommentId}
                 setActiveReplyCommentId={setActiveReplyCommentId}
               />
-            ))
-          )}
+            ))}
+          {isLoading && !isFetchingNextPage && <CommentSkeleton />}
+          {!isLoading && isFetchingNextPage && <Loader />}
         </div>
 
         {/* Selected File Previews */}
@@ -112,7 +179,10 @@ const CommentSection = () => {
           <div className="bg-gray-300 w-full p-2 rounded-t-lg overflow-x-auto">
             <div className="flex gap-2 flex-nowrap">
               {selectedFiles.map((file, index) => (
-                <div key={index} className="relative w-24 h-24 bg-gray-200 rounded-md overflow-hidden flex-shrink-0">
+                <div
+                  key={index}
+                  className="relative w-24 h-24 bg-gray-200 rounded-md overflow-hidden flex-shrink-0"
+                >
                   <button
                     className="z-10 absolute top-1 right-1 bg-black text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
                     onClick={() => removeFile(index)}
@@ -120,9 +190,17 @@ const CommentSection = () => {
                     ✕
                   </button>
                   {file.type.startsWith("image") ? (
-                    <img src={URL.createObjectURL(file)} alt="Preview" className="w-full h-full object-cover" />
+                    <img
+                      src={URL.createObjectURL(file)}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                    />
                   ) : file.type.startsWith("video") ? (
-                    <video src={URL.createObjectURL(file)} className="w-full h-full object-cover" controls />
+                    <video
+                      src={URL.createObjectURL(file)}
+                      className="w-full h-full object-cover"
+                      controls
+                    />
                   ) : null}
                 </div>
               ))}

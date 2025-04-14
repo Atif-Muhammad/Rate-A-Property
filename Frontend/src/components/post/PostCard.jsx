@@ -9,33 +9,46 @@ import { arrayBufferToBase64 } from "../../ReUsables/arrayTobuffer";
 import PostSkeleton from "../skeletons/PostSkeleton";
 import DiscoverSkeleton from "../skeletons/DiscoverSkeleton";
 import { NewPost } from "../NewPost";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 const PostCard = (props) => {
   const postId = props.postId;
 
   const [post, setPost] = useState({});
+  // console.log("user in  post card:", props.currentUser)
 
-  const [agreeOwner, setAgreeOwner] = useState("");
+  // const [agreeOwner, setAgreeOwner] = useState("");
+  const agreeOwner = props.currentUser?.id;
+
   const [agrees, setAgrees] = useState([]);
   const [disagrees, setDisagrees] = useState([]);
   const [loading, setLoading] = useState(false);
   const [openPostModal, setOpenPostModal] = useState(false);
   const [editData, setEditData] = useState(null);
 
-  const {data: user} = useQuery({
-    queryKey: ["userWho"],
-    queryFn: async ()=>{
-      const res = await APIS.userWho();
-      setAgreeOwner(res.data.id);
-      console.log(res.data.id)
-      return res.data
-    }
-  })
+  const queryClient = useQueryClient();
 
-  
+  const { mutate: deletePost } = useMutation({
+    mutationFn: (postId) => APIS.delPost(postId),
+    onSuccess: (_, postId) => {
+      // Update cache: remove deleted post
+      queryClient.setQueryData(["posts"], (oldData) => {
+        if (!oldData) return oldData;
+        return {
+          ...oldData,
+          pages: oldData.pages.map((page) => ({
+            ...page,
+            data: page.data.filter((post) => post._id !== postId),
+          })),
+        };
+      });
+    },
+    onError: (error) => {
+      console.error("Error deleting post:", error);
+    },
+  });
 
-  
+      
   const postFromprop = () => {
     setPost(props.post);
     setAgrees(props.post.likes);
@@ -101,13 +114,7 @@ const PostCard = (props) => {
   };
 
   const handlePostDel = (postId) => {
-    APIS.delPost(postId)
-      .then((res) => {
-        console.log(res.data);
-      })
-      .catch((err) => {
-        console.log(err);
-      });
+    deletePost(postId)
   };
 
   return (
@@ -209,7 +216,7 @@ const PostCard = (props) => {
 
               <NavLink
                 to={`/post/${post._id}`}
-                state={{ post }}
+                state={{ post, currentUser: props.currentUser }}
                 className="flex items-center md:gap-x-2 hover:text-gray-700 transition"
               >
                 <MessagesSquare size={22} />

@@ -12,51 +12,151 @@ import MediaGrid from "../post/MediaGrid";
 import { CommentInputBox } from "./CommentInputBox";
 import { CommentOptions } from "./CommentOption";
 import CommentSkeleton from "../skeletons/CommentSkeleton";
+import {
+  QueryClient,
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 
 function CommentCard(props) {
   const [agrees, setAgrees] = useState(props.comment.likes);
   const [disagrees, setDisagrees] = useState(props.comment.disLikes);
-  const agreeOwner = props.agreeOwner;
+  const currentUser = props.currentUser;
+  const agreeOwner = props.currentUser.id;
+  // console.log(currentUser)
   const isTemp = props.comment?._id?.startsWith("temp");
   const [isExpanded, setIsExpanded] = useState(false);
   // const [showReplyBox, setShowReplyBox] = useState(false);
   const showReplyBox = props.activeReplyCommentId === props.comment._id;
 
-  const [replies, setReplies] = useState(props.comment.comments || []);
-  const [currentUser, setCurrentUser] = useState({});
+  // const [replies, setReplies] = useState(props.comment.comments || []);
+
+  // const [currentUser, setCurrentUser] = useState({});
   const [showReplies, setShowReplies] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(props.comment.comment);
-  const [loading, setLoading] = useState(false);
+  const [visibleReplyPages, setVisibleReplyPages] = useState(1);
 
   const MAX_LENGTH = 200;
 
-  const getUserDetails = async () => {
-    console.log("dasd",agreeOwner);
-    // try {
-    //   const res = await APIS.userWho();
-    //   if (res.status === 200) {
-    //     const userRes = await APIS.getUser(res.data.id);
-    //     // console.log(userRes)
-    //     if (userRes.status === 200) {
-    //       const details = {
-    //         owner: userRes.data.user_name,
-    //         id: userRes.data._id,
-    //         image: userRes.data.image,
-    //         user_name: userRes.data.user_name,
-    //         posts: userRes.data.posts || [],
-    //       };
-    //       setCurrentUser(details);
-    //     }
-    //   }
-    // } catch (err) {
-    //   console.error(err);
-    // }
-  };
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    getUserDetails();
-  }, []);
+  const { mutate: deleteComment } = useMutation({
+    mutationFn: async (commentId) => await APIS.delComment(commentId),
+
+    // Optimistically update the UI before the request finishes
+    onMutate: async (commentId) => {
+      await queryClient.cancelQueries(["comments", props.comment?.for_post]);
+
+      const previousData = queryClient.getQueryData([
+        "comments",
+        props.comment?.for_post,
+      ]);
+
+      queryClient.setQueryData(
+        ["comments", props.comment?.for_post],
+        (oldData) => {
+          if (!oldData) return oldData;
+          console.log(oldData);
+          return {
+            ...oldData,
+            pages: oldData.pages.map((page) => ({
+              ...page,
+              comments: page.data?.filter(
+                (comment) => comment._id !== commentId
+              ),
+            })),
+          };
+        }
+      );
+
+      return { previousData };
+    },
+    // Rollback if there's an error
+    onError: (err, commentId, context) => {
+      if (context?.previousData) {
+        queryClient.setQueryData(
+          ["comments", props.comment?.for_post],
+          context.previousData
+        );
+      }
+      console.error("Error deleting comment:", err);
+    },
+
+    // Optionally refetch to ensure server-state consistency
+    onSettled: () => {
+      queryClient.invalidateQueries(["comments", props.comment?.for_post]);
+    },
+  });
+
+  const {
+    data: replies = [],
+    isLoading: loadingReplies,
+    fetchNextPage,
+    hasNextPage,
+    refetch: refetchReplies,
+  } = useInfiniteQuery({
+    queryKey: ["replies", props.comment._id],
+    queryFn: async ({ pageParam = 1 }) => {
+      const res = await APIS.getReplies({
+        pageParam,
+        commentId: props.comment._id,
+      });
+      // console.log(res.data)
+      return {
+        data: res.data,
+        nextPage: pageParam + 1,
+        hasMore: res.data.length === 5,
+      };
+    },
+    getNextPageParam: (lastPage) =>
+      lastPage.hasMore ? lastPage.nextPage : undefined,
+    enabled: false,
+  });
+
+  const sendReplyMutation = useMutation({
+    mutationFn: async ({ formData, tempId }) => {
+      const res = await APIS.addReply(formData);
+      return { reply: res.data, tempId };
+    },
+    onSuccess: ({ reply, tempId }) => {
+      queryClient.setQueryData(["replies", props.comment._id], (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          pages: old.pages.map((page, idx) => {
+            if (idx === 0) {
+              return {
+                ...page,
+                data: page.data.map((r) => (r._id === tempId ? reply : r)),
+              };
+            }
+            return page;
+          }),
+        };
+      });
+    },
+
+    onError: (_err, { tempId }) => {
+      queryClient.setQueryData(["replies", props.comment._id], (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          pages: old.pages.map((page, idx) => {
+            if (idx === 0) {
+              return {
+                ...page,
+                data: page.data.filter((reply) => reply._id !== tempId),
+              };
+            }
+            return page;
+          }),
+        };
+      });
+    },
+  });
 
   const handleEditComment = () => {
     setIsEditing(true);
@@ -84,26 +184,6 @@ function CommentCard(props) {
     setAgrees(props.comment.likes);
     setDisagrees(props.comment.disLikes);
   }, [props.comment.likes, props.comment.disLikes]);
-
-  const getReplies = async (cmntId) => {
-    setLoading(true);
-    await APIS.getReplies(cmntId)
-      .then((res) => {
-        if (res.status === 200) {
-          // console.log("replies:", res.data)
-          setReplies(res.data);
-          setLoading(false);
-        }
-      })
-      .catch((err) => {
-        console.log(err);
-        setLoading(false);
-      });
-  };
-
-  useEffect(() => {
-    // getReplies(props.comment._id);
-  }, []);
 
   const handleAgree = async () => {
     if (isTemp) return;
@@ -139,8 +219,13 @@ function CommentCard(props) {
     }
   };
 
-  const handleSendReply = async (text, media) => {
+  const handleSendReply = (text, media) => {
     if (!text.trim() && media.length === 0) return;
+
+    console.log(text)
+    console.log(media)
+    console.log(props.comment._id)
+
     const tempId = `temp-${Date.now()}`;
 
     const mediaPreviews = media.map((file) => {
@@ -175,9 +260,23 @@ function CommentCard(props) {
       media: mediaPreviews,
     };
 
-    // Add reply and ensure replies are visible
-    setReplies((prevReplies) => [newReplyData, ...prevReplies]);
-    setShowReplies(true); // Show replies immediately
+    // console.log(newReplyData)
+
+    queryClient.setQueryData(["replies", props.comment._id], (old) => {
+      if (!old) return;
+      return {
+        ...old,
+        pages: [
+          {
+            ...old.pages[0],
+            data: [newReplyData, ...old.pages[0].data],
+          },
+          ...old.pages.slice(1),
+        ],
+      };
+    });
+
+    setShowReplies(true);
 
     const formData = new FormData();
     formData.append("owner", currentUser?.id);
@@ -185,33 +284,16 @@ function CommentCard(props) {
     formData.append("for_post", props.comment._id);
     media.forEach((file) => formData.append("files", file));
 
-    await APIS.addReply(formData)
-      .then((res) => {
-        if (res.status === 200) {
-          setReplies((prevReplies) =>
-            prevReplies.map((reply) =>
-              reply._id === tempId ? res.data : reply
-            )
-          );
-        }
-      })
-      .catch((err) => {
-        console.log(err);
-        setReplies((prevReplies) =>
-          prevReplies.filter((reply) => reply._id !== tempId)
-        );
-      });
+    sendReplyMutation.mutate({ formData, tempId });
   };
 
   const handleCommentDel = async (commentId) => {
-    APIS.delComment(commentId)
-      .then((res) => {
-        console.log(res.data);
-      })
-      .catch((err) => {
-        console.log(err);
-      });
+    deleteComment(commentId);
   };
+
+  const totalPagesInCache = replies?.pages?.length || 0;
+  const shouldShowLoadMore =
+    visibleReplyPages < totalPagesInCache || hasNextPage;
 
   return (
     <>
@@ -288,7 +370,7 @@ function CommentCard(props) {
               <button
                 onClick={() =>
                   props.setActiveReplyCommentId(
-                    showReplyBox ? null : props.comment._id
+                    showReplyBox ? null : props.comment?._id
                   )
                 }
                 className="flex items-center space-x-1 hover:text-blue-600"
@@ -297,7 +379,7 @@ function CommentCard(props) {
               </button>
             </div>
           </div>
-          {agreeOwner.id == props.comment.owner._id && (
+          {currentUser.id == props.comment.owner?._id && (
             <CommentOptions
               onDelete={() => {
                 handleCommentDel(props.comment._id);
@@ -308,17 +390,18 @@ function CommentCard(props) {
         </div>
 
         {/* Replies */}
-        {replies?.length > 0 && (
+        {props.comment.comments?.length > 0 && (
           <div className="w-full mt-4 pl-8 relative">
             {!showReplies ? (
               <button
                 onClick={() => {
-                  getReplies(props.comment?._id);
+                  setVisibleReplyPages(1);
+                  if (!showReplies) refetchReplies();
                   setShowReplies(true);
                 }}
                 className="text-blue-600 text-sm hover:underline cursor-pointer"
               >
-                View Replies ({replies?.length})
+                View Replies ({props.comment.comments?.length})
               </button>
             ) : (
               <>
@@ -328,19 +411,43 @@ function CommentCard(props) {
                 >
                   Hide Replies
                 </button>
-                {/* Vertical Line */}
+
                 <div className="absolute top-0 left-4 h-full border-l-2 border-gray-300"></div>
 
                 <div className="space-y-3 pl-6">
-                  {!loading ? (
-                    replies?.map((reply) => (
-                      <CommentCard
-                        key={reply._id}
-                        comment={reply}
-                        agreeOwner={props.agreeOwner}
-                        currentUser={props.currentUser}
-                      />
-                    ))
+                  {shouldShowLoadMore && (
+                    <div className="flex justify-start">
+                      <button
+                        onClick={() => {
+                          if (hasNextPage) {
+                            fetchNextPage().then(() =>
+                              setVisibleReplyPages((prev) => prev + 1)
+                            );
+                          } else {
+                            setVisibleReplyPages((prev) => prev + 1);
+                          }
+                        }}
+                        className="text-sm text-blue-700 font-medium hover:underline px-2 py-1"
+                        disabled={loadingReplies}
+                      >
+                        {loadingReplies ? "Loading..." : "Load More Replies"}
+                      </button>
+                    </div>
+                  )}
+
+                  {!loadingReplies ? (
+                    replies?.pages
+                      .slice(0, visibleReplyPages)
+                      .flatMap((page) =>
+                        page.data.map((reply) => (
+                          <CommentCard
+                            key={reply._id}
+                            comment={reply}
+                            agreeOwner={props.agreeOwner}
+                            currentUser={props.currentUser}
+                          />
+                        ))
+                      )
                   ) : (
                     <CommentSkeleton />
                   )}
@@ -352,9 +459,9 @@ function CommentCard(props) {
 
         {(showReplyBox || isEditing) && (
           <CommentInputBox
-            currentUser={props.agreeOwner}
+            currentUser={props.currentUser}
             initialText={isEditing ? editText : ""}
-            initialMedia={props.comment.media} // Pass existing media if it's being edited
+            initialMedia={isEditing ? props.comment.media : []} // Pass existing media if it's being edited ||||| error because it is passing the post's images to the reply's input box, becaue you have used the same input box for them both.
             onSendReply={(text, media) => {
               if (isEditing) {
                 setEditText(text);

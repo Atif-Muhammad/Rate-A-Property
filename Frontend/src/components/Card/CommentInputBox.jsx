@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { ImagePlus, Send, X } from "lucide-react";
+import { arrayBufferToBase64 } from "../../ReUsables/arrayTobuffer";
 
 export function CommentInputBox({
   currentUser,
@@ -44,9 +45,9 @@ export function CommentInputBox({
   return (
     <div className="flex flex-col w-full mt-3 space-y-2">
       {/* Media Previews */}
-      {replyMedia.length > 0 && (
+      {replyMedia?.length > 0 && (
         <div className="flex space-x-2 overflow-x-auto pb-1">
-          {replyMedia.map((file, index) => {
+          {replyMedia?.map((file, index) => {
             // Ensure that file is a valid instance of File
             if (file instanceof File) {
               return (
@@ -84,7 +85,9 @@ export function CommentInputBox({
       <div className="flex items-center space-x-2 w-full">
         {/* User Avatar */}
         <img
-          src={currentUser.image?.data?.data}
+          src={`data:${
+            currentUser?.image?.contentType
+          };base64,${arrayBufferToBase64(currentUser?.image?.data?.data)}`}
           alt="user-avatar"
           className="w-9 h-9 rounded-full"
         />
