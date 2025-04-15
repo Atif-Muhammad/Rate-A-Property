@@ -79,16 +79,16 @@ const postController = {
             const postId = req.params.id;
             const { owner, location, description } = req.body;
             const ownerId = new mongoose.Types.ObjectId(owner);
-
+            // get the post to check if the update already exists or not.. if yes then stip that for update
             const postDoc = await post.findById(postId).populate("media");
             if (!postDoc) return res.status(404).json({ error: "Post not found" });
 
-            // Detect file changes
-            const uploadedFileNames = req.fileNames || []; // from your multer setup
+            // Detect file changes/get file names and then check them with existing files
+            const uploadedFileNames = req.fileNames || []; 
             const existingFileNames = postDoc.media.map((m) => m.identifier.filename);
 
-            const addedFiles = uploadedFileNames.filter(f => !existingFileNames.includes(f));
-            const removedFiles = postDoc.media.filter(m => !uploadedFileNames.includes(m.identifier.filename));
+            const addedFiles = uploadedFileNames?.filter(f => !existingFileNames.includes(f));
+            const removedFiles = postDoc.media?.filter(m => !uploadedFileNames.includes(m.identifier.filename));
 
             // Build file data for added files
             const addedFileData = addedFiles.map(filename => {
