@@ -46,6 +46,7 @@ export const PostDesign = () => {
     queryFn: fetchPosts,
     getNextPageParam: (lastPage) =>
       lastPage.hasMore ? lastPage.nextPage : undefined,
+    enabled: true
   });
 
   // Infinite scroll

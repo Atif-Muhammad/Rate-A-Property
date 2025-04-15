@@ -10,6 +10,9 @@ router.post(
   upload_disk.array("files"),
   postController.createPost
 );
+
+router.put("/updatePost/:id", upload_disk.array("files"), postController.updatePost);
+
 router.get("/getPosts", postController.getPosts);
 router.get("/getSinglePost", postController.getSingPost);
 

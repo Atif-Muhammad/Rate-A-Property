@@ -7,7 +7,8 @@ const comment = require("../models/commentModel")
 const checkUser = require("./checkUser");
 const mongoose = require("mongoose");
 // const {gfs} = require("../app")
-const path = require("path")
+const fs = require("fs");
+const path = require("path");
 const { upload_disk } = require("../multerConfig/multerConfig")
 const deleteCommentsRecursively = require("./deleteComments")
 
@@ -72,6 +73,89 @@ const postController = {
             console.error("Error Creating Post:", error);
             res.status(500).json({ error: "Internal Server Error", details: error.message });
         }
+    },
+    updatePost: async (req, res) => {
+        try {
+            const postId = req.params.id;
+            const { owner, location, description } = req.body;
+            const ownerId = new mongoose.Types.ObjectId(owner);
+
+            const postDoc = await post.findById(postId).populate("media");
+            if (!postDoc) return res.status(404).json({ error: "Post not found" });
+
+            // Detect file changes
+            const uploadedFileNames = req.fileNames || []; // from your multer setup
+            const existingFileNames = postDoc.media.map((m) => m.identifier.filename);
+
+            const addedFiles = uploadedFileNames.filter(f => !existingFileNames.includes(f));
+            const removedFiles = postDoc.media.filter(m => !uploadedFileNames.includes(m.identifier.filename));
+
+            // Build file data for added files
+            const addedFileData = addedFiles.map(filename => {
+                const ext = path.extname(filename);
+                const type = ext === ".mp4" || ext === ".webm" || ext === ".MOV" ? "video" : "image";
+
+                return {
+                    filename: filename.toString(),
+                    type: type.toString(),
+                    path: `/uploads/${owner}/${filename}`,
+                };
+            });
+
+            let mediaChanged = addedFiles.length > 0 || removedFiles.length > 0;
+            let contentChanged =
+                postDoc.location !== location || postDoc.description !== description;
+
+            // Only proceed if something changed
+            if (!mediaChanged && !contentChanged) {
+                return res.status(200).json({ message: "No changes detected" });
+            }
+
+            // Update post fields if changed
+            if (contentChanged) {
+                postDoc.location = location;
+                postDoc.description = description;
+                await postDoc.save();
+            }
+
+            // Handle media updates
+            if (mediaChanged) {
+                // Delete removed media from DB and disk
+                for (const mediaDoc of removedFiles) {
+                    const filePath = path.join(__dirname, "..", mediaDoc.identifier.path);
+                    fs.unlink(filePath, (err) => {
+                        if (err) console.error("Failed to delete file:", filePath);
+                    });
+
+                    await media.findByIdAndDelete(mediaDoc._id);
+                    await post.updateOne({ _id: postId }, { $pull: { media: mediaDoc._id } });
+                }
+
+                // Add new media entries
+                const newMediaDocs = await Promise.all(
+                    addedFileData.map((file) => {
+                        const mediaDoc = new media({
+                            identifier: file,
+                            owner: ownerId,
+                            of_post: postId,
+                            likes: [],
+                            disLikes: [],
+                        });
+                        return mediaDoc.save();
+                    })
+                );
+
+                const newMediaIds = newMediaDocs.map((m) => m._id);
+                await post.updateOne({ _id: postId }, { $push: { media: { $each: newMediaIds } } });
+            }
+
+            return res.status(200).json({ message: "Post updated successfully" });
+
+        } catch (error) {
+            console.error("Error Updating Post:", error);
+            res.status(500).json({ error: "Internal Server Error", details: error.message });
+        }
+
     },
     getPosts: async (req, res) => {
         // console.log(req.query); 
@@ -593,7 +677,7 @@ const postController = {
             await disLike.deleteMany({ for_post: commentId });
             // remove post model
             await comment.deleteOne({ _id: commentId });
-            await comment.updateOne({comments : commentId }, {$pull: {comments: commentId}})
+            await comment.updateOne({ comments: commentId }, { $pull: { comments: commentId } })
             await user.updateOne({ _id: userDets.id }, { $pull: { posts: commentId } });
             res.send("post deleted");
 
@@ -929,7 +1013,7 @@ const postController = {
                     path: "media",
                     populate: [{ path: "likes" }, { path: "disLikes" }],
                 });
-                
+
 
             const updatedComments = comments.map(comment => {
                 const mediaUrls = comment.media

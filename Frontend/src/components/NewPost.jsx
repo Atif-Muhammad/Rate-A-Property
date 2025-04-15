@@ -4,6 +4,9 @@ import { APIS } from "../../config/Config";
 import { arrayBufferToBase64 } from "../ReUsables/arrayTobuffer";
 import { useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {useCreatePost, useUpdatePost} from '../hooks/ReactQuery.js'
+
 
 export const NewPost = ({
   isOpen,
@@ -15,24 +18,29 @@ export const NewPost = ({
   const fileInputRef = useRef(null);
   const [selectedMedia, setSelectedMedia] = useState([]);
   const [location, setLocation] = useState("Select Location");
-  const [user, setUser] = useState({});
   const [isPosting, setIsPosting] = useState(false);
   const navigate = useNavigate();
 
   const isEdit = !!editPostData;
 
-  useEffect(() => {
-    // Set user data
-    APIS.userWho()
-      .then((res) => {
-        if (res.status === 200) {
-          APIS.getUser(res.data.id)
-            .then((res) => setUser(res.data))
-            .catch((err) => console.log(err));
-        }
-      })
-      .catch((err) => console.log(err));
-  }, []);
+  const createPostMutation = useCreatePost();
+  const updatePostMutation = useUpdatePost();
+
+  const { data: user = {}, isLoading } = useQuery({
+    queryKey: ["user"],
+    queryFn: async () => {
+      const who = await APIS.userWho();
+      const res = await APIS.getUser(who.data.id);
+      const user = res.data;
+      // console.log("user", res.data)
+      return {
+        id: user._id,
+        image: user.image,
+        user_name: user.user_name,
+        posts: user.posts || [],
+      };
+    },
+  });
 
   useEffect(() => {
     if (isEdit) {
@@ -71,7 +79,8 @@ export const NewPost = ({
   const handleSubmit = () => {
     setIsPosting(true);
     const formData = new FormData();
-    formData.append("owner", user._id);
+    // console.log(user)
+    formData.append("owner", user.id);
     formData.append("description", textRef.current?.value);
     formData.append("location", location);
 
@@ -83,23 +92,28 @@ export const NewPost = ({
     });
 
     if (isEdit) {
-      // Call update API
-      APIS.updatePost(editPostData._id, formData)
-        .then((res) => {
-          onPostUpdated?.(); // Refresh posts if needed
-          onClose();
-        })
-        .catch((err) => console.log(err))
-        .finally(() => setIsPosting(false));
+      updatePostMutation.mutate(
+        { postId: editPostData._id, formData },
+        {
+          onSuccess: () => {
+            onPostUpdated?.();
+            onClose();
+          },
+          onError: (err) => console.log(err),
+          onSettled: () => setIsPosting(false),
+        }
+      );
     } else {
-      // Create new post
-      APIS.createPost(formData)
-        .then((res) => {
+      createPostMutation.mutate(formData, {
+        onSuccess: () => {
           navigate("/");
           onClose();
-        })
-        .catch((err) => console.log(err))
-        .finally(() => setIsPosting(false));
+        },
+        onError: (err) => console.log(err),
+        onSettled: () => {
+          setIsPosting(false)
+        },
+      });
     }
   };
 

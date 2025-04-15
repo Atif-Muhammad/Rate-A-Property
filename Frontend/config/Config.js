@@ -69,6 +69,19 @@ const createPost = async (data) => {
   }
 };
 
+const updatePost = async (postId, formData)=>{
+  // console.log(postId,formData)
+  try {
+    const response = await axios.put(`${Baseurl}/posts/updatePost/${postId}`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+      withCredentials: true,
+    })
+    return response
+  } catch (error) {
+    return error
+  }
+}
+
 const delPost = async(postId)=>{
   try {
     const response = await axios.post(`${Baseurl}/posts/delPost?postId=${postId}`, {}, {withCredentials: true});
@@ -99,6 +112,7 @@ const getSinglePost = async (post_id) => {
     return error;
   }
 };
+
 
 const like = async (postId) => {
   try {
@@ -310,6 +324,7 @@ export const APIS = {
   getUser,
   logout,
   createPost,
+  updatePost,
   getPosts,
   delPost,
   getSinglePost,
