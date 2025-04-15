@@ -151,27 +151,39 @@ const CommentSection = () => {
       </div>
 
       {/* Right Side - Comments Section */}
-      <div className="w-full lg:w-1/2 bg-white shadow-md rounded-lg p-4 flex flex-col h-full overflow-auto">
+      <div className="w-full lg:w-1/2 bg-white shadow-md rounded-lg p-4 flex flex-col h-[85vh] overflow-auto">
         <h2 className="text-lg font-semibold mb-3 border-b pb-2 text-center">
           Comments
         </h2>
 
-        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2 lg:max-h-[65vh] h-full ">
-          {/* {console.log("current user:", data)} */}
-
-          {data?.pages
-            .flatMap((page) => page.data)
-            ?.map((comment) => (
-              <CommentCard
-                key={comment._id}
-                comment={comment}
-                currentUser={currentUser}
-                activeReplyCommentId={activeReplyCommentId}
-                setActiveReplyCommentId={setActiveReplyCommentId}
-              />
-            ))}
-          {isLoading && !isFetchingNextPage && <CommentSkeleton />}
-          {!isLoading && isFetchingNextPage && <Loader />}
+        <div
+          ref={scrollContainerRef}
+          className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2 lg:max-h-[65vh] h-full "
+        >
+          {isLoading && !isFetchingNextPage ? (
+            <CommentSkeleton />
+          ) : (
+            <>
+              {data?.pages?.flatMap((page) => page.data).length === 0 ? (
+                <div className="flex items-center justify-center h-full text-gray-500 font-medium">
+                  No comments yet.
+                </div>
+              ) : (
+                data?.pages
+                  .flatMap((page) => page.data)
+                  .map((comment) => (
+                    <CommentCard
+                      key={comment._id}
+                      comment={comment}
+                      currentUser={currentUser}
+                      activeReplyCommentId={activeReplyCommentId}
+                      setActiveReplyCommentId={setActiveReplyCommentId}
+                    />
+                  ))
+              )}
+              {!isLoading && isFetchingNextPage && <Loader />}
+            </>
+          )}
         </div>
 
         {/* Selected File Previews */}

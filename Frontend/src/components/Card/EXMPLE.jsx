@@ -19,6 +19,7 @@ function CommentCard(props) {
   const [disagrees, setDisagrees] = useState(props.comment.disLikes);
   const currentUser = props.currentUser;
   const agreeOwner = props.currentUser.id;
+
   const isTemp = props.comment?._id?.startsWith("temp");
   const [isExpanded, setIsExpanded] = useState(false);
   const [localActiveReplyCommentId, setLocalActiveReplyCommentId] =
@@ -96,6 +97,7 @@ function CommentCard(props) {
         pageParam,
         commentId: props.comment._id,
       });
+      // console.log(res.data)
       return {
         data: res.data,
         nextPage: pageParam + 1,
@@ -104,7 +106,7 @@ function CommentCard(props) {
     },
     getNextPageParam: (lastPage) =>
       lastPage.hasMore ? lastPage.nextPage : undefined,
-    enabled: props.comment.comments?.length > 0, // Enable if there are replies
+    enabled: false,
   });
 
   const sendReplyMutation = useMutation({
@@ -213,6 +215,10 @@ function CommentCard(props) {
   const handleSendReply = (text, media) => {
     if (!text.trim() && media.length === 0) return;
 
+    console.log(text);
+    console.log(media);
+    console.log(props.comment._id);
+
     const tempId = `temp-${Date.now()}`;
 
     const mediaPreviews = media.map((file) => {
@@ -247,46 +253,23 @@ function CommentCard(props) {
       media: mediaPreviews,
     };
 
-    // Enable replies display if it's the first reply
-    if (props.comment.comments?.length === 0) {
-      setShowReplies(true);
-      // Force the replies query to be enabled
-      queryClient.setQueryData(["replies", props.comment._id], {
+    // console.log(newReplyData)
+
+    queryClient.setQueryData(["replies", props.comment._id], (old) => {
+      if (!old) return;
+      return {
+        ...old,
         pages: [
           {
-            data: [newReplyData],
-            nextPage: 2,
-            hasMore: false,
+            ...old.pages[0],
+            data: [newReplyData, ...old.pages[0].data],
           },
+          ...old.pages.slice(1),
         ],
-        pageParams: [1],
-      });
-    } else {
-      // Normal optimistic update for existing replies
-      queryClient.setQueryData(["replies", props.comment._id], (old) => {
-        if (!old)
-          return {
-            pages: [
-              {
-                data: [newReplyData],
-                nextPage: 2,
-                hasMore: false,
-              },
-            ],
-            pageParams: [1],
-          };
-        return {
-          ...old,
-          pages: [
-            {
-              ...old.pages[0],
-              data: [newReplyData, ...old.pages[0].data],
-            },
-            ...old.pages.slice(1),
-          ],
-        };
-      });
-    }
+      };
+    });
+
+    setShowReplies(true);
 
     const formData = new FormData();
     formData.append("owner", currentUser?.id);
@@ -303,8 +286,10 @@ function CommentCard(props) {
 
   const handleReplyClick = () => {
     if (props.setActiveReplyCommentId) {
+      // اگر باہر سے اسٹیٹ مینج ہو رہا ہے (مین کامنٹ کیس)
       props.setActiveReplyCommentId(showReplyBox ? null : props.comment._id);
     } else {
+      // اگر مقامی اسٹیٹ مینج ہو رہا ہے (رپلائی کیس)
       setLocalActiveReplyCommentId(showReplyBox ? null : props.comment._id);
     }
   };
@@ -385,6 +370,18 @@ function CommentCard(props) {
               >
                 <ThumbsDown size={16} /> <span>({disagrees?.length || 0})</span>
               </button>
+              {/* <button
+                onClick={() => {
+                  console.log(props.comment?._id);
+                  console.log(showReplyBox);
+                  props.setActiveReplyCommentId(
+                    showReplyBox ? null : props.comment?._id
+                  );
+                }}
+                className="flex items-center space-x-1 hover:text-blue-600"
+              >
+                <MessageCircle size={16} /> <span>Reply</span>
+              </button> */}
               <button
                 onClick={handleReplyClick}
                 className="flex items-center space-x-1 hover:text-blue-600"
@@ -409,9 +406,9 @@ function CommentCard(props) {
             {!showReplies ? (
               <button
                 onClick={() => {
+                  setVisibleReplyPages(1);
+                  if (!showReplies) refetchReplies();
                   setShowReplies(true);
-                  // Always refetch to ensure we have the latest data
-                  refetchReplies();
                 }}
                 className="text-blue-600 text-sm hover:underline cursor-pointer"
               >
@@ -488,6 +485,7 @@ function CommentCard(props) {
               } else {
                 handleSendReply(text, media);
               }
+              // دونوں اسٹیٹس کو ری سیٹ کریں
               if (props.setActiveReplyCommentId) {
                 props.setActiveReplyCommentId(null);
               }
