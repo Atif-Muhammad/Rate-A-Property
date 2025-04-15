@@ -15,10 +15,12 @@ import {
 import Loader from "../../Loaders/Loader";
 
 function CommentCard(props) {
+  // console.log(props.comment)
   const [agrees, setAgrees] = useState(props.comment.likes);
   const [disagrees, setDisagrees] = useState(props.comment.disLikes);
   const currentUser = props.currentUser;
   const agreeOwner = props.currentUser.id;
+
   const isTemp = props.comment?._id?.startsWith("temp");
   const [isExpanded, setIsExpanded] = useState(false);
   const [localActiveReplyCommentId, setLocalActiveReplyCommentId] =
@@ -38,35 +40,29 @@ function CommentCard(props) {
   const { mutate: deleteComment } = useMutation({
     mutationFn: async (commentId) => await APIS.delComment(commentId),
 
-    // Optimistically update the UI before the request finishes
     onMutate: async (commentId) => {
       await queryClient.cancelQueries(["comments", props.comment?.for_post]);
 
-      const previousData = queryClient.getQueryData([
-        "comments",
-        props.comment?.for_post,
-      ]);
+      const key = ["comments", props.comment?.for_post];
+      const previousData = queryClient.getQueryData(key);
 
-      queryClient.setQueryData(
-        ["comments", props.comment?.for_post],
-        (oldData) => {
-          if (!oldData) return oldData;
-          console.log(oldData);
-          return {
-            ...oldData,
-            pages: oldData.pages.map((page) => ({
-              ...page,
-              comments: page.data?.filter(
-                (comment) => comment._id !== commentId
-              ),
-            })),
-          };
-        }
-      );
+      if (!previousData) return;
+
+      queryClient.setQueryData(key, (old) => {
+        if (!old?.pages) return old;
+
+        return {
+          ...old,
+          pages: old.pages.map((page) => ({
+            ...page,
+            data: page.data?.filter((c) => c._id !== commentId),
+          })),
+        };
+      });
 
       return { previousData };
     },
-    // Rollback if there's an error
+
     onError: (err, commentId, context) => {
       if (context?.previousData) {
         queryClient.setQueryData(
@@ -77,8 +73,9 @@ function CommentCard(props) {
       console.error("Error deleting comment:", err);
     },
 
-    // Optionally refetch to ensure server-state consistency
     onSettled: () => {
+      // console.log(props.comment)
+      console.log("invalidating parent cache", props.comment.for_post)
       queryClient.invalidateQueries(["comments", props.comment?.for_post]);
     },
   });
@@ -90,12 +87,13 @@ function CommentCard(props) {
     hasNextPage,
     refetch: refetchReplies,
   } = useInfiniteQuery({
-    queryKey: ["replies", props.comment._id],
+    queryKey: ["comments", props.comment._id],
     queryFn: async ({ pageParam = 1 }) => {
       const res = await APIS.getReplies({
         pageParam,
         commentId: props.comment._id,
       });
+      // console.log(res.data)
       return {
         data: res.data,
         nextPage: pageParam + 1,
@@ -104,7 +102,7 @@ function CommentCard(props) {
     },
     getNextPageParam: (lastPage) =>
       lastPage.hasMore ? lastPage.nextPage : undefined,
-    enabled: props.comment.comments?.length > 0, // Enable if there are replies
+    enabled: true,
   });
 
   const sendReplyMutation = useMutation({
@@ -112,8 +110,40 @@ function CommentCard(props) {
       const res = await APIS.addReply(formData);
       return { reply: res.data, tempId };
     },
+
+    onMutate: ({ tempId, formData }) => {
+      // Store the previous data to revert in case of an error
+      const prevData = queryClient.getQueryData([
+        "comments",
+        props.comment._id,
+      ]);
+
+      // Optimistically add the temporary reply to the cache
+      queryClient.setQueryData(["comments", props.comment?._id], (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          pages: old.pages.map((page, index) => {
+            if (index === 0) {
+              return {
+                ...page,
+                data: [
+                  ...page.data,
+                  { _id: tempId, content: formData.content, isTemp: true },
+                ],
+              };
+            }
+            return page;
+          }),
+        };
+      });
+
+      return { prevData }; // Return previous data to restore in case of error
+    },
+
     onSuccess: ({ reply, tempId }) => {
-      queryClient.setQueryData(["replies", props.comment._id], (old) => {
+      // Replace the temporary reply with the actual reply data
+      queryClient.setQueryData(["comments", props.comment._id], (old) => {
         if (!old) return old;
         return {
           ...old,
@@ -130,8 +160,9 @@ function CommentCard(props) {
       });
     },
 
-    onError: (_err, { tempId }) => {
-      queryClient.setQueryData(["replies", props.comment._id], (old) => {
+    onError: (_err, { tempId }, context) => {
+      // On error, remove the temporary reply and restore the previous data
+      queryClient.setQueryData(["comments", props.comment._id], (old) => {
         if (!old) return old;
         return {
           ...old,
@@ -146,6 +177,15 @@ function CommentCard(props) {
           }),
         };
       });
+
+      // Restore the original data in case of error
+      queryClient.setQueryData(
+        ["comments", props.comment._id],
+        context.prevData
+      );
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries(["comments", props.comment?.for_post]);
     },
   });
 
@@ -213,6 +253,10 @@ function CommentCard(props) {
   const handleSendReply = (text, media) => {
     if (!text.trim() && media.length === 0) return;
 
+    console.log(text);
+    console.log(media);
+    console.log(props.comment._id);
+
     const tempId = `temp-${Date.now()}`;
 
     const mediaPreviews = media.map((file) => {
@@ -247,46 +291,23 @@ function CommentCard(props) {
       media: mediaPreviews,
     };
 
-    // Enable replies display if it's the first reply
-    if (props.comment.comments?.length === 0) {
-      setShowReplies(true);
-      // Force the replies query to be enabled
-      queryClient.setQueryData(["replies", props.comment._id], {
+    // console.log(newReplyData)
+
+    queryClient.setQueryData(["replies", props.comment._id], (old) => {
+      if (!old) return;
+      return {
+        ...old,
         pages: [
           {
-            data: [newReplyData],
-            nextPage: 2,
-            hasMore: false,
+            ...old.pages[0],
+            data: [newReplyData, ...old.pages[0].data],
           },
+          ...old.pages.slice(1),
         ],
-        pageParams: [1],
-      });
-    } else {
-      // Normal optimistic update for existing replies
-      queryClient.setQueryData(["replies", props.comment._id], (old) => {
-        if (!old)
-          return {
-            pages: [
-              {
-                data: [newReplyData],
-                nextPage: 2,
-                hasMore: false,
-              },
-            ],
-            pageParams: [1],
-          };
-        return {
-          ...old,
-          pages: [
-            {
-              ...old.pages[0],
-              data: [newReplyData, ...old.pages[0].data],
-            },
-            ...old.pages.slice(1),
-          ],
-        };
-      });
-    }
+      };
+    });
+
+    setShowReplies(true);
 
     const formData = new FormData();
     formData.append("owner", currentUser?.id);
@@ -303,8 +324,10 @@ function CommentCard(props) {
 
   const handleReplyClick = () => {
     if (props.setActiveReplyCommentId) {
+      // اگر باہر سے اسٹیٹ مینج ہو رہا ہے (مین کامنٹ کیس)
       props.setActiveReplyCommentId(showReplyBox ? null : props.comment._id);
     } else {
+      // اگر مقامی اسٹیٹ مینج ہو رہا ہے (رپلائی کیس)
       setLocalActiveReplyCommentId(showReplyBox ? null : props.comment._id);
     }
   };
@@ -385,6 +408,18 @@ function CommentCard(props) {
               >
                 <ThumbsDown size={16} /> <span>({disagrees?.length || 0})</span>
               </button>
+              {/* <button
+                onClick={() => {
+                  console.log(props.comment?._id);
+                  console.log(showReplyBox);
+                  props.setActiveReplyCommentId(
+                    showReplyBox ? null : props.comment?._id
+                  );
+                }}
+                className="flex items-center space-x-1 hover:text-blue-600"
+              >
+                <MessageCircle size={16} /> <span>Reply</span>
+              </button> */}
               <button
                 onClick={handleReplyClick}
                 className="flex items-center space-x-1 hover:text-blue-600"
@@ -409,9 +444,9 @@ function CommentCard(props) {
             {!showReplies ? (
               <button
                 onClick={() => {
+                  setVisibleReplyPages(1);
+                  if (!showReplies) refetchReplies();
                   setShowReplies(true);
-                  // Always refetch to ensure we have the latest data
-                  refetchReplies();
                 }}
                 className="text-blue-600 text-sm hover:underline cursor-pointer"
               >
@@ -430,17 +465,19 @@ function CommentCard(props) {
 
                 <div className="space-y-3 pl-6">
                   {!loadingReplies ? (
-                    replies?.pages.slice(0, visibleReplyPages).flatMap((page) =>
-                      page.data.map((reply) => (
-                        <CommentCard
-                          key={reply._id}
-                          comment={reply}
-                          agreeOwner={props.agreeOwner}
-                          currentUser={props.currentUser}
-                          // setActiveReplyCommentId={props.setActiveReplyCommentId}
-                        />
-                      ))
-                    )
+                    replies?.pages
+                      ?.slice(0, visibleReplyPages)
+                      .flatMap((page) =>
+                        page.data.map((reply) => (
+                          <CommentCard
+                            key={reply._id}
+                            comment={reply}
+                            agreeOwner={props.agreeOwner}
+                            currentUser={props.currentUser}
+                            // setActiveReplyCommentId={props.setActiveReplyCommentId}
+                          />
+                        ))
+                      )
                   ) : (
                     <CommentSkeleton />
                   )}

@@ -593,8 +593,10 @@ const postController = {
             await disLike.deleteMany({ for_post: commentId });
             // remove post model
             await comment.deleteOne({ _id: commentId });
+            await comment.updateOne({comments : commentId }, {$pull: {comments: commentId}})
             await user.updateOne({ _id: userDets.id }, { $pull: { posts: commentId } });
             res.send("post deleted");
+
         } catch (error) {
             res.send(error);
         }
