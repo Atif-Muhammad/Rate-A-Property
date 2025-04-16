@@ -4,7 +4,7 @@ import { APIS } from "../../config/Config";
 import { arrayBufferToBase64 } from "../ReUsables/arrayTobuffer";
 import { useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { QueryClient, useQuery, useQueryClient } from "@tanstack/react-query";
 import {useCreatePost, useUpdatePost} from '../hooks/ReactQuery.js'
 
 
@@ -82,8 +82,10 @@ export const NewPost = ({
     // console.log(user)
     formData.append("owner", user.id);
     formData.append("description", textRef.current?.value);
-    formData.append("location", location);
-
+    formData.append("location", location)
+    // console.log(selectedMedia)
+    const existingFiles = selectedMedia.map(item=> item.url);
+    formData.append("existingFiles", existingFiles);
     // Only append new media files (not existing)
     selectedMedia.forEach((item) => {
       if (item.file) {
@@ -91,6 +93,7 @@ export const NewPost = ({
       }
     });
 
+    
     if (isEdit) {
       updatePostMutation.mutate(
         { postId: editPostData._id, formData },
