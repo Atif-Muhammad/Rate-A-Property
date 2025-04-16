@@ -19,9 +19,22 @@ export const useUpdatePost = () => {
     mutationFn: async ({ postId, formData }) => {
       return await APIS.updatePost(postId, formData);
     },
-    onSuccess: () => {
+    onSuccess: (postId) => {
       // This will re-fetch all pages of your infinite query
       queryClient.invalidateQueries({ queryKey: ["posts"] });
+      queryClient.setQueryData(["posts"], (oldData) => {
+        if (!oldData) return oldData;
+
+        return {
+          ...oldData,
+          pages: oldData.pages.map((page) => ({
+            ...page,
+            data: page.data.map((post) =>
+              post._id === postId ? oldData : post
+            ),
+          })),
+        };
+      });
     },
   });
 };
