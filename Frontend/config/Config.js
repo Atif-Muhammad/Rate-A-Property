@@ -226,6 +226,19 @@ const addComment = async (data) => {
     return error;
   }
 };
+const updateComment = async (data) => {
+  try {
+    const response = await axios.post(
+      `${Baseurl}/posts/addComment`, data, {
+      headers: { "Content-Type": "multipart/form-data" },
+      withCredentials: true,
+    }
+    );
+    return response;
+  } catch (error) {
+    return error;
+  }
+};
 
 const delComment = async (commentId)=>{
   try {
@@ -337,6 +350,7 @@ export const APIS = {
   disLikeMedia,
   unDisLikeMedia,
   addComment,
+  updateComment,
   delComment,
   getcomments,
   likeComment,

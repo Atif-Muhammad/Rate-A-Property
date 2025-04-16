@@ -7,6 +7,7 @@ import MediaGrid from "../post/MediaGrid";
 import { CommentInputBox } from "./CommentInputBox";
 import { CommentOptions } from "./CommentOption";
 import CommentSkeleton from "../skeletons/CommentSkeleton";
+import { updateCommentMutation } from "../../hooks/ReactQuery";
 import {
   useInfiniteQuery,
   useMutation,
@@ -224,21 +225,36 @@ function CommentCard(props) {
     setEditText(props.comment.comment);
   };
 
-  const handleSaveEdit = async () => {
-    if (!editText.trim()) return;
-
-    try {
-      const res = await APIS.updateComment(props.comment._id, {
-        content: editText,
-      });
-      if (res.status === 200) {
-        setIsEditing(false);
-        props.comment.comment = editText; // Update the UI
-      }
-    } catch (err) {
-      console.error("Error updating comment:", err);
-    }
+  const handleSaveEdit = () => {
+    if (!editText.trim() && selectedFiles.length === 0 && !existingFiles.length) return;
+  
+    const formData = new FormData();
+    formData.append("content", editText);
+    formData.append("owner", currentUser.id);
+  
+    // Append media files
+    selectedFiles.forEach((file) => {
+      formData.append("files", file);
+    });
+  
+    // Existing file URLs to retain
+    existingFiles.forEach((url) => {
+      formData.append("existingFiles", url); 
+    });
+  
+    const updatedAt = new Date().toISOString();
+  
+    updateCommentMutation.mutate({
+      commentId: comment._id,
+      postId,
+      formData,
+      newContent: editText,
+      updatedAt,
+    });
+  
+    setIsEditing(false);
   };
+  
 
   useEffect(() => {
     // console.log("comment:", props.comment)
