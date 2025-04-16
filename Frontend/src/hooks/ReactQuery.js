@@ -28,12 +28,14 @@ export const useUpdatePost = () => {
 
 export const useupdateCommentMutation = () => {
   const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async ({ commentId, formData }) => {
+      // full updated comment returned here
       return await APIS.updateComment(commentId, formData);
     },
-    onSuccess: (_, variables) => {
-      const { postId, commentId, newContent, updatedAt } = variables;
+    onSuccess: (formattedComment, variables) => {
+      const { postId, commentId } = variables;
 
       queryClient.setQueryData(["comments", postId], (old) => {
         if (!old) return old;
@@ -43,13 +45,7 @@ export const useupdateCommentMutation = () => {
           pages: old.pages.map((page) => ({
             ...page,
             data: page.data.map((comment) =>
-              comment._id === commentId
-                ? {
-                    ...comment,
-                    comment: newContent,
-                    updatedAt,
-                  }
-                : comment
+              comment._id === commentId ? formattedComment : comment
             ),
           })),
         };
@@ -57,5 +53,6 @@ export const useupdateCommentMutation = () => {
     },
   });
 };
+
 
 

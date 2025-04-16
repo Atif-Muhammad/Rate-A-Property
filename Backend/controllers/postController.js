@@ -78,57 +78,57 @@ const postController = {
         try {
             const postId = req.params.id;
             const { owner, location, description, existingFiles = [] } = req.body;
-        
+
             const ownerId = new mongoose.Types.ObjectId(owner);
             const postDoc = await post.findById(postId).populate("media");
             if (!postDoc) return res.status(404).json({ error: "Post not found" });
-        
+
             // Step 1: Files from DB (full path/URL)
             const dbFileUrls = postDoc.media.map(m => m.identifier.path);
-        
+
             // Step 2: New uploads (filenames -> convert to URL form)
             const uploadedFileNames = req.fileNames || [];
             const uploadedFileUrls = uploadedFileNames.map(filename => `/uploads/${owner}/${filename}`);
-        
+
             // Step 3: Detect removed files (in DB but not in existingFiles passed by frontend)
             const removedFiles = postDoc.media.filter(
                 (m) => !existingFiles.includes(m.identifier.path)
             );
-        
+
             // Step 4: Detect newly added files (uploaded now, not in existing list)
             const addedFiles = uploadedFileUrls.filter(
                 (url) => !existingFiles.includes(url)
             );
-        
+
             console.log("addedFiles:", addedFiles);
             console.log("removedFiles:", removedFiles.map(m => m.identifier.path));
-        
+
             // Step 5: Create media metadata for new files
             const addedFileData = addedFiles.map((url) => {
                 const ext = path.extname(url);
                 const type = [".mp4", ".webm", ".MOV"].includes(ext) ? "video" : "image";
-        
+
                 return {
                     filename: path.basename(url),
                     type,
                     path: url,
                 };
             });
-        
+
             const mediaChanged = addedFiles.length > 0 || removedFiles.length > 0;
             const contentChanged = postDoc.location !== location || postDoc.description !== description;
-        
+
             if (!mediaChanged && !contentChanged) {
                 return res.status(200).json({ message: "No changes detected" });
             }
-        
+
             // Content update
             if (contentChanged) {
                 postDoc.location = location;
                 postDoc.description = description;
                 await postDoc.save();
             }
-        
+
             // Media update
             if (mediaChanged) {
                 // Delete removed media from DB and disk
@@ -137,11 +137,11 @@ const postController = {
                     fs.unlink(filePath, (err) => {
                         if (err) console.error("Failed to delete file:", filePath);
                     });
-        
+
                     await media.findByIdAndDelete(mediaDoc._id);
                     await post.updateOne({ _id: postId }, { $pull: { media: mediaDoc._id } });
                 }
-        
+
                 // Add new media to DB
                 if (addedFileData.length > 0) {
                     const newMediaDocs = await Promise.all(
@@ -156,20 +156,20 @@ const postController = {
                             return mediaDoc.save();
                         })
                     );
-        
+
                     const newMediaIds = newMediaDocs.map(m => m._id);
                     await post.updateOne({ _id: postId }, { $push: { media: { $each: newMediaIds } } });
                 }
             }
-        
+
             return res.status(200).json({ message: "Post updated successfully" });
-        
+
         } catch (error) {
             console.error("Error Updating Post:", error);
             res.status(500).json({ error: "Internal Server Error", details: error.message });
         }
-        
-        
+
+
 
     },
     getPosts: async (req, res) => {
@@ -675,6 +675,122 @@ const postController = {
             res.status(500).json({ error: "Internal Server Error", details: error.message });
         }
     },
+    updateComment: async (req, res) => {
+        try {
+            const { content, owner } = req.body;
+            const commentId = req.params.id;
+            const ownerId = new mongoose.Types.ObjectId(owner);
+
+            // Normalize existingFiles from FormData
+            let existingFiles = req.body.existingFiles;
+            if (!existingFiles) existingFiles = [];
+            else if (!Array.isArray(existingFiles)) existingFiles = [existingFiles];
+
+            const existingFilenames = existingFiles.map(url => url.split("/").pop());
+
+            // Get current comment with media
+            const existingComment = await comment.findById(commentId).populate("media");
+            if (!existingComment) {
+                return res.status(404).json({ error: "Comment not found" });
+            }
+
+            // Media to delete = not in existingFilenames
+            const mediaToDelete = existingComment.media.filter(
+                (file) => !existingFilenames.includes(file.identifier.filename)
+            );
+
+            for (const mediaDoc of mediaToDelete) {
+                await media.findByIdAndDelete(mediaDoc._id);
+                const filePath = path.join(__dirname, `../public/uploads/comments/${mediaDoc.identifier.filename}`);
+                if (fs.existsSync(filePath)) {
+                    fs.unlinkSync(filePath);
+                }
+            }
+
+            // Save new uploaded files
+            const newFileDocs = await Promise.all(
+                (req.files || []).map((file) => {
+                    const ext = path.extname(file.filename).toLowerCase();
+                    const type = [".mp4", ".webm", ".mov"].includes(ext) ? "video" : "image";
+
+                    const newMedia = new media({
+                        identifier: {
+                            filename: file.filename,
+                            type,
+                            path: `/uploads/comments/${file.filename}`,
+                        },
+                        owner: ownerId,
+                        of_comment: commentId,
+                        likes: [],
+                        disLikes: [],
+                    });
+
+                    return newMedia.save();
+                })
+            );
+
+            // Retain old media not deleted
+            const retainedMedia = existingComment.media.filter((file) =>
+                existingFilenames.includes(file.identifier.filename)
+            );
+
+            const updatedMediaIds = [
+                ...retainedMedia.map((m) => m._id),
+                ...newFileDocs.map((m) => m._id),
+            ];
+
+            await comment.findByIdAndUpdate(commentId, {
+                comment: content,
+                updatedAt: new Date().toISOString(),
+                media: updatedMediaIds,
+            });
+
+            const updatedComment = await comment
+                .findById(commentId)
+                .populate("owner")
+                .populate("likes")
+                .populate("disLikes")
+                .populate({
+                    path: "media",
+                    populate: [{ path: "likes" }, { path: "disLikes" }],
+                });
+
+            const formattedMedia = updatedComment.media.map((file) => {
+                const ext = path.extname(file.identifier.filename).toLowerCase();
+                const mediaType = [".mp4", ".webm", ".mov"].includes(ext) ? "video" : "image";
+                const ownerId = updatedComment.owner?._id?.toString() || updatedComment.owner?.toString();
+
+                return {
+                    url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${file.identifier.filename}`,
+                    type: mediaType,
+                    filename: file.identifier.filename,
+                    likes: file.likes,
+                    disLikes: file.disLikes,
+                    of_comment: file.of_comment,
+                    owner: file.owner,
+                    _id: file._id,
+                };
+            });
+
+            const formattedComment = {
+                ...updatedComment.toObject(),
+                media: formattedMedia,
+                owner: {
+                    ...updatedComment.owner.toObject(),
+                    image: updatedComment.owner.image?.data
+                        ? `data:image/png;base64,${updatedComment.owner.image.data.toString("base64")}`
+                        : null,
+                },
+            };
+
+            res.status(200).json(formattedComment);
+        } catch (error) {
+            console.error("Error updating comment:", error);
+            res.status(500).json({ error: "Internal Server Error", details: error.message });
+        }
+
+    },
+
 
     delComment: async (req, res) => {
         const { commentId } = req.query;
@@ -805,7 +921,7 @@ const postController = {
             res.send(error);
         }
     },
-    updatecomment: async (req, res)=>{
+    updatecomment: async (req, res) => {
         console.log(req.body)
     },
     unLikeComment: async (req, res) => {

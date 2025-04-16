@@ -14,6 +14,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import Loader from "../../Loaders/Loader";
+import { m } from "framer-motion";
 
 function CommentCard(props) {
   // console.log(props.comment)
@@ -231,9 +232,13 @@ function CommentCard(props) {
   };
 
   // Update your handleSaveEdit function
-  const handleSaveEdit = () => {
+  const handleSaveEdit = (text, media) => {
+    // Distinguish existing vs new files
+    const existingFiles = media.filter((file) => file.filename);
+    const selectedFiles = media.filter((file) => file.name);
+
     if (
-      !editText.trim() &&
+      !text.trim() &&
       selectedFiles.length === 0 &&
       existingFiles.length === 0
     ) {
@@ -241,17 +246,17 @@ function CommentCard(props) {
     }
 
     const formData = new FormData();
-    formData.append("content", editText);
+    formData.append("content", text);
     formData.append("owner", currentUser.id);
 
-    // Append new media files
+    // New files (File objects)
     selectedFiles.forEach((file) => {
       formData.append("files", file);
     });
 
-    // Append existing file URLs to retain
+    // Existing file URLs (to keep)
     existingFiles.forEach((file) => {
-      formData.append("existingFiles", file.url || file);
+      formData.append("existingFiles", file.url);
     });
 
     const updatedAt = new Date().toISOString();
@@ -260,12 +265,11 @@ function CommentCard(props) {
       commentId: props.comment._id,
       postId: props.comment.for_post,
       formData,
-      newContent: editText,
+      newContent: text,
       updatedAt,
     });
 
     setIsEditing(false);
-    setSelectedFiles([]);
   };
 
   useEffect(() => {
@@ -583,10 +587,11 @@ function CommentCard(props) {
             initialText={isEditing ? editText : ""}
             initialMedia={isEditing ? existingFiles : []}
             onSendReply={(text, media) => {
+              // console.log("first", text)
               if (isEditing) {
                 setEditText(text);
                 setSelectedFiles(media);
-                handleSaveEdit();
+                handleSaveEdit(text, media);
               } else {
                 handleSendReply(text, media);
               }

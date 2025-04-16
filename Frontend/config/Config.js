@@ -226,15 +226,16 @@ const addComment = async (data) => {
     return error;
   }
 };
-const updateComment = async (data) => {
+const updateComment = async (id, formData) => {
+  // console.log("first", id)
   try {
-    const response = await axios.post(
-      `${Baseurl}/posts/addComment`, data, {
+    const response = await axios.put(
+      `${Baseurl}/posts/updateComment/${id}`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
       withCredentials: true,
     }
     );
-    return response;
+    return response.json();;
   } catch (error) {
     return error;
   }

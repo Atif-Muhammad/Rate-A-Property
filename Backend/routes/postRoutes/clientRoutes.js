@@ -29,7 +29,7 @@ router.put("/disLikeMedia", postController.disLikeMedia);
 router.put("/unDisLikeMedia", postController.unDisLikeMedia);
 
 router.post("/addComment", upload_disk.array("files"), postController.addComment);
-router.post("/updateComment", upload_disk.array("files"), postController.updatecomment);
+router.put("/updateComment/:id", upload_disk.array("files"), postController.updateComment);
 router.post("/delComment", postController.delComment);
 router.get("/getComments", postController.getComments);
 

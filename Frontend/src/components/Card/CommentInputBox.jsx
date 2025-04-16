@@ -35,7 +35,7 @@ export function CommentInputBox({
 
   const handleSubmit = () => {
     onSendReply(replyText, [...newFiles, ...existingMedia]);
-    console.log(replyText, newFiles,existingMedia)
+    // console.log(replyText, newFiles,existingMedia)
   };
 
   const handleCancel = () => {
