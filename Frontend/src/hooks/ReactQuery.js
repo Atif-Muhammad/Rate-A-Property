@@ -47,8 +47,9 @@ export const useupdateCommentMutation = () => {
       // full updated comment returned here
       return await APIS.updateComment(commentId, formData);
     },
-    onSuccess: (formattedComment, variables) => {
+    onSuccess: (_, variables) => {
       const { postId, commentId } = variables;
+      queryClient.invalidateQueries({ queryKey: ["comments", postId] });
 
       queryClient.setQueryData(["comments", postId], (old) => {
         if (!old) return old;
@@ -58,7 +59,7 @@ export const useupdateCommentMutation = () => {
           pages: old.pages.map((page) => ({
             ...page,
             data: page.data.map((comment) =>
-              comment._id === commentId ? formattedComment : comment
+              comment._id === commentId ? old : comment
             ),
           })),
         };
