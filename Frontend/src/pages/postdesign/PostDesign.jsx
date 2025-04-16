@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import { APIS } from "../../../config/Config"; 
+import {
+  useInfiniteQuery,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
+import { APIS } from "../../../config/Config";
 import PostCard from "../../components/post/PostCard";
 import DiscoverSkeleton from "../../components/skeletons/DiscoverSkeleton";
-import  Loader  from "../../Loaders/Loader";
+import Loader from "../../Loaders/Loader";
 
 const LIMIT = 10;
 
@@ -17,6 +21,7 @@ const fetchPosts = async ({ pageParam = 1 }) => {
 };
 
 export const PostDesign = () => {
+  const queryClient = useQueryClient();
 
   const { data: currentUser = {} } = useQuery({
     queryKey: ["user"],
@@ -24,7 +29,6 @@ export const PostDesign = () => {
       const who = await APIS.userWho();
       const res = await APIS.getUser(who.data.id);
       const user = res.data;
-      // console.log("user", res.data)
       return {
         id: user._id,
         image: user.image,
@@ -46,8 +50,9 @@ export const PostDesign = () => {
     queryFn: fetchPosts,
     getNextPageParam: (lastPage) =>
       lastPage.hasMore ? lastPage.nextPage : undefined,
-    enabled: true
+    enabled: true,
   });
+
 
   // Infinite scroll
   useEffect(() => {
@@ -75,6 +80,7 @@ export const PostDesign = () => {
             key={post._id + "-" + pageIndex + "-" + idx}
             post={post}
             currentUser={currentUser}
+            // onPostUpdated={handlePostUpdated}
           />
         ))
       )}

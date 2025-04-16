@@ -31,37 +31,22 @@ const PostCard = (props) => {
   const { mutate: deletePost } = useMutation({
     mutationFn: (postId) => APIS.delPost(postId),
     onSuccess: (_, postId) => {
-      // Update cache: remove deleted post
-      queryClient.setQueryData(["posts"], (oldData) => {
-        if (!oldData) return oldData;
-        return {
-          ...oldData,
-          pages: oldData.pages.map((page) => ({
-            ...page,
-            data: page.data.filter((post) => post._id !== postId),
-          })),
-        };
-      });
+      queryClient.invalidateQueries(["posts"]);
     },
     onError: (error) => {
       console.error("Error deleting post:", error);
     },
   });
 
-      
   const postFromprop = () => {
     setPost(props.post);
-    setAgrees(props.post.likes);
-    setDisagrees(props.post.disLikes);
+    setAgrees(props.post.likes || []);
+    setDisagrees(props.post.disLikes || []);
   };
 
   useEffect(() => {
-    // console.log("id:",props.postId)
-    // console.log("post:",props.post)
-    props.post && postFromprop()
-    // console.log(post)
-    
-  }, []);
+    postFromprop();
+  }, [props.post]); // This will update when parent updates the post prop
 
   useEffect(() => {}, [agrees, disagrees]);
 
@@ -114,7 +99,7 @@ const PostCard = (props) => {
   };
 
   const handlePostDel = (postId) => {
-    deletePost(postId)
+    deletePost(postId);
   };
 
   return (
