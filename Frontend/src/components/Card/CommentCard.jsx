@@ -7,7 +7,7 @@ import MediaGrid from "../post/MediaGrid";
 import { CommentInputBox } from "./CommentInputBox";
 import { CommentOptions } from "./CommentOption";
 import CommentSkeleton from "../skeletons/CommentSkeleton";
-import { updateCommentMutation } from "../../hooks/ReactQuery";
+import { useupdateCommentMutation } from "../../hooks/ReactQuery";
 import {
   useInfiniteQuery,
   useMutation,
@@ -33,10 +33,42 @@ function CommentCard(props) {
   const [editText, setEditText] = useState(props.comment.comment);
   const [visibleReplyPages, setVisibleReplyPages] = useState(1);
   const [isLoadingMoreReplies, setIsLoadingMoreReplies] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [existingFiles, setExistingFiles] = useState(props.comment.media || []);
+
+  const nestingDepth = props.nestingDepth || 0;
+  const maxVisualDepthDesktop = 3; // Maximum depth for visual indentation on desktop
+  const maxVisualDepthMobile = 1; // Maximum depth for visual indentation on mobile
+
+  const queryClient = useQueryClient();
+  const updateCommentMutation = useupdateCommentMutation();
+  // Determine if we're on a mobile device
+  const [isMobile, setIsMobile] = useState(false);
 
   const MAX_LENGTH = 200;
 
-  const queryClient = useQueryClient();
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768); // Tailwind's md breakpoint
+    };
+
+    // Set initial value
+    handleResize();
+
+    // Add event listener
+    window.addEventListener("resize", handleResize);
+
+    // Clean up
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Calculate the effective max depth based on screen size
+  const effectiveMaxDepth = isMobile
+    ? maxVisualDepthMobile
+    : maxVisualDepthDesktop;
+
+  // Calculate whether to show full thread or collapse it
+  const shouldCollapseThread = isMobile && nestingDepth >= maxVisualDepthMobile;
 
   const { mutate: deleteComment } = useMutation({
     mutationFn: async (commentId) => await APIS.delComment(commentId),
@@ -76,7 +108,7 @@ function CommentCard(props) {
 
     onSettled: () => {
       // console.log(props.comment)
-      console.log("invalidating parent cache", props.comment.for_post)
+      console.log("invalidating parent cache", props.comment.for_post);
       queryClient.invalidateQueries(["comments", props.comment?.for_post]);
     },
   });
@@ -190,41 +222,51 @@ function CommentCard(props) {
     },
   });
 
+  // Update your handleEditComment function
   const handleEditComment = () => {
     setIsEditing(true);
     setEditText(props.comment.comment);
+    setExistingFiles(props.comment.media || []);
+    setSelectedFiles([]);
   };
 
+  // Update your handleSaveEdit function
   const handleSaveEdit = () => {
-    if (!editText.trim() && selectedFiles.length === 0 && !existingFiles.length) return;
-  
+    if (
+      !editText.trim() &&
+      selectedFiles.length === 0 &&
+      existingFiles.length === 0
+    ) {
+      return;
+    }
+
     const formData = new FormData();
     formData.append("content", editText);
     formData.append("owner", currentUser.id);
-  
-    // Append media files
+
+    // Append new media files
     selectedFiles.forEach((file) => {
       formData.append("files", file);
     });
-  
-    // Existing file URLs to retain
-    existingFiles.forEach((url) => {
-      formData.append("existingFiles", url); 
+
+    // Append existing file URLs to retain
+    existingFiles.forEach((file) => {
+      formData.append("existingFiles", file.url || file);
     });
-  
+
     const updatedAt = new Date().toISOString();
-  
+
     updateCommentMutation.mutate({
-      commentId: comment._id,
-      postId,
+      commentId: props.comment._id,
+      postId: props.comment.for_post,
       formData,
       newContent: editText,
       updatedAt,
     });
-  
+
     setIsEditing(false);
+    setSelectedFiles([]);
   };
-  
 
   useEffect(() => {
     // console.log("comment:", props.comment)
@@ -353,8 +395,12 @@ function CommentCard(props) {
   return (
     <>
       <div
-        className={`relative flex flex-col items-start space-y-2 p-4 rounded-lg shadow-sm transition ${
-          isTemp ? "bg-gray-500" : "bg-gray-100"
+        className={`relative flex flex-col items-start space-y-2 p-3 sm:p-4 rounded-lg shadow-sm transition ${
+          isTemp
+            ? "bg-gray-500"
+            : nestingDepth % 2 === 0
+            ? "bg-gray-50"
+            : "bg-gray-100"
         }`}
       >
         <div className="flex items-start space-x-3 w-full">
@@ -422,18 +468,7 @@ function CommentCard(props) {
               >
                 <ThumbsDown size={16} /> <span>({disagrees?.length || 0})</span>
               </button>
-              {/* <button
-                onClick={() => {
-                  console.log(props.comment?._id);
-                  console.log(showReplyBox);
-                  props.setActiveReplyCommentId(
-                    showReplyBox ? null : props.comment?._id
-                  );
-                }}
-                className="flex items-center space-x-1 hover:text-blue-600"
-              >
-                <MessageCircle size={16} /> <span>Reply</span>
-              </button> */}
+
               <button
                 onClick={handleReplyClick}
                 className="flex items-center space-x-1 hover:text-blue-600"
@@ -452,9 +487,15 @@ function CommentCard(props) {
           )}
         </div>
 
-        {/* Replies */}
+        {/* Replies Section - Responsive Version */}
         {props.comment.comments?.length > 0 && (
-          <div className="w-full mt-4 pl-8 relative">
+          <div
+            className={`w-full mt-3 sm:mt-4 ${
+              nestingDepth < effectiveMaxDepth
+                ? "pl-4 sm:pl-6 md:pl-8"
+                : "pl-0 sm:pl-2"
+            } relative`}
+          >
             {!showReplies ? (
               <button
                 onClick={() => {
@@ -475,9 +516,18 @@ function CommentCard(props) {
                   Hide Replies
                 </button>
 
-                <div className="absolute top-0 left-4 h-full border-l-2 border-gray-300"></div>
+                {/* Only show connecting line up to effectiveMaxDepth */}
+                {nestingDepth < effectiveMaxDepth && (
+                  <div className="absolute top-0 left-2 sm:left-3 md:left-4 h-full border-l border-gray-300 sm:border-l-2"></div>
+                )}
 
-                <div className="space-y-3 pl-6">
+                <div
+                  className={`space-y-2 sm:space-y-3 ${
+                    nestingDepth < effectiveMaxDepth
+                      ? "pl-2 sm:pl-4 md:pl-6"
+                      : ""
+                  }`}
+                >
                   {!loadingReplies ? (
                     replies?.pages
                       ?.slice(0, visibleReplyPages)
@@ -488,6 +538,7 @@ function CommentCard(props) {
                             comment={reply}
                             agreeOwner={props.agreeOwner}
                             currentUser={props.currentUser}
+                            nestingDepth={nestingDepth + 1}
                             // setActiveReplyCommentId={props.setActiveReplyCommentId}
                           />
                         ))
@@ -530,12 +581,12 @@ function CommentCard(props) {
           <CommentInputBox
             currentUser={props.currentUser}
             initialText={isEditing ? editText : ""}
-            initialMedia={isEditing ? props.comment.media : []}
+            initialMedia={isEditing ? existingFiles : []}
             onSendReply={(text, media) => {
               if (isEditing) {
                 setEditText(text);
+                setSelectedFiles(media);
                 handleSaveEdit();
-                setIsEditing(false);
               } else {
                 handleSendReply(text, media);
               }
@@ -550,7 +601,9 @@ function CommentCard(props) {
               }
               setLocalActiveReplyCommentId(null);
               setIsEditing(false);
+              setSelectedFiles([]);
             }}
+            isEditing={isEditing}
           />
         )}
       </div>

@@ -1,11 +1,9 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { APIS } from "../../config/Config";
 
-
-const queryClient = useQueryClient();
 // CREATE POST
 export const useCreatePost = () => {
-
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (formData) => await APIS.createPost(formData),
     onSuccess: () => {
@@ -16,7 +14,7 @@ export const useCreatePost = () => {
 
 // UPDATE POST
 export const useUpdatePost = () => {
-
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ postId, formData }) => {
       return await APIS.updatePost(postId, formData);
@@ -28,38 +26,36 @@ export const useUpdatePost = () => {
   });
 };
 
+export const useupdateCommentMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ commentId, formData }) => {
+      return await APIS.updateComment(commentId, formData);
+    },
+    onSuccess: (_, variables) => {
+      const { postId, commentId, newContent, updatedAt } = variables;
 
-export const updateCommentMutation = useMutation({
-  mutationFn: async ({ commentId, formData }) => {
-    return await APIS.updateComment(commentId, formData);
-  },
-  onSuccess: (_, variables) => {
-    const { postId, commentId, newContent, updatedAt } = variables;
+      queryClient.setQueryData(["comments", postId], (old) => {
+        if (!old) return old;
 
-    queryClient.setQueryData(["comments", postId], (old) => {
-      if (!old) return old;
-
-      return {
-        ...old,
-        pages: old.pages.map((page) => ({
-          ...page,
-          data: page.data.map((comment) =>
-            comment._id === commentId
-              ? {
-                  ...comment,
-                  comment: newContent,
-                  updatedAt,
-                }
-              : comment
-          ),
-        })),
-      };
-    });
-  },
-});
-
-
-
-
+        return {
+          ...old,
+          pages: old.pages.map((page) => ({
+            ...page,
+            data: page.data.map((comment) =>
+              comment._id === commentId
+                ? {
+                    ...comment,
+                    comment: newContent,
+                    updatedAt,
+                  }
+                : comment
+            ),
+          })),
+        };
+      });
+    },
+  });
+};
 
 
