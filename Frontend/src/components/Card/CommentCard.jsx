@@ -7,7 +7,7 @@ import MediaGrid from "../post/MediaGrid";
 import { CommentInputBox } from "./CommentInputBox";
 import { CommentOptions } from "./CommentOption";
 import CommentSkeleton from "../skeletons/CommentSkeleton";
-import { updateCommentMutation } from "../../hooks/ReactQuery";
+import { useupdateCommentMutation } from "../../hooks/ReactQuery";
 import {
   useInfiniteQuery,
   useMutation,
@@ -33,11 +33,15 @@ function CommentCard(props) {
   const [editText, setEditText] = useState(props.comment.comment);
   const [visibleReplyPages, setVisibleReplyPages] = useState(1);
   const [isLoadingMoreReplies, setIsLoadingMoreReplies] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [existingFiles, setExistingFiles] = useState(props.comment.media || []);
 
   const nestingDepth = props.nestingDepth || 0;
   const maxVisualDepthDesktop = 3; // Maximum depth for visual indentation on desktop
   const maxVisualDepthMobile = 1; // Maximum depth for visual indentation on mobile
 
+  const queryClient = useQueryClient();
+  const updateCommentMutation = useupdateCommentMutation();
   // Determine if we're on a mobile device
   const [isMobile, setIsMobile] = useState(false);
 
@@ -65,8 +69,6 @@ function CommentCard(props) {
 
   // Calculate whether to show full thread or collapse it
   const shouldCollapseThread = isMobile && nestingDepth >= maxVisualDepthMobile;
-
-  const queryClient = useQueryClient();
 
   const { mutate: deleteComment } = useMutation({
     mutationFn: async (commentId) => await APIS.delComment(commentId),
@@ -220,41 +222,51 @@ function CommentCard(props) {
     },
   });
 
+  // Update your handleEditComment function
   const handleEditComment = () => {
     setIsEditing(true);
     setEditText(props.comment.comment);
+    setExistingFiles(props.comment.media || []);
+    setSelectedFiles([]);
   };
 
+  // Update your handleSaveEdit function
   const handleSaveEdit = () => {
-    if (!editText.trim() && selectedFiles.length === 0 && !existingFiles.length) return;
-  
+    if (
+      !editText.trim() &&
+      selectedFiles.length === 0 &&
+      existingFiles.length === 0
+    ) {
+      return;
+    }
+
     const formData = new FormData();
     formData.append("content", editText);
     formData.append("owner", currentUser.id);
-  
-    // Append media files
+
+    // Append new media files
     selectedFiles.forEach((file) => {
       formData.append("files", file);
     });
-  
-    // Existing file URLs to retain
-    existingFiles.forEach((url) => {
-      formData.append("existingFiles", url); 
+
+    // Append existing file URLs to retain
+    existingFiles.forEach((file) => {
+      formData.append("existingFiles", file.url || file);
     });
-  
+
     const updatedAt = new Date().toISOString();
-  
+
     updateCommentMutation.mutate({
-      commentId: comment._id,
-      postId,
+      commentId: props.comment._id,
+      postId: props.comment.for_post,
       formData,
       newContent: editText,
       updatedAt,
     });
-  
+
     setIsEditing(false);
+    setSelectedFiles([]);
   };
-  
 
   useEffect(() => {
     // console.log("comment:", props.comment)
@@ -569,12 +581,12 @@ function CommentCard(props) {
           <CommentInputBox
             currentUser={props.currentUser}
             initialText={isEditing ? editText : ""}
-            initialMedia={isEditing ? props.comment.media : []}
+            initialMedia={isEditing ? existingFiles : []}
             onSendReply={(text, media) => {
               if (isEditing) {
                 setEditText(text);
+                setSelectedFiles(media);
                 handleSaveEdit();
-                setIsEditing(false);
               } else {
                 handleSendReply(text, media);
               }
@@ -589,7 +601,9 @@ function CommentCard(props) {
               }
               setLocalActiveReplyCommentId(null);
               setIsEditing(false);
+              setSelectedFiles([]);
             }}
+            isEditing={isEditing}
           />
         )}
       </div>
