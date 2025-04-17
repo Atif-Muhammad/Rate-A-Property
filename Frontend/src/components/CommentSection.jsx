@@ -5,7 +5,7 @@ import {
   useQueryClient,
   useInfiniteQuery,
 } from "@tanstack/react-query";
-import { Send, ImagePlus } from "lucide-react";
+import { Send, ImagePlus, Loader2 } from "lucide-react";
 import { useLocation, useParams } from "react-router-dom";
 import { APIS } from "../../config/Config";
 import { arrayBufferToBase64 } from "../ReUsables/arrayTobuffer";
@@ -30,30 +30,25 @@ const CommentSection = () => {
 
   const LIMIT = 10;
 
-  const {
-    data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isLoading,
-  } = useInfiniteQuery({
-    queryKey: ["comments", postId],
-    queryFn: async ({ pageParam = 1 }) => {
-      const res = await APIS.getcomments({
-        postId,
-        page: pageParam,
-        limit: LIMIT,
-      });
-      // console.log(res.data)
-      return res.data;
-    },
-    getNextPageParam: (lastPage, allPages) => {
-      if (lastPage.hasMore) {
-        return allPages.length + 1;
-      }
-      return undefined;
-    },
-  });
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
+    useInfiniteQuery({
+      queryKey: ["comments", postId],
+      queryFn: async ({ pageParam = 1 }) => {
+        const res = await APIS.getcomments({
+          postId,
+          page: pageParam,
+          limit: LIMIT,
+        });
+        // console.log(res.data)
+        return res.data;
+      },
+      getNextPageParam: (lastPage, allPages) => {
+        if (lastPage.hasMore) {
+          return allPages.length + 1;
+        }
+        return undefined;
+      },
+    });
 
   useEffect(() => {
     const scrollContainer = scrollContainerRef.current;
@@ -86,17 +81,16 @@ const CommentSection = () => {
     };
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-
-  const addCommentMutation = useMutation({
-    mutationFn: async (formData) => {
-      return await APIS.addComment(formData);
-    },
-    onSuccess: () => {
-      setSelectedFiles([]);
-      setNewComment("");
-      queryClient.invalidateQueries({ queryKey: ["comments", postId] });
-    },
-  });
+  // const addCommentMutation = useMutation({
+  //   mutationFn: async (formData) => {
+  //     return await APIS.addComment(formData);
+  //   },
+  //   onSuccess: () => {
+  //     setSelectedFiles([]);
+  //     setNewComment("");
+  //     queryClient.invalidateQueries({ queryKey: ["comments", postId] });
+  //   },
+  // });
 
   const handleFileUpload = (event) => {
     const files = Array.from(event.target.files);
@@ -109,8 +103,31 @@ const CommentSection = () => {
     setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const addCommentMutation = useMutation({
+    mutationFn: async (formData) => {
+      return await APIS.addComment(formData);
+    },
+    onMutate: () => {
+      // Disable inputs while submitting
+      return true;
+    },
+    onSuccess: () => {
+      setSelectedFiles([]);
+      setNewComment("");
+      queryClient.invalidateQueries({ queryKey: ["comments", postId] });
+    },
+    onError: () => {
+      // If error occurs, rollback the optimistic update
+      queryClient.invalidateQueries({ queryKey: ["comments", postId] });
+    },
+  });
+
   const handleAddComment = () => {
-    if (!newComment.trim() && selectedFiles.length === 0) return;
+    if (
+      (!newComment.trim() && selectedFiles.length === 0) ||
+      addCommentMutation.isPending
+    )
+      return;
 
     const newCommentObj = {
       comment: newComment,
@@ -118,20 +135,20 @@ const CommentSection = () => {
       for_post: postId,
       createdAt: new Date().toISOString(),
     };
-    // console.log(newCommentObj)
-    queryClient.setQueryData(["comments", postId], (old) => {
-      if(!old) return old;
 
+    // Optimistic update
+    queryClient.setQueryData(["comments", postId], (old) => {
+      if (!old) return old;
       return {
         ...old,
         pages: [
           {
             ...old.pages[0],
-            data: [newCommentObj, ...old.pages[0].data]
+            data: [newCommentObj, ...old.pages[0].data],
           },
-          ...old.pages.slice(1)
-        ]
-      }
+          ...old.pages.slice(1),
+        ],
+      };
     });
 
     const formData = new FormData();
@@ -236,6 +253,7 @@ const CommentSection = () => {
             className="flex-1 p-3 border rounded-full focus:outline-none mx-2 bg-white shadow-sm text-sm"
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
+            disabled={addCommentMutation.isPending}
           />
 
           <input
@@ -245,20 +263,41 @@ const CommentSection = () => {
             accept="image/*,video/*"
             className="hidden"
             onChange={handleFileUpload}
+            disabled={addCommentMutation.isPending}
           />
 
           <button
-            className="text-gray-500 hover:text-gray-600 p-2 rounded-full bg-gray-200 mx-1"
+            className={`text-gray-500 hover:text-gray-600 p-2 rounded-full bg-gray-200 mx-1 ${
+              addCommentMutation.isPending
+                ? "opacity-50 cursor-not-allowed"
+                : ""
+            }`}
             onClick={() => document.getElementById("fileInput").click()}
+            disabled={addCommentMutation.isPending}
           >
             <ImagePlus size={20} />
           </button>
 
           <button
-            className="text-blue-500 hover:text-blue-600 p-3 rounded-full bg-blue-100"
+            className={`text-blue-500 hover:text-blue-600 p-3 rounded-full ${
+              addCommentMutation.isPending ? "bg-blue-200" : "bg-blue-100"
+            } ${
+              (!newComment.trim() && selectedFiles.length === 0) ||
+              addCommentMutation.isPending
+                ? "opacity-50 cursor-not-allowed"
+                : ""
+            }`}
             onClick={handleAddComment}
+            disabled={
+              (!newComment.trim() && selectedFiles.length === 0) ||
+              addCommentMutation.isPending
+            }
           >
-            <Send size={20} />
+            {addCommentMutation.isPending ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <Send size={20} />
+            )}
           </button>
         </div>
       </div>

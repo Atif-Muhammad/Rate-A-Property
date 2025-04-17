@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ImagePlus, Send, X } from "lucide-react";
+import { ImagePlus, Send, X, Loader2 } from "lucide-react";
 import { arrayBufferToBase64 } from "../../ReUsables/arrayTobuffer";
 
 export function CommentInputBox({
@@ -13,6 +13,7 @@ export function CommentInputBox({
   const [replyText, setReplyText] = useState(initialText);
   const [newFiles, setNewFiles] = useState([]);
   const [existingMedia, setExistingMedia] = useState(initialMedia);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     setReplyText(initialText);
@@ -33,9 +34,21 @@ export function CommentInputBox({
     setExistingMedia((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = () => {
-    onSendReply(replyText, [...newFiles, ...existingMedia]);
-    // console.log(replyText, newFiles,existingMedia)
+  const handleSubmit = async () => {
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
+    try {
+      await onSendReply(replyText, [...newFiles, ...existingMedia]);
+      // Reset only if the operation was successful
+      setReplyText("");
+      setNewFiles([]);
+      setExistingMedia([]);
+    } catch (error) {
+      console.error("Error submitting comment:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleCancel = () => {
@@ -44,6 +57,12 @@ export function CommentInputBox({
     setExistingMedia([]);
     onCancel();
   };
+
+  const isDisabled =
+    (!replyText.trim() &&
+      newFiles.length === 0 &&
+      existingMedia.length === 0) ||
+    isSubmitting;
 
   return (
     <div className="flex flex-col w-full mt-3 space-y-2">
@@ -72,6 +91,7 @@ export function CommentInputBox({
               <button
                 onClick={() => handleRemoveExistingMedia(index)}
                 className="absolute -top-2 -right-2 bg-white rounded-full shadow p-1 hover:bg-gray-200"
+                disabled={isSubmitting}
               >
                 <X size={14} />
               </button>
@@ -100,6 +120,7 @@ export function CommentInputBox({
               <button
                 onClick={() => handleRemoveNewFile(index)}
                 className="absolute -top-2 -right-2 bg-white rounded-full shadow p-1 hover:bg-gray-200"
+                disabled={isSubmitting}
               >
                 <X size={14} />
               </button>
@@ -137,7 +158,10 @@ export function CommentInputBox({
             className="flex-1 focus:outline-none text-sm bg-transparent"
             value={replyText}
             onChange={(e) => setReplyText(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && handleSubmit()}
+            onKeyPress={(e) =>
+              e.key === "Enter" && !isDisabled && handleSubmit()
+            }
+            disabled={isSubmitting}
           />
 
           {/* Upload Button */}
@@ -148,10 +172,13 @@ export function CommentInputBox({
             accept="image/*,video/*"
             className="hidden"
             onChange={handleFileUpload}
+            disabled={isSubmitting}
           />
           <label
             htmlFor="commentFileInput"
-            className="text-gray-500 hover:text-gray-600 mx-1 cursor-pointer"
+            className={`text-gray-500 hover:text-gray-600 mx-1 cursor-pointer ${
+              isSubmitting ? "opacity-50 cursor-not-allowed" : ""
+            }`}
           >
             <ImagePlus size={20} />
           </label>
@@ -159,21 +186,26 @@ export function CommentInputBox({
           {/* Send Button */}
           <button
             onClick={handleSubmit}
-            className="text-blue-500 hover:text-blue-600"
-            disabled={
-              !replyText.trim() &&
-              newFiles.length === 0 &&
-              existingMedia.length === 0
-            }
+            className={`text-blue-500 hover:text-blue-600 ${
+              isDisabled ? "opacity-50 cursor-not-allowed" : ""
+            }`}
+            disabled={isDisabled}
           >
-            <Send size={20} />
+            {isSubmitting ? (
+              <Loader2 size={20} className="animate-spin" />
+            ) : (
+              <Send size={20} />
+            )}
           </button>
         </div>
 
         {/* Cancel Button */}
         <button
-          className="text-gray-400 hover:text-gray-600 text-xs"
+          className={`text-gray-400 hover:text-gray-600 text-xs ${
+            isSubmitting ? "opacity-50 cursor-not-allowed" : ""
+          }`}
           onClick={handleCancel}
+          disabled={isSubmitting}
         >
           Cancel
         </button>
