@@ -173,34 +173,41 @@ export const NewPost = ({
           rows="4"
         ></textarea>
 
-        {/* Preview */}
-        {selectedMedia.map((media, index) => {
-          const mediaUrl = String(media.url); // ensure it's a string
-          return (
-            <div key={index} className="relative w-28 h-28 flex-shrink-0">
-              {mediaUrl.endsWith(".mp4") ? (
-                <video
-                  src={mediaUrl}
-                  controls
-                  className="w-full h-full rounded-lg"
-                />
-              ) : (
-                <img
-                  src={mediaUrl}
-                  alt="Selected"
-                  className="w-full h-full object-cover rounded-lg"
-                />
-              )}
-              <button
-                onClick={() => removeMedia(index)}
-                className="absolute top-1 right-1 bg-black/60 p-1 rounded-full text-white"
-              >
-                <Trash2 size={16} />
-              </button>
-            </div>
-          );
-        })}
+        {/* Preview - Horizontal Scroll */}
+        <div className="flex overflow-x-auto pb-2 gap-2">
+          {" "}
+          {/* Added overflow-x-auto and pb-2 for scrollbar space */}
+          {selectedMedia.map((media, index) => {
+            const mediaUrl = String(media.url);
+            return (
+              <div key={index} className="flex-shrink-0 relative w-28 h-28">
+                {" "}
+                {/* flex-shrink-0 is crucial */}
+                {mediaUrl.endsWith(".mp4") ? (
+                  <video
+                    src={mediaUrl}
+                    controls
+                    className="w-full h-full rounded-lg object-cover"
+                  />
+                ) : (
+                  <img
+                    src={mediaUrl}
+                    alt="Selected"
+                    className="w-full h-full object-cover rounded-lg"
+                  />
+                )}
+                <button
+                  onClick={() => removeMedia(index)}
+                  className="absolute top-1 right-1 bg-black/60 p-1 rounded-full text-white hover:bg-black/80"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            );
+          })}
+        </div>
 
+        
         {/* File input */}
         <input
           type="file"
