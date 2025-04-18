@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { arrayBufferToBase64 } from "../../ReUsables/arrayTobuffer";
-import { ThumbsUp, ThumbsDown, MessageCircle } from "lucide-react";
+import { ThumbsUp, ThumbsDown, MessageCircle, X } from "lucide-react";
 import { APIS } from "../../../config/Config";
 import { getTimeAgo } from "../../ReUsables/GetTimeAgo";
 import MediaGrid from "../post/MediaGrid";
-import { CommentInputBox } from "./CommentInputBox";
+import { AddComment } from "./Addcomment";
 import { CommentOptions } from "./CommentOption";
 import CommentSkeleton from "../skeletons/CommentSkeleton";
 import { useupdateCommentMutation } from "../../hooks/ReactQuery";
@@ -232,44 +232,31 @@ function CommentCard(props) {
   };
 
   // Update your handleSaveEdit function
-  const handleSaveEdit = (text, media) => {
-    // Distinguish existing vs new files
-    const existingFiles = media.filter((file) => file.filename);
-    const selectedFiles = media.filter((file) => file.name);
+  const handleSaveEdit = async (text, media) => {
+    try {
+      const formData = new FormData();
+      formData.append("content", text);
+      formData.append("owner", currentUser.id);
 
-    if (
-      !text.trim() &&
-      selectedFiles.length === 0 &&
-      existingFiles.length === 0
-    ) {
-      return;
+      // Handle media files
+      media.forEach((file) => {
+        if (file instanceof File) {
+          formData.append("files", file);
+        } else if (file.url) {
+          formData.append("existingFiles", file.url);
+        }
+      });
+
+      await updateCommentMutation.mutateAsync({
+        commentId: props.comment._id,
+        postId: props.comment.for_post,
+        formData,
+      });
+
+      setIsEditing(false);
+    } catch (error) {
+      console.error("Error saving edit:", error);
     }
-
-    const formData = new FormData();
-    formData.append("content", text);
-    formData.append("owner", currentUser.id);
-
-    // New files (File objects)
-    selectedFiles.forEach((file) => {
-      formData.append("files", file);
-    });
-
-    // Existing file URLs (to keep)
-    existingFiles.forEach((file) => {
-      formData.append("existingFiles", file.url);
-    });
-
-    const updatedAt = new Date().toISOString();
-
-    updateCommentMutation.mutate({
-      commentId: props.comment._id,
-      postId: props.comment.for_post,
-      formData,
-      newContent: text,
-      updatedAt,
-    });
-
-    setIsEditing(false);
   };
 
   useEffect(() => {
@@ -582,34 +569,48 @@ function CommentCard(props) {
         )}
 
         {(showReplyBox || isEditing) && (
-          <CommentInputBox
-            currentUser={props.currentUser}
-            initialText={isEditing ? editText : ""}
-            initialMedia={isEditing ? existingFiles : []}
-            onSendReply={(text, media) => {
-              // console.log("first", text)
-              if (isEditing) {
-                setEditText(text);
-                setSelectedFiles(media);
-                handleSaveEdit(text, media);
-              } else {
-                handleSendReply(text, media);
+          <div className="mt-2 w-full bg-gray-100 rounded-lg overflow-hidden">
+            {isEditing ? (
+              <div className="flex items-center justify-between px-5 pt-2">
+                <span className="text-md text-gray-700">
+                  Editing your comment
+                </span>
+                <button
+                  onClick={() => setIsEditing(false)}
+                  className="text-gray-500 hover:text-red-500 transition-colors"
+                >
+                  <X size={18} className="hover:scale-110" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between px-5 pt-2">
+                <span className="text-md text-gray-700">
+                  Replying to{" "}
+                  <span className="font-bold text-black">
+                    @{props.comment.owner?.user_name}
+                  </span>
+                </span>
+                <button
+                  onClick={handleReplyClick}
+                  className="text-gray-500 hover:text-red-500 transition-colors"
+                >
+                  <X size={18} className="hover:scale-110" />
+                </button>
+              </div>
+            )}
+            <AddComment
+              currentUser={currentUser}
+              initialText={isEditing ? editText : ""}
+              initialMedia={isEditing ? existingFiles : []}
+              onSendReply={handleSendReply}
+              onSaveEdit={handleSaveEdit}
+              onCancel={
+                isEditing ? () => setIsEditing(false) : handleReplyClick
               }
-              if (props.setActiveReplyCommentId) {
-                props.setActiveReplyCommentId(null);
-              }
-              setLocalActiveReplyCommentId(null);
-            }}
-            onCancel={() => {
-              if (props.setActiveReplyCommentId) {
-                props.setActiveReplyCommentId(null);
-              }
-              setLocalActiveReplyCommentId(null);
-              setIsEditing(false);
-              setSelectedFiles([]);
-            }}
-            isEditing={isEditing}
-          />
+              isEditing={isEditing}
+              isReply={!isEditing}
+            />
+          </div>
         )}
       </div>
     </>

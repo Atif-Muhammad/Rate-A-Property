@@ -1,33 +1,23 @@
 import { useState, useEffect, useRef } from "react";
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-  useInfiniteQuery,
-} from "@tanstack/react-query";
-import { Send, ImagePlus, Loader2 } from "lucide-react";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation, useParams } from "react-router-dom";
 import { APIS } from "../../config/Config";
-import { arrayBufferToBase64 } from "../ReUsables/arrayTobuffer";
 import CommentCard from "./Card/CommentCard";
 import PostCard from "./post/PostCard";
 import CommentSkeleton from "./skeletons/CommentSkeleton";
 import Loader from "../Loaders/Loader";
-import DiscoverSkeleton from "./skeletons/DiscoverSkeleton";
+import { AddComment } from "./Card/Addcomment";
 
 const CommentSection = () => {
+  const [activeReplyId, setActiveReplyId] = useState(null);
+
   const location = useLocation();
   const { postId } = useParams();
   const post = location.state?.post;
   const currentUser = location.state?.currentUser;
   const queryClient = useQueryClient();
 
-  const [newComment, setNewComment] = useState("");
-  const [selectedFiles, setSelectedFiles] = useState([]);
-  const [activeReplyCommentId, setActiveReplyCommentId] = useState(null);
-
   const scrollContainerRef = useRef(null);
-
   const LIMIT = 10;
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
@@ -39,7 +29,6 @@ const CommentSection = () => {
           page: pageParam,
           limit: LIMIT,
         });
-        // console.log(res.data)
         return res.data;
       },
       getNextPageParam: (lastPage, allPages) => {
@@ -52,10 +41,8 @@ const CommentSection = () => {
 
   useEffect(() => {
     const scrollContainer = scrollContainerRef.current;
-
     const handleScroll = () => {
       if (!scrollContainer) return;
-
       const scrollTop = scrollContainer.scrollTop;
       const containerHeight = scrollContainer.clientHeight;
       const contentHeight = scrollContainer.scrollHeight;
@@ -73,7 +60,6 @@ const CommentSection = () => {
       scrollContainer.addEventListener("scroll", handleScroll);
     }
 
-    window.addEventListener("scroll", handleScroll);
     return () => {
       if (scrollContainer) {
         scrollContainer.removeEventListener("scroll", handleScroll);
@@ -81,60 +67,8 @@ const CommentSection = () => {
     };
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  // const addCommentMutation = useMutation({
-  //   mutationFn: async (formData) => {
-  //     return await APIS.addComment(formData);
-  //   },
-  //   onSuccess: () => {
-  //     setSelectedFiles([]);
-  //     setNewComment("");
-  //     queryClient.invalidateQueries({ queryKey: ["comments", postId] });
-  //   },
-  // });
-
-  const handleFileUpload = (event) => {
-    const files = Array.from(event.target.files);
-    if (files.length > 0) {
-      setSelectedFiles((prevFiles) => [...prevFiles, ...files]);
-    }
-  };
-
-  const removeFile = (index) => {
-    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const addCommentMutation = useMutation({
-    mutationFn: async (formData) => {
-      return await APIS.addComment(formData);
-    },
-    onMutate: () => {
-      // Disable inputs while submitting
-      return true;
-    },
-    onSuccess: () => {
-      setSelectedFiles([]);
-      setNewComment("");
-      queryClient.invalidateQueries({ queryKey: ["comments", postId] });
-    },
-    onError: () => {
-      // If error occurs, rollback the optimistic update
-      queryClient.invalidateQueries({ queryKey: ["comments", postId] });
-    },
-  });
-
-  const handleAddComment = () => {
-    if (
-      (!newComment.trim() && selectedFiles.length === 0) ||
-      addCommentMutation.isPending
-    )
-      return;
-
-    const newCommentObj = {
-      comment: newComment,
-      owner: currentUser,
-      for_post: postId,
-      createdAt: new Date().toISOString(),
-    };
+  const handleCommentAdded = async (newCommentObj) => {
+    console.log("New comment data being submitted:", newCommentObj); // Add this line
 
     // Optimistic update
     queryClient.setQueryData(["comments", postId], (old) => {
@@ -151,13 +85,33 @@ const CommentSection = () => {
       };
     });
 
+    // Actual API call
     const formData = new FormData();
     formData.append("owner", currentUser.id);
-    formData.append("content", newComment);
-    formData.append("for_post", postId);
-    selectedFiles.forEach((file) => formData.append("files", file));
+    formData.append("content", newCommentObj.comment);
 
-    addCommentMutation.mutate(formData);
+    // Log media files if they exist
+    if (newCommentObj.media && newCommentObj.media.length > 0) {
+      console.log("Media files being submitted:", newCommentObj.media);
+      newCommentObj.media.forEach((file, index) => {
+        if (file instanceof File) {
+          formData.append("files", file);
+        }
+      });
+    }
+
+    formData.append("for_post", postId);
+
+    console.log("FormData contents:");
+    // Log FormData entries
+    for (let [key, value] of formData.entries()) {
+      console.log(key, value);
+    }
+
+    await APIS.addComment(formData);
+
+    // Refetch to ensure data consistency
+    queryClient.invalidateQueries({ queryKey: ["comments", postId] });
   };
 
   return (
@@ -175,7 +129,7 @@ const CommentSection = () => {
 
         <div
           ref={scrollContainerRef}
-          className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2 lg:max-h-[65vh] h-full "
+          className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2 lg:max-h-[65vh] h-full"
         >
           {isLoading && !isFetchingNextPage ? (
             <CommentSkeleton />
@@ -193,8 +147,8 @@ const CommentSection = () => {
                       key={comment._id}
                       comment={comment}
                       currentUser={currentUser}
-                      activeReplyCommentId={activeReplyCommentId}
-                      setActiveReplyCommentId={setActiveReplyCommentId}
+                      activeReplyCommentId={activeReplyId}
+                      setActiveReplyCommentId={setActiveReplyId}
                     />
                   ))
               )}
@@ -203,103 +157,12 @@ const CommentSection = () => {
           )}
         </div>
 
-        {/* Selected File Previews */}
-        {selectedFiles.length > 0 && (
-          <div className="bg-gray-300 w-full p-2 rounded-t-lg overflow-x-auto">
-            <div className="flex gap-2 flex-nowrap">
-              {selectedFiles.map((file, index) => (
-                <div
-                  key={index}
-                  className="relative w-24 h-24 bg-gray-200 rounded-md overflow-hidden flex-shrink-0"
-                >
-                  <button
-                    className="z-10 absolute top-1 right-1 bg-black text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
-                    onClick={() => removeFile(index)}
-                  >
-                    ✕
-                  </button>
-                  {file.type.startsWith("image") ? (
-                    <img
-                      src={URL.createObjectURL(file)}
-                      alt="Preview"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : file.type.startsWith("video") ? (
-                    <video
-                      src={URL.createObjectURL(file)}
-                      className="w-full h-full object-cover"
-                      controls
-                    />
-                  ) : null}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Fixed Input Box */}
-        <div className="bg-gray-100 p-3 sticky lg:flex bottom-0 rounded-lg flex items-center">
-          <img
-            src={`data:${
-              currentUser?.image?.contentType
-            };base64,${arrayBufferToBase64(currentUser?.image?.data?.data)}`}
-            alt="user-avatar"
-            className="w-10 h-10 rounded-full"
-          />
-
-          <input
-            type="text"
-            placeholder="Write a comment..."
-            className="flex-1 p-3 border rounded-full focus:outline-none mx-2 bg-white shadow-sm text-sm"
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            disabled={addCommentMutation.isPending}
-          />
-
-          <input
-            type="file"
-            multiple
-            id="fileInput"
-            accept="image/*,video/*"
-            className="hidden"
-            onChange={handleFileUpload}
-            disabled={addCommentMutation.isPending}
-          />
-
-          <button
-            className={`text-gray-500 hover:text-gray-600 p-2 rounded-full bg-gray-200 mx-1 ${
-              addCommentMutation.isPending
-                ? "opacity-50 cursor-not-allowed"
-                : ""
-            }`}
-            onClick={() => document.getElementById("fileInput").click()}
-            disabled={addCommentMutation.isPending}
-          >
-            <ImagePlus size={20} />
-          </button>
-
-          <button
-            className={`text-blue-500 hover:text-blue-600 p-3 rounded-full ${
-              addCommentMutation.isPending ? "bg-blue-200" : "bg-blue-100"
-            } ${
-              (!newComment.trim() && selectedFiles.length === 0) ||
-              addCommentMutation.isPending
-                ? "opacity-50 cursor-not-allowed"
-                : ""
-            }`}
-            onClick={handleAddComment}
-            disabled={
-              (!newComment.trim() && selectedFiles.length === 0) ||
-              addCommentMutation.isPending
-            }
-          >
-            {addCommentMutation.isPending ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              <Send size={20} />
-            )}
-          </button>
-        </div>
+        {/* Add the AddComment component at the bottom */}
+        <AddComment
+          postId={postId}
+          currentUser={currentUser}
+          onCommentAdded={handleCommentAdded} // Your existing function
+        />
       </div>
     </div>
   );
