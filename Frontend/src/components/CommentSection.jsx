@@ -67,10 +67,10 @@ const CommentSection = () => {
     };
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  const handleCommentAdded = async (newCommentObj) => {
-    console.log("New comment data being submitted:", newCommentObj); // Add this line
-
-    // Optimistic update
+  const handleCommentAdded = async (newCommentObj, newFiles) => {
+    console.log("New comment data being submitted:", newCommentObj);
+  
+    // Optimistic UI update
     queryClient.setQueryData(["comments", postId], (old) => {
       if (!old) return old;
       return {
@@ -84,36 +84,25 @@ const CommentSection = () => {
         ],
       };
     });
-
+  
     // Actual API call
     const formData = new FormData();
     formData.append("owner", currentUser.id);
     formData.append("content", newCommentObj.comment);
-
-    // Log media files if they exist
-    if (newCommentObj.media && newCommentObj.media.length > 0) {
-      console.log("Media files being submitted:", newCommentObj.media);
-      newCommentObj.media.forEach((file, index) => {
-        if (file instanceof File) {
-          formData.append("files", file);
-        }
+    formData.append("for_post", postId);
+  
+    if (newFiles && newFiles.length > 0) {
+      newFiles.forEach((file) => {
+        formData.append("files", file);
       });
     }
-
-    formData.append("for_post", postId);
-
-    console.log("FormData contents:");
-    // Log FormData entries
-    for (let [key, value] of formData.entries()) {
-      console.log(key, value);
-    }
-
+  
     await APIS.addComment(formData);
-
-    // Refetch to ensure data consistency
+  
+    // Invalidate cache to fetch updated DB version
     queryClient.invalidateQueries({ queryKey: ["comments", postId] });
   };
-
+  
   return (
     <div className="flex flex-col lg:flex-row items-start w-full h-full justify-center lg:gap-3 gap-6 p-3 overflow-hidden">
       {/* Left Side - Post Card */}
@@ -161,7 +150,7 @@ const CommentSection = () => {
         <AddComment
           postId={postId}
           currentUser={currentUser}
-          onCommentAdded={handleCommentAdded} // Your existing function
+          onCommentAdded={handleCommentAdded} 
         />
       </div>
     </div>

@@ -14,6 +14,7 @@ router.post(
 router.put("/updatePost/:id", upload_disk.array("files"), postController.updatePost);
 
 router.get("/getPosts", postController.getPosts);
+router.get("/getUserPosts", postController.getUserPosts);
 router.get("/getSinglePost", postController.getSingPost);
 
 router.post("/delPost", postController.delPost);

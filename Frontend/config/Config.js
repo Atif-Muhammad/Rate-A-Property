@@ -101,6 +101,16 @@ const getPosts = async ({page, limit}) => {
     return error;
   }
 };
+const getUserPosts = async ({page, limit, userId}) => {
+  // console.log(page, limit)
+  try {
+    const response = await axios.get(`${Baseurl}/posts/getUserPosts?user=${userId}&page=${page}&limit=${limit}`);
+    return response;
+    
+  } catch (error) {
+    return error;
+  }
+};
 
 const getSinglePost = async (post_id) => {
   try {
@@ -251,6 +261,7 @@ const delComment = async (commentId)=>{
 }
 
 
+
 const getcomments = async ({postId, page, limit}) => {
   try {
     const response = await axios.get(
@@ -340,6 +351,7 @@ export const APIS = {
   createPost,
   updatePost,
   getPosts,
+  getUserPosts,
   delPost,
   getSinglePost,
   like,

@@ -14,20 +14,22 @@ export const AddComment = ({
   isEditing = false,
   isReply = false,
 }) => {
-  // Use separate state for controlled input
   const [text, setText] = useState(initialText);
   const [newFiles, setNewFiles] = useState([]);
-  const [existingMedia, setExistingMedia] = useState(initialMedia);
+  const [existingMedia, setExistingMedia] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef(null);
+  const hasInitialized = useRef(false); // prevents repeated overwrite of existingMedia
 
   useEffect(() => {
     setText(initialText || "");
   }, [initialText]);
-  
-  // Update media when initialMedia changes
+
   useEffect(() => {
-    setExistingMedia(initialMedia);
+    if (!hasInitialized.current) {
+      setExistingMedia(initialMedia || []);
+      hasInitialized.current = true;
+    }
   }, [initialMedia]);
 
   const handleFileUpload = useCallback((e) => {
@@ -59,10 +61,6 @@ export const AddComment = ({
     try {
       const media = [...existingMedia, ...newFiles];
 
-      // Log the data before submission
-      console.log("Submitting comment with text:", text);
-      console.log("Submitting comment with media:", media);
-
       if (isEditing) {
         await onSaveEdit?.(text, media);
       } else if (isReply) {
@@ -72,21 +70,28 @@ export const AddComment = ({
           _id: `temp-${Date.now()}`,
           comment: text,
           owner: currentUser,
-          media: media.map((file) => ({
-            url: file.url || URL.createObjectURL(file),
-            type: file.type?.startsWith("image") ? "image" : "video",
-          })),
+          media: [
+            ...existingMedia,
+            ...newFiles.map((file) => ({
+              // Only for optimistic UI preview
+              originalname: file.name,
+              url: URL.createObjectURL(file),
+              type: file.type?.startsWith("image") ? "image" : "video",
+            })),
+          ],
           createdAt: new Date().toISOString(),
           likes: [],
           disLikes: [],
         };
-        await onCommentAdded?.(optimisticComment);
+        await onCommentAdded?.(optimisticComment, newFiles);
       }
 
+      // Clear form if not editing
       if (!isEditing) {
         setText("");
         setNewFiles([]);
         setExistingMedia([]);
+        hasInitialized.current = false; // allow new initialMedia when switching posts
       }
     } catch (error) {
       console.error("Submission failed:", error);
@@ -111,38 +116,45 @@ export const AddComment = ({
     isSubmitting;
 
   return (
-    <div className="sticky bottom-0 w-full  bg-gray-100 rounded-lg">
-      {/* Media Previews */}
+    <div className="sticky bottom-0 w-full bg-gray-100 rounded-lg">
       {(newFiles.length > 0 || existingMedia.length > 0) && (
         <div className="p-2 bg-gray-200 rounded-t-lg flex gap-2 overflow-x-auto">
-          {[...existingMedia, ...newFiles].map((file, index) => (
-            <div key={index} className="relative w-24 h-24 flex-shrink-0">
-              <button
-                onClick={() => removeFile(index, index >= existingMedia.length)}
-                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 z-10"
-                type="button"
-              >
-                <X size={14} />
-              </button>
-              {file.type?.startsWith("image") ? (
-                <img
-                  src={file.url || URL.createObjectURL(file)}
-                  alt="Preview"
-                  className="w-full h-full object-cover rounded-md"
-                />
-              ) : (
-                <video
-                  src={file.url || URL.createObjectURL(file)}
-                  className="w-full h-full object-cover rounded-md"
-                  controls
-                />
-              )}
-            </div>
-          ))}
+          {[...existingMedia, ...newFiles].map((file, index) => {
+            const isNew = index >= existingMedia.length;
+            const fileObj = isNew
+              ? newFiles[index - existingMedia.length]
+              : existingMedia[index];
+            const src = fileObj.url || URL.createObjectURL(fileObj);
+            const type = fileObj.type || (fileObj.url?.includes("video") ? "video" : "image");
+
+            return (
+              <div key={index} className="relative w-24 h-24 flex-shrink-0">
+                <button
+                  onClick={() => removeFile(index, isNew)}
+                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 z-10"
+                  type="button"
+                >
+                  <X size={14} />
+                </button>
+                {type.startsWith("image") ? (
+                  <img
+                    src={src}
+                    alt="Preview"
+                    className="w-full h-full object-cover rounded-md"
+                  />
+                ) : (
+                  <video
+                    src={src}
+                    className="w-full h-full object-cover rounded-md"
+                    controls
+                  />
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 
-      {/* Input Area */}
       <div className="p-3 flex items-center">
         <img
           src={

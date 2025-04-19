@@ -108,7 +108,7 @@ const PostCard = (props) => {
         <div className="bg-white shadow-md rounded-lg p-3.5  w-full lg:max-w-3xl border border-gray-200">
           <div className="flex items-center justify-between">
             <div className="flex items-center justify-between w-full space-x-3">
-              <NavLink to="/profile" className="flex items-center gap-x-3">
+              <NavLink to={`/profile/${post?.owner?.user_name}`} state={{owner: post?.owner, currentUser: props.currentUser}} className="flex items-center gap-x-3">
                 <img
                   src={post?.owner?.image}
                   alt="profile"
