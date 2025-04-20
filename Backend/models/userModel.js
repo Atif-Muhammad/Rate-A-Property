@@ -31,6 +31,14 @@ const userSchema = mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'disLike'
     }],
+    followers: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'user'
+    }],
+    following: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'user'
+    }]
 })
 
 module.exports = mongoose.model("user", userSchema);

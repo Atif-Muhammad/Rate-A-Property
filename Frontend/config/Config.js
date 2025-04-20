@@ -56,6 +56,19 @@ const getUser = async (id) => {
     return error;
   }
 };
+
+const followUser = async (followerId, followId) => {
+  try {
+    const response = await axios.put(
+      `${Baseurl}/user/followUser?follower_id=${followerId}&follow_id=${followId}`,
+      {},
+      { withCredentials: true }
+    );
+    return response;
+  } catch (error) {
+    return error;
+  }
+}
 // Post related APIs
 const createPost = async (data) => {
   try {
@@ -348,6 +361,7 @@ export const APIS = {
   signin,
   getUser,
   logout,
+  followUser,
   createPost,
   updatePost,
   getPosts,

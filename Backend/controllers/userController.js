@@ -198,6 +198,25 @@ const userController = {
         } catch (error) {
             res.send(error);
         }
+    },
+    followUser: async (req, res) => {
+        const follower_id = req.query.follower_id;
+        const follow_id = req.query.follow_id;
+        try {
+            const followerDB = await user.findById(follower_id);
+            const followDB = await user.findById(follow_id);
+            if (followerDB && followDB) {
+                followerDB.following.push(follow_id);
+                followDB.followers.push(follower_id);
+                await followerDB.save();
+                await followDB.save();
+                res.send("Successfully followed the user")
+            } else {
+                res.status(404).send("User not found")
+            }
+        }catch (error) {
+            res.send(error)
+        }
     }
 
 }

@@ -108,11 +108,11 @@ export const UserInfo = () => {
             <span className="text-sm text-gray-500">Posts</span>
           </div>
           <div className="text-center">
-            <span className="block font-bold">4.5K</span>
+            <span className="block font-bold">{profile?.followers?.length}</span>
             <span className="text-sm text-gray-500">Followers</span>
           </div>
           <div className="text-center">
-            <span className="block font-bold">300</span>
+            <span className="block font-bold">{profile?.following?.length}</span>
             <span className="text-sm text-gray-500">Following</span>
           </div>
         </div>
