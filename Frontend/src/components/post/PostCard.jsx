@@ -25,18 +25,20 @@ const PostCard = (props) => {
   const [loading, setLoading] = useState(false);
   const [openPostModal, setOpenPostModal] = useState(false);
   const [editData, setEditData] = useState(null);
+  const [isFollowing, setIsFollowing] = useState(
+    props.post?.owner?.followers?.includes(props.currentUser?._id) || false
+  );
 
   const queryClient = useQueryClient();
 
   const { mutate: deletePost } = useMutation({
     mutationFn: (postId) => APIS.delPost(postId),
-    onSuccess: (_, postId) => {
+    onSuccess: () => {
       queryClient.invalidateQueries(["posts"]);
     },
-    onError: (error) => {
-      console.error("Error deleting post:", error);
-    },
   });
+
+
 
   const postFromprop = () => {
     setPost(props.post);
@@ -46,7 +48,7 @@ const PostCard = (props) => {
 
   useEffect(() => {
     postFromprop();
-  }, [props.post]); // This will update when parent updates the post prop
+  }, [props.post]);
 
   useEffect(() => {}, [agrees, disagrees]);
 
@@ -102,19 +104,54 @@ const PostCard = (props) => {
     deletePost(postId);
   };
 
-  const handleFollow = async (followId) => {
-    try {
-      const response = await APIS.followUser(agreeOwner, followId);
-      if (response.status === 200) {
-        console.log("Followed successfully");
-        // Optionally, you can update the UI or state here
-      } else {
-        console.error("Failed to follow user:", response.data);
-      }
-    } catch (error) {
-      console.error("Error following user:", error);
+  // Update isFollowing state when props.post changes
+  useEffect(() => {
+    setIsFollowing(
+      props.post?.owner?.followers?.includes(props.currentUser?._id) || false
+    );
+  }, [props.post]);
+
+  const { mutate: followUser } = useMutation({
+    mutationFn: (followId) => APIS.followUser(agreeOwner, followId),
+    onMutate: (followId) => {
+      // Optimistically update the UI
+      setIsFollowing(true);
+      return { previousFollowState: isFollowing };
+    },
+    onError: (err, followId, context) => {
+      // Rollback on error
+      setIsFollowing(context.previousFollowState);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(["posts"]);
+      queryClient.invalidateQueries(["user", post.owner?._id]);
+    },
+  });
+
+  const { mutate: unfollowUser } = useMutation({
+    mutationFn: (followId) => APIS.unfollowUser(agreeOwner, followId),
+    onMutate: (followId) => {
+      // Optimistically update the UI
+      setIsFollowing(false);
+      return { previousFollowState: isFollowing };
+    },
+    onError: (err, followId, context) => {
+      // Rollback on error
+      setIsFollowing(context.previousFollowState);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(["posts"]);
+      queryClient.invalidateQueries(["user", post.owner?._id]);
+    },
+  });
+
+  const handleFollowAction = (followId) => {
+    if (isFollowing) {
+      unfollowUser(followId);
+    } else {
+      followUser(followId);
     }
-  }
+  };
 
   return (
     <>
@@ -122,7 +159,7 @@ const PostCard = (props) => {
         <div className="bg-white shadow-md rounded-lg p-3.5  w-full lg:max-w-3xl border border-gray-200">
           <div className="flex items-center justify-between">
             <div className="flex items-center justify-between w-full space-x-3">
-              {/* change this */}
+              {/* Profile & Username */}
               <NavLink
                 to={`/profile/${post?.owner?.user_name}`}
                 state={{ owner: post?.owner, currentUser: props.currentUser }}
@@ -133,30 +170,52 @@ const PostCard = (props) => {
                   alt="profile"
                   className="w-12 h-12 rounded-full border-2 border-blue-500"
                 />
-
                 <div className="leading-tight">
-                  <div className="flex items-center gap-x-5">
-                    <p className="text-sm font-semibold text-black">
-                      {post?.owner?.user_name}
-                    </p>
-                    {(agreeOwner != post.owner?._id && !post.owner?.followers?.includes(agreeOwner)) && <button className="text-xs border px-2 py-0.5 cursor-pointer" onClick={()=> handleFollow(post.owner?._id)}>Follow</button>}
-                  </div>
+                  <p className="text-sm font-semibold text-black">
+                    {post?.owner?.user_name}
+                  </p>
                   <span className="text-xs text-gray-500">
                     {getTimeAgo(post.createdAt)}
                   </span>
                 </div>
               </NavLink>
-              {agreeOwner == post.owner?._id && (
-                <PostOptions
-                  onDelete={() => {
-                    handlePostDel(post._id);
-                  }}
-                  onEdit={() => {
-                    setEditData(post); // ← set post to edit in parent
-                    setOpenPostModal(true); // ← open modal
-                  }}
-                />
-              )}
+
+              {/* Follow & PostOptions (right side) */}
+              <div className="flex items-center gap-x-2">
+                {/* Follow/Following Button with Unfollow on hover */}
+                {agreeOwner != post.owner?._id && (
+                  <button
+                    className={`text-sm font-medium px-4 py-1.5 rounded-lg transition-all duration-200 active:scale-95 relative group ${
+                      isFollowing
+                        ? "bg-gray-100 hover:bg-red-50 text-black border border-gray-300 hover:border-red-300"
+                        : "bg-blue-500 hover:bg-blue-600 text-white"
+                    }`}
+                    onClick={() => handleFollowAction(post.owner?._id)}
+                  >
+                    <span
+                      className={`${isFollowing ? "group-hover:hidden" : ""}`}
+                    >
+                      {isFollowing ? "Following" : "Follow"}
+                    </span>
+                    {isFollowing && (
+                      <span className="hidden group-hover:block text-red-500">
+                        Unfollow
+                      </span>
+                    )}
+                  </button>
+                )}
+
+                {/* Post Options (if owner) */}
+                {agreeOwner == post.owner?._id && (
+                  <PostOptions
+                    onDelete={() => handlePostDel(post._id)}
+                    onEdit={() => {
+                      setEditData(post);
+                      setOpenPostModal(true);
+                    }}
+                  />
+                )}
+              </div>
             </div>
           </div>
 

@@ -116,23 +116,30 @@ export const AddComment = ({
     isSubmitting;
 
   return (
-    <div className="sticky bottom-0 w-full bg-gray-100 rounded-lg">
+    <div className="lg:max-w-3xl w-full bg-gray-100 rounded-lg   shadow-sm">
+      {/* Media preview section */}
       {(newFiles.length > 0 || existingMedia.length > 0) && (
-        <div className="p-2 bg-gray-200 rounded-t-lg flex gap-2 overflow-x-auto">
+        <div className="p-3 bg-gray-50 border-b rounded-t-lg flex gap-3 overflow-x-auto">
           {[...existingMedia, ...newFiles].map((file, index) => {
             const isNew = index >= existingMedia.length;
             const fileObj = isNew
               ? newFiles[index - existingMedia.length]
               : existingMedia[index];
             const src = fileObj.url || URL.createObjectURL(fileObj);
-            const type = fileObj.type || (fileObj.url?.includes("video") ? "video" : "image");
+            const type =
+              fileObj.type ||
+              (fileObj.url?.includes("video") ? "video" : "image");
 
             return (
-              <div key={index} className="relative w-24 h-24 flex-shrink-0">
+              <div
+                key={index}
+                className="relative w-24 h-24 flex-shrink-0 group"
+              >
                 <button
                   onClick={() => removeFile(index, isNew)}
-                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 z-10"
+                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 z-10 "
                   type="button"
+                  aria-label="Remove media"
                 >
                   <X size={14} />
                 </button>
@@ -140,12 +147,12 @@ export const AddComment = ({
                   <img
                     src={src}
                     alt="Preview"
-                    className="w-full h-full object-cover rounded-md"
+                    className="w-full h-full object-cover rounded-md border border-gray-200"
                   />
                 ) : (
                   <video
                     src={src}
-                    className="w-full h-full object-cover rounded-md"
+                    className="w-full h-full object-cover rounded-md border border-gray-200"
                     controls
                   />
                 )}
@@ -155,7 +162,8 @@ export const AddComment = ({
         </div>
       )}
 
-      <div className="p-3 flex items-center">
+      {/* Input section */}
+      <div className="p-3 flex items-center gap-3">
         <img
           src={
             currentUser?.image?.contentType
@@ -164,11 +172,11 @@ export const AddComment = ({
                 };base64,${arrayBufferToBase64(currentUser.image.data?.data)}`
               : currentUser?.image
           }
-          alt="user-avatar"
-          className="w-10 h-10 rounded-full"
+          alt="User avatar"
+          className="w-10 h-10 rounded-full border-2 border-white shadow-sm"
         />
 
-        <div className="flex-1 mx-2 relative">
+        <div className="flex-1 relative">
           <input
             type="text"
             placeholder={
@@ -178,7 +186,7 @@ export const AddComment = ({
                 ? "Write a reply..."
                 : "Write a comment..."
             }
-            className="w-full p-3 border rounded-full focus:outline-none bg-white shadow-sm text-sm"
+            className="w-full px-4 py-2.5 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-sm transition-all placeholder-gray-400"
             value={text}
             onChange={handleTextChange}
             onKeyPress={(e) =>
@@ -198,12 +206,13 @@ export const AddComment = ({
           />
         </div>
 
-        <div className="flex gap-1">
+        <div className="flex gap-2">
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={isSubmitting}
-            className="p-2 text-gray-600 hover:text-blue-600 disabled:opacity-50"
+            className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors disabled:opacity-50"
             type="button"
+            aria-label="Attach media"
           >
             <ImagePlus size={20} />
           </button>
@@ -211,12 +220,13 @@ export const AddComment = ({
           <button
             onClick={handleSubmit}
             disabled={isDisabled}
-            className={`p-2 rounded-full ${
+            className={`p-2 rounded-full transition-colors ${
               isSubmitting
-                ? "bg-blue-200 text-blue-600"
-                : "bg-blue-100 text-blue-600 hover:bg-blue-200"
-            } disabled:opacity-50`}
+                ? "bg-blue-100 text-blue-600"
+                : "bg-blue-500 text-white hover:bg-blue-600"
+            } disabled:opacity-50 disabled:bg-blue-100 disabled:text-blue-400`}
             type="button"
+            aria-label={isSubmitting ? "Submitting..." : "Submit comment"}
           >
             {isSubmitting ? (
               <Loader2 size={20} className="animate-spin" />

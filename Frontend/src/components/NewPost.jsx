@@ -1,12 +1,10 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Image, Smile, UserPlus, MapPin, X, Trash2 } from "lucide-react";
+import { Image, MapPin, X, Trash2 } from "lucide-react";
 import { APIS } from "../../config/Config";
-import { arrayBufferToBase64 } from "../ReUsables/arrayTobuffer";
 import { useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 import { QueryClient, useQuery, useQueryClient } from "@tanstack/react-query";
-import {useCreatePost, useUpdatePost} from '../hooks/ReactQuery.js'
-
+import { useCreatePost, useUpdatePost } from "../hooks/ReactQuery.js";
 
 export const NewPost = ({
   isOpen,
@@ -53,7 +51,6 @@ export const NewPost = ({
         existing: true,
       }));
 
-
       setSelectedMedia(existingMedia);
     }
   }, [editPostData]);
@@ -82,9 +79,9 @@ export const NewPost = ({
     // console.log(user)
     formData.append("owner", user.id);
     formData.append("description", textRef.current?.value);
-    formData.append("location", location)
+    formData.append("location", location);
     // console.log(selectedMedia)
-    const existingFiles = selectedMedia.map(item=> item.url);
+    const existingFiles = selectedMedia.map((item) => item.url);
     formData.append("existingFiles", existingFiles);
     // Only append new media files (not existing)
     selectedMedia.forEach((item) => {
@@ -93,7 +90,6 @@ export const NewPost = ({
       }
     });
 
-    
     if (isEdit) {
       updatePostMutation.mutate(
         { postId: editPostData._id, formData },
@@ -114,7 +110,7 @@ export const NewPost = ({
         },
         onError: (err) => console.log(err),
         onSettled: () => {
-          setIsPosting(false)
+          setIsPosting(false);
         },
       });
     }
@@ -145,9 +141,7 @@ export const NewPost = ({
         <div className="flex items-center space-x-4 mb-4">
           {user.image && (
             <img
-              src={`data:${user.image.contentType};base64,${arrayBufferToBase64(
-                user.image.data.data
-              )}`}
+              src={user.image}
               alt="user profile"
               className="w-12 h-12 rounded-full border-2 border-blue-500"
             />
@@ -207,7 +201,6 @@ export const NewPost = ({
           })}
         </div>
 
-        
         {/* File input */}
         <input
           type="file"
@@ -258,4 +251,3 @@ export const NewPost = ({
     document.body
   );
 };
-
