@@ -71,9 +71,7 @@ export const Header = () => {
             <div className="w-12 h-12 rounded-full  flex items-center justify-center shadow-md transition-transform hover:scale-105">
               <img
                 className="w-full h-full rounded-full object-cover border-2 border-white"
-                src={`data:${
-                  currentUser.image.contentType
-                };base64,${arrayBufferToBase64(currentUser.image.data.data)}`}
+                src={currentUser.image}
                 alt="user profile"
               />
             </div>

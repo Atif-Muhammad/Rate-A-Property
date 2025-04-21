@@ -9,16 +9,26 @@ import {
   LogOut,
 } from "lucide-react";
 import { APIS } from "../../config/Config";
-
-const navLinks = [
-  { to: "/", label: "Home", icon: <Home size={24} /> },
-  { to: "/notifications", label: "Notifications", icon: <Bell size={24} /> },
-  { to: "/messages", label: "Messages", icon: <MessageCircle size={24} /> },
-  { to: "/profile", label: "Profile", icon: <UserCircle size={24} /> },
-  { to: "/settings", label: "Settings", icon: <Settings size={24} /> },
-];
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 export const Sidebar = () => {
+  const queryClient = useQueryClient();
+  const currentUser = queryClient.getQueryData(["userInfo"]);
+
+  // console.log(currentUser);  
+
+  const navLinks = [
+    { to: "/", label: "Home", icon: <Home size={24} /> },
+    { to: "/notifications", label: "Notifications", icon: <Bell size={24} /> },
+    { to: "/messages", label: "Messages", icon: <MessageCircle size={24} /> },
+    {
+      to: `/profile/${currentUser?.user_name}`,
+      label: "Profile",
+      icon: <UserCircle size={24} />,
+    },
+    { to: "/settings", label: "Settings", icon: <Settings size={24} /> },
+  ];
+
   const [isScrolled, setIsScrolled] = useState(false);
   const navigate = useNavigate();
 
@@ -30,7 +40,6 @@ export const Sidebar = () => {
       })
       .catch((err) => console.log("Logout error:", err));
   };
-
 
   // use for top scroller
   useEffect(() => {
@@ -54,6 +63,11 @@ export const Sidebar = () => {
             <NavLink
               key={to}
               to={to}
+              state={
+                currentUser
+                  ? { owner: currentUser, currentUser: currentUser }
+                  : {}
+              }
               className={({ isActive }) =>
                 `flex items-center gap-3 py-2 px-4 w-full text-left rounded-md transition ${
                   isActive ? "bg-gray-700 text-white" : "hover:bg-gray-800"

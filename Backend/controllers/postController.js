@@ -251,6 +251,7 @@ const postController = {
         const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
         const userId = req.query.user;
+        console.log(userId)
     
         if (!userId) {
             return res.status(400).json({ error: "Missing userId" });

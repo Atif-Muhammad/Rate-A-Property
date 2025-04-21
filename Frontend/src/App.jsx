@@ -11,9 +11,23 @@ import { LayoutForLanding } from "./pages/LayoutForLanding";
 import { Notifications } from "./pages/notification/Notifications";
 import { Messages } from "./pages/messages/Messages";
 import { UserInfo } from "./pages/profile/UserInfo";
+import { useQuery } from "@tanstack/react-query";
+import { APIS } from "../config/Config";
 // import State from "./context/state";
 
 function App() {
+
+  const { data } = useQuery({
+    queryKey: ["userInfo"],
+    queryFn: async () => {
+      const who = await APIS.userWho();
+      const res = await APIS.getUser(who.data.id);
+      const user = res.data;
+      console.log("user in app:", user);
+      return user; 
+    },
+  });
+
   return (
     <>
       {/* <div className=" h-screen"> */}
@@ -26,7 +40,7 @@ function App() {
               <Route index element={<Home />} />
               <Route path="*" element={<NotFound />} />
               <Route path="/notifications" element={<Notifications />} />
-              <Route path="/profile/:user" element={<UserInfo />} />
+              <Route path={`/profile/:${data?.user_name}`} element={<UserInfo />} />
               <Route path="/messages" element={<Messages />} />
             </Route>
             {/* others components */}

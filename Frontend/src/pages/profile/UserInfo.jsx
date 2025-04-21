@@ -9,24 +9,38 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import PostCard from "../../components/post/PostCard";
+import { useMemo } from "react";
 
 export const UserInfo = () => {
   const location = useLocation();
-  const {owner, currentUser} = location.state || {};
+  const { owner, currentUser } = location.state || {};
+  console.log("state owner:", owner)
+  // const { data: userInfo = {} } = useQuery({
+  //   queryKey: ["userInfo", owner?.id],
+  //   queryFn: async () => await APIS.getUser(owner?.id),
+  //   enabled: !!owner?.id && !owner?._id,
+  // });
 
-  console.log(location.state)
+  // const ownerFinal = useMemo(() => {
+  //   return owner?._id ? owner : userInfo?.data;
+  // }, [owner, userInfo]);
+
+  // const userPosts = owner?._id;
   const LIMIT = 10;
 
   const fetchPosts = async ({ pageParam = 1 }) => {
-    const res = await APIS.getUserPosts({ page: pageParam, limit: LIMIT, userId: owner?._id });
+    console.log("making call for user", owner)
+    const res = await APIS.getUserPosts({
+      page: pageParam,
+      limit: LIMIT,
+      userId: owner?.id ? owner?.id : owner?._id,
+    });
     return {
       data: res.data.data,
       nextPage: pageParam + 1,
       hasMore: res.data.hasMore,
     };
   };
-
-
 
   const {
     data,
@@ -36,14 +50,15 @@ export const UserInfo = () => {
     status,
     isLoading,
   } = useInfiniteQuery({
-    queryKey: ["userPosts", owner?._id],
+    queryKey: ["userPosts", owner?.id ? owner?.id : owner?._id],
     queryFn: fetchPosts,
     getNextPageParam: (lastPage) =>
       lastPage.hasMore ? lastPage.nextPage : undefined,
-    enabled: !!owner?._id,
+    enabled: !!owner,
   });
-   
-  
+
+  console.log("current", currentUser);
+
   const [profile, setProfile] = useState(owner || {});
 
   const [showModal, setShowModal] = useState(false);
@@ -57,23 +72,47 @@ export const UserInfo = () => {
   };
 
   // Infinite scroll
-    useEffect(() => {
-      const onScroll = () => {
-        const { scrollTop, scrollHeight, clientHeight } =
-          document.documentElement;
-        if (
-          scrollTop + clientHeight >= scrollHeight - 100 &&
-          hasNextPage &&
-          !isFetchingNextPage
-        ) {
-          fetchNextPage();
-        }
-      };
-  
-      window.addEventListener("scroll", onScroll);
-      return () => window.removeEventListener("scroll", onScroll);
-    }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+  useEffect(() => {
+    const onScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } =
+        document.documentElement;
+      if (
+        scrollTop + clientHeight >= scrollHeight - 100 &&
+        hasNextPage &&
+        !isFetchingNextPage
+      ) {
+        fetchNextPage();
+      }
+    };
 
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+
+  const handleUnfollow = async (followerId, followId) => {
+    // console.log("Unfollow clicked", followerId, followId);
+    const res = await APIS.unfollowUser(followerId, followId);
+    if (res.status === 200) {
+      console.log("Unfollowed successfully");
+      // Optionally, you can update the UI or state here
+    } else {
+      console.error("Failed to unfollow");
+    }
+  };
+
+  const handleFollow = async (followerId, followId) => {
+    try {
+      const response = await APIS.followUser(followerId, followId);
+      if (response.status === 200) {
+        console.log("Followed successfully");
+        // Optionally, you can update the UI or state here
+      } else {
+        console.error("Failed to follow user:", response.data);
+      }
+    } catch (error) {
+      console.error("Error following user:", error);
+    }
+  };
 
   return (
     <div className="max-w-3xl bg-white mx-auto p-4 space-y-6 rounded-xl shadow">
@@ -87,12 +126,28 @@ export const UserInfo = () => {
           />
           <div className="flex flex-col space-y-2">
             <h1 className="text-xl font-semibold">{profile?.user_name}</h1>
-            <button
-              onClick={handleOpen}
-              className="px-4 py-1 rounded-md border text-sm font-medium hover:bg-gray-100 w-fit"
-            >
-              Edit Profile
-            </button>
+            {profile?._id === currentUser?._id ? (
+              <button
+                onClick={handleOpen}
+                className="px-4 py-1 rounded-md border text-sm font-medium hover:bg-gray-100 w-fit"
+              >
+                Edit Profile
+              </button>
+            ) : profile?.followers?.includes(currentUser?._id) ? (
+              <button
+                onClick={() => handleUnfollow(currentUser?._id, profile?._id)}
+                className="px-4 py-1 rounded-md border text-sm font-medium hover:bg-gray-100 w-fit"
+              >
+                Unfollow
+              </button>
+            ) : (
+              <button
+                className="text-xs border px-2 py-0.5 cursor-pointer"
+                onClick={() => handleFollow(currentUser?._id, profile?._id)}
+              >
+                Follow
+              </button>
+            )}
           </div>
         </div>
 
@@ -108,11 +163,15 @@ export const UserInfo = () => {
             <span className="text-sm text-gray-500">Posts</span>
           </div>
           <div className="text-center">
-            <span className="block font-bold">{profile?.followers?.length}</span>
+            <span className="block font-bold">
+              {profile?.followers?.length}
+            </span>
             <span className="text-sm text-gray-500">Followers</span>
           </div>
           <div className="text-center">
-            <span className="block font-bold">{profile?.following?.length}</span>
+            <span className="block font-bold">
+              {profile?.following?.length}
+            </span>
             <span className="text-sm text-gray-500">Following</span>
           </div>
         </div>

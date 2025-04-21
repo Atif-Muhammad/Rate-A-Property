@@ -22,21 +22,8 @@ const fetchPosts = async ({ pageParam = 1 }) => {
 
 export const PostDesign = () => {
   const queryClient = useQueryClient();
-
-  const { data: currentUser = {} } = useQuery({
-    queryKey: ["user"],
-    queryFn: async () => {
-      const who = await APIS.userWho();
-      const res = await APIS.getUser(who.data.id);
-      const user = res.data;
-      return {
-        id: user._id,
-        image: user.image,
-        user_name: user.user_name,
-        posts: user.posts || [],
-      };
-    },
-  });
+  // get cached user 
+  const currentUser = queryClient.getQueryData(["userInfo"]);
 
   const {
     data,

@@ -188,13 +188,17 @@ const userController = {
             }
         }))
     },
-    getUser: async (req, res)=>{
+    getUser: async (req, res) => {
         const user_id = req.query.user;
-        
+
         try {
-            const usr = await user.findOne({_id: user_id});
+            const usr = await user.findOne({ _id: user_id });
             // console.log(usr)
-            res.send(usr)
+            const finalUser = {
+                ...usr._doc,
+                image: `data:image/png;base64,${usr.image.data.toString("base64")}`,
+            }
+            res.send(finalUser)
         } catch (error) {
             res.send(error);
         }
@@ -202,21 +206,68 @@ const userController = {
     followUser: async (req, res) => {
         const follower_id = req.query.follower_id;
         const follow_id = req.query.follow_id;
+
         try {
             const followerDB = await user.findById(follower_id);
             const followDB = await user.findById(follow_id);
+
             if (followerDB && followDB) {
-                followerDB.following.push(follow_id);
-                followDB.followers.push(follower_id);
+                // Check if already following
+                const isAlreadyFollowing = followerDB.following.includes(follow_id);
+                const isAlreadyFollowed = followDB.followers.includes(follower_id);
+
+                if (!isAlreadyFollowing) {
+                    followerDB.following.push(follow_id);
+                }
+
+                if (!isAlreadyFollowed) {
+                    followDB.followers.push(follower_id);
+                }
+
                 await followerDB.save();
                 await followDB.save();
-                res.send("Successfully followed the user")
+
+                res.send("Successfully followed the user");
             } else {
-                res.status(404).send("User not found")
+                res.status(404).send("User not found");
             }
-        }catch (error) {
-            res.send(error)
+        } catch (error) {
+            res.status(500).send(error);
         }
+
+    },
+    unfollowUser: async (req, res) => {
+        const follower_id = req.query.follower_id;
+        const follow_id = req.query.follow_id;
+
+        // console.log(follower_id, follow_id)
+
+        try {
+            const followerDB = await user.findById(follower_id);
+            const followDB = await user.findById(follow_id);
+
+            if (followerDB && followDB) {
+                // Filter out follow_id from following array
+                followerDB.following = followerDB.following.filter(
+                    (id) => id.toString() !== follow_id
+                );
+
+                // Filter out follower_id from followers array
+                followDB.followers = followDB.followers.filter(
+                    (id) => id.toString() !== follower_id
+                );
+
+                await followerDB.save();
+                await followDB.save();
+
+                res.send("Successfully unfollowed the user");
+            } else {
+                res.status(404).send("User not found");
+            }
+        } catch (error) {
+            res.status(500).send(error);
+        }
+
     }
 
 }

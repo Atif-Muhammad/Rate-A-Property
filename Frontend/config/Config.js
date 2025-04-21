@@ -12,7 +12,6 @@ const userWho = async () => {
     return error;
   }
 };
-
 const signup = async (data) => {
   try {
     const response = await axios.post(`${Baseurl}/user/signup`, data, {
@@ -69,6 +68,18 @@ const followUser = async (followerId, followId) => {
     return error;
   }
 }
+const unfollowUser = async (followerId, followId) => {
+  try {
+    const response = await axios.put(
+      `${Baseurl}/user/unfollowUser?follower_id=${followerId}&follow_id=${followId}`,
+      {},
+      { withCredentials: true }
+    );
+    return response;
+  } catch (error) {
+    return error;
+  }
+}
 // Post related APIs
 const createPost = async (data) => {
   try {
@@ -82,7 +93,7 @@ const createPost = async (data) => {
   }
 };
 
-const updatePost = async (postId, formData)=>{
+const updatePost = async (postId, formData) => {
   // console.log(postId,formData)
   try {
     const response = await axios.put(`${Baseurl}/posts/updatePost/${postId}`, formData, {
@@ -95,31 +106,31 @@ const updatePost = async (postId, formData)=>{
   }
 }
 
-const delPost = async(postId)=>{
+const delPost = async (postId) => {
   try {
-    const response = await axios.post(`${Baseurl}/posts/delPost?postId=${postId}`, {}, {withCredentials: true});
+    const response = await axios.post(`${Baseurl}/posts/delPost?postId=${postId}`, {}, { withCredentials: true });
     return response
   } catch (error) {
     return error
   }
 }
 
-const getPosts = async ({page, limit}) => {
+const getPosts = async ({ page, limit }) => {
   // console.log(page, limit)
   try {
     const response = await axios.get(`${Baseurl}/posts/getPosts?page=${page}&limit=${limit}`);
     return response;
-    
+
   } catch (error) {
     return error;
   }
 };
-const getUserPosts = async ({page, limit, userId}) => {
+const getUserPosts = async ({ page, limit, userId }) => {
   // console.log(page, limit)
   try {
     const response = await axios.get(`${Baseurl}/posts/getUserPosts?user=${userId}&page=${page}&limit=${limit}`);
     return response;
-    
+
   } catch (error) {
     return error;
   }
@@ -264,9 +275,9 @@ const updateComment = async (id, formData) => {
   }
 };
 
-const delComment = async (commentId)=>{
+const delComment = async (commentId) => {
   try {
-    const response = await axios.post(`${Baseurl}/posts/delComment?commentId=${commentId}`, {}, {withCredentials: true});
+    const response = await axios.post(`${Baseurl}/posts/delComment?commentId=${commentId}`, {}, { withCredentials: true });
     return response
   } catch (error) {
     return error;
@@ -275,7 +286,7 @@ const delComment = async (commentId)=>{
 
 
 
-const getcomments = async ({postId, page, limit}) => {
+const getcomments = async ({ postId, page, limit }) => {
   try {
     const response = await axios.get(
       `${Baseurl}/posts/getComments?post=${postId}&page=${page}&limit=${limit}`,
@@ -339,7 +350,7 @@ const unDisLikeComment = async (comntId) => {
 const addReply = async (data) => {
   // console.log(data)
   try {
-    const response = await axios.post(`${Baseurl}/posts/addReply`, data, {withCredentials: true });
+    const response = await axios.post(`${Baseurl}/posts/addReply`, data, { withCredentials: true });
     return response
   } catch (error) {
     return error;
@@ -362,6 +373,7 @@ export const APIS = {
   getUser,
   logout,
   followUser,
+  unfollowUser,
   createPost,
   updatePost,
   getPosts,
