@@ -10,6 +10,8 @@ import { AddComment } from "./Card/Addcomment";
 
 const CommentSection = () => {
   const [activeReplyId, setActiveReplyId] = useState(null);
+  const [isInputFocused, setIsInputFocused] = useState(false);
+  const [scrollPadding, setScrollPadding] = useState(0);
 
   const location = useLocation();
   const { postId } = useParams();
@@ -18,6 +20,7 @@ const CommentSection = () => {
   const queryClient = useQueryClient();
 
   const scrollContainerRef = useRef(null);
+  const commentInputRef = useRef(null);
   const LIMIT = 10;
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
@@ -41,6 +44,8 @@ const CommentSection = () => {
 
   useEffect(() => {
     const scrollContainer = scrollContainerRef.current;
+    if (!scrollContainer) return;
+
     const handleScroll = () => {
       if (!scrollContainer) return;
       const scrollTop = scrollContainer.scrollTop;
@@ -56,20 +61,31 @@ const CommentSection = () => {
       }
     };
 
-    if (scrollContainer) {
-      scrollContainer.addEventListener("scroll", handleScroll);
-    }
-
+    scrollContainer.addEventListener("scroll", handleScroll);
     return () => {
-      if (scrollContainer) {
-        scrollContainer.removeEventListener("scroll", handleScroll);
-      }
+      scrollContainer.removeEventListener("scroll", handleScroll);
     };
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
+  // Adjust scroll position when input is focused
+  useEffect(() => {
+    if (isInputFocused && scrollContainerRef.current) {
+      const inputHeight = commentInputRef.current?.offsetHeight || 0;
+      setScrollPadding(inputHeight + 20); // Add some extra padding
+
+      // Scroll to bottom to ensure input is visible
+      setTimeout(() => {
+        scrollContainerRef.current.scrollTo({
+          top: scrollContainerRef.current.scrollHeight,
+          behavior: "smooth",
+        });
+      }, 100);
+    } else {
+      setScrollPadding(0);
+    }
+  }, [isInputFocused]);
+
   const handleCommentAdded = async (newCommentObj, newFiles) => {
-    console.log("New comment data being submitted:", newCommentObj);
-  
     // Optimistic UI update
     queryClient.setQueryData(["comments", postId], (old) => {
       if (!old) return old;
@@ -84,41 +100,53 @@ const CommentSection = () => {
         ],
       };
     });
-  
+
     // Actual API call
     const formData = new FormData();
-    formData.append("owner", currentUser.id);
+    formData.append("owner", currentUser._id);
     formData.append("content", newCommentObj.comment);
     formData.append("for_post", postId);
-  
+
     if (newFiles && newFiles.length > 0) {
       newFiles.forEach((file) => {
         formData.append("files", file);
       });
     }
-  
+
     await APIS.addComment(formData);
-  
-    // Invalidate cache to fetch updated DB version
     queryClient.invalidateQueries({ queryKey: ["comments", postId] });
+
+    // Scroll to bottom after adding comment
+    if (scrollContainerRef.current) {
+      setTimeout(() => {
+        scrollContainerRef.current.scrollTo({
+          top: scrollContainerRef.current.scrollHeight,
+          behavior: "smooth",
+        });
+      }, 100);
+    }
   };
-  
+
   return (
-    <div className="flex flex-col lg:flex-row items-start w-full h-full justify-center lg:gap-3 gap-6 p-3 overflow-hidden">
+    <div className="flex flex-col items-center w-full h-full justify-center lg:gap-3 gap-6 p-3">
       {/* Left Side - Post Card */}
       <div className="w-full lg:w-1/2">
         <PostCard post={post} currentUser={currentUser} />
       </div>
 
       {/* Right Side - Comments Section */}
-      <div className="w-full lg:w-1/2 bg-white shadow-md rounded-lg p-4 flex flex-col h-[85vh] overflow-auto">
-        <h2 className="text-lg font-semibold mb-3 border-b pb-2 text-center">
+      <div className="w-full lg:w-1/2 bg-white shadow-md rounded-lg p-4 flex flex-col relative">
+        <h2 className="text-lg font-semibold mb-3 border-b pb-2 text-center sticky top-0 bg-white z-10">
           Comments
         </h2>
 
         <div
           ref={scrollContainerRef}
-          className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2 lg:max-h-[65vh] h-full"
+          className="flex-1 space-y-4 mb-4 pr-2 overflow-y-auto"
+          style={{
+            maxHeight: "calc(100vh - 250px)",
+            paddingBottom: `${scrollPadding}px`,
+          }}
         >
           {isLoading && !isFetchingNextPage ? (
             <CommentSkeleton />
@@ -126,7 +154,7 @@ const CommentSection = () => {
             <>
               {data?.pages?.flatMap((page) => page.data).length === 0 ? (
                 <div className="flex items-center justify-center h-full text-gray-500 font-medium">
-                  No comments yet.
+                  No comments yet. Be the first to comment!
                 </div>
               ) : (
                 data?.pages
@@ -146,12 +174,19 @@ const CommentSection = () => {
           )}
         </div>
 
-        {/* Add the AddComment component at the bottom */}
-        <AddComment
-          postId={postId}
-          currentUser={currentUser}
-          onCommentAdded={handleCommentAdded} 
-        />
+        {/* AddComment fixed to bottom but with proper spacing */}
+        <div
+          className="sticky bottom-0 left-0 right-0 bg-white pt-2 border-t z-20"
+          ref={commentInputRef}
+        >
+          <AddComment
+            postId={postId}
+            currentUser={currentUser}
+            onCommentAdded={handleCommentAdded}
+            onFocus={() => setIsInputFocused(true)}
+            onBlur={() => setIsInputFocused(false)}
+          />
+        </div>
       </div>
     </div>
   );

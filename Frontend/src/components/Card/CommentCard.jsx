@@ -21,7 +21,7 @@ function CommentCard(props) {
   const [agrees, setAgrees] = useState(props.comment.likes);
   const [disagrees, setDisagrees] = useState(props.comment.disLikes);
   const currentUser = props.currentUser;
-  const agreeOwner = props.currentUser.id;
+  const agreeOwner = props.currentUser._id;
 
   const isTemp = props.comment?._id?.startsWith("temp");
   const [isExpanded, setIsExpanded] = useState(false);
@@ -236,7 +236,7 @@ function CommentCard(props) {
     try {
       const formData = new FormData();
       formData.append("content", text);
-      formData.append("owner", currentUser.id);
+      formData.append("owner", currentUser._id);
 
       // Handle media files
       media.forEach((file) => {
@@ -328,7 +328,7 @@ function CommentCard(props) {
     const newReplyData = {
       _id: tempId,
       owner: {
-        id: currentUser?.id,
+        id: currentUser?._id,
         user_name: currentUser?.user_name,
         image: currentUser?.image,
       },
@@ -359,7 +359,7 @@ function CommentCard(props) {
     setShowReplies(true);
 
     const formData = new FormData();
-    formData.append("owner", currentUser?.id);
+    formData.append("owner", currentUser?._id);
     formData.append("content", text);
     formData.append("for_post", props.comment._id);
     media.forEach((file) => formData.append("files", file));
@@ -468,7 +468,7 @@ function CommentCard(props) {
               </button>
             </div>
           </div>
-          {currentUser.id == props.comment.owner?._id && (
+          {currentUser._id == props.comment.owner?._id && (
             <CommentOptions
               onDelete={() => {
                 handleCommentDel(props.comment._id);
@@ -569,7 +569,7 @@ function CommentCard(props) {
         )}
 
         {(showReplyBox || isEditing) && (
-          <div className="mt-2 w-full bg-gray-100 rounded-lg overflow-hidden">
+          <div className="mt-2 w-full bg-gray-100 border border-gray-100 rounded-lg overflow-hidden">
             {isEditing ? (
               <div className="flex items-center justify-between px-5 pt-2">
                 <span className="text-md text-gray-700">

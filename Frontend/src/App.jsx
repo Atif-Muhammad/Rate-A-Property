@@ -40,7 +40,7 @@ function App() {
               <Route index element={<Home />} />
               <Route path="*" element={<NotFound />} />
               <Route path="/notifications" element={<Notifications />} />
-              <Route path={`/profile/:${data?.user_name}`} element={<UserInfo />} />
+              <Route path={`/profile/:user`} element={<UserInfo />} />
               <Route path="/messages" element={<Messages />} />
             </Route>
             {/* others components */}
