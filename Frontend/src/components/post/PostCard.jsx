@@ -5,11 +5,9 @@ import { getTimeAgo } from "../../ReUsables/GetTimeAgo";
 import MediaGrid from "./MediaGrid";
 import { NavLink } from "react-router-dom";
 import { PostOptions } from "../post/PostOption";
-import { arrayBufferToBase64 } from "../../ReUsables/arrayTobuffer";
-import PostSkeleton from "../skeletons/PostSkeleton";
-import DiscoverSkeleton from "../skeletons/DiscoverSkeleton";
 import { NewPost } from "../NewPost";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import ShareModal from "../models/ShareModal";
 
 const PostCard = (props) => {
   const postId = props.postId;
@@ -28,6 +26,8 @@ const PostCard = (props) => {
   const [isFollowing, setIsFollowing] = useState(
     props.post?.owner?.followers?.includes(props.currentUser?._id) || false
   );
+  // Inside your PostCard component, add this state:
+  const [showShareModal, setShowShareModal] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -37,8 +37,6 @@ const PostCard = (props) => {
       queryClient.invalidateQueries(["posts"]);
     },
   });
-
-
 
   const postFromprop = () => {
     setPost(props.post);
@@ -238,7 +236,7 @@ const PostCard = (props) => {
 
           {post.media && <MediaGrid media={post.media} />}
           {/* Action Buttons */}
-          <div className="flex justify-between gap-2 p-2 border-t border-gray-300 pt-3 items-center mt-4 text-gray-600 text-sm">
+          <div className="flex justify-between gap-2 p-2 border-t border-gray-300 pt-3 items-center  text-gray-600 text-sm">
             <div className="flex items-center gap-x-4">
               <button
                 onClick={handleAgree}
@@ -286,7 +284,17 @@ const PostCard = (props) => {
               </span>
             </NavLink>
 
-            <button className="flex items-center md:gap-x-2 hover:text-green-500 transition">
+            {/* <button className="flex items-center md:gap-x-2 hover:text-green-500 transition">
+              <Share2 size={22} />
+              <span className="text-base font-medium hidden md:flex">
+                Share
+              </span>
+            </button> */}
+
+            <button
+              className="flex items-center md:gap-x-2 hover:text-green-500 transition"
+              onClick={() => setShowShareModal(true)}
+            >
               <Share2 size={22} />
               <span className="text-base font-medium hidden md:flex">
                 Share
@@ -297,12 +305,14 @@ const PostCard = (props) => {
       ) : (
         <>Error Fetching post</>
       )}
-
       <NewPost
         isOpen={openPostModal}
         onClose={() => setOpenPostModal(false)}
         editPostData={editData}
       />
+      {showShareModal && (
+        <ShareModal post={post} onClose={() => setShowShareModal(false)} />
+      )}
     </>
   );
 };

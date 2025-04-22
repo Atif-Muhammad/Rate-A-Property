@@ -10,12 +10,14 @@ import {
 } from "lucide-react";
 import { APIS } from "../../config/Config";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { ConfirmationModal } from "../components/models/ConfirmationModel";
 
 export const Sidebar = () => {
   const queryClient = useQueryClient();
   const currentUser = queryClient.getQueryData(["userInfo"]);
+  const [showConfirm, setShowConfirm] = useState(false);
 
-  // console.log(currentUser);  
+  // console.log(currentUser);
 
   const navLinks = [
     { to: "/", label: "Home", icon: <Home size={24} /> },
@@ -32,13 +34,18 @@ export const Sidebar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogout = () => {
+  const confirmLogout = () => {
+    setShowConfirm(false);
     APIS.logout()
       .then(() => {
         console.log("Logout successful");
         navigate("/");
       })
       .catch((err) => console.log("Logout error:", err));
+  };
+
+  const handleLogout = () => {
+    setShowConfirm(true);
   };
 
   // use for top scroller
@@ -110,6 +117,16 @@ export const Sidebar = () => {
           </NavLink>
         ))}
       </div>
+
+      {showConfirm && (
+        <ConfirmationModal
+          title="Are you sure?"
+          description="Do you really want to logout your account?"
+          onCancel={() => setShowConfirm(false)}
+          onConfirm={confirmLogout}
+          button="Yes, Logout"
+        />
+      )}
     </>
   );
 };
