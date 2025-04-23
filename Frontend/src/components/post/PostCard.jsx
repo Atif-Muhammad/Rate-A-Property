@@ -122,7 +122,7 @@ const PostCard = (props) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(["posts"]);
-      queryClient.invalidateQueries(["user", post.owner?._id]);
+      queryClient.invalidateQueries(["userProfile", agreeOwner]);
     },
   });
 
@@ -139,7 +139,7 @@ const PostCard = (props) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(["posts"]);
-      queryClient.invalidateQueries(["user", post.owner?._id]);
+      queryClient.invalidateQueries(["userProfile", agreeOwner]);
     },
   });
 

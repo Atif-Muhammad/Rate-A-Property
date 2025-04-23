@@ -5,113 +5,126 @@ import { EditProfileModal } from "./EditProfileModal";
 import { APIS } from "../../../config/Config";
 import {
   useInfiniteQuery,
+  useMutation,
   useQuery,
   useQueryClient,
-  useMutation,
 } from "@tanstack/react-query";
 import PostCard from "../../components/post/PostCard";
 import { useMemo } from "react";
-import PostSkeleton from "../../components/skeletons/PostSkeleton";
-import { ProfileSkeleton } from "../../components/skeletons/ProfileSkeleton";
+
 
 export const UserInfo = () => {
   const location = useLocation();
-  const { owner: initialOwner, currentUser } = location.state || {};
+  const { owner, currentUser } = location.state || {};
+  console.log("state owner:", owner);
   const queryClient = useQueryClient();
-  const [showModal, setShowModal] = useState(false);
+  // const { data: userInfo = {} } = useQuery({
+  //   queryKey: ["userInfo", owner?.id],
+  //   queryFn: async () => await APIS.getUser(owner?.id),
+  //   enabled: !!owner?.id && !owner?._id,
+  // });
+
+  // const ownerFinal = useMemo(() => {
+  //   return owner?._id ? owner : userInfo?.data;
+  // }, [owner, userInfo]);
+
+  // const userPosts = owner?._id;
   const LIMIT = 10;
 
-  // Fetch profile data using React Query
-  const {
-    data: profile,
-    isLoading: profileLoading,
-    refetch: refetchProfile,
-  } = useQuery({
-    queryKey: ["userProfile", initialOwner?._id],
-    queryFn: () => APIS.getUserProfile(initialOwner?._id),
-    initialData: initialOwner, // Use location state as initial data
-    enabled: !!initialOwner?._id,
-  });
+  const followMutation = useMutation({
+    mutationFn: async ({ followerId, followId }) =>
+      await APIS.followUser(followerId, followId),
 
-  // Derive isFollowing from the profile data
-  const isFollowing = profile?.followers?.includes(currentUser?._id) || false;
-
-  // Optimistic follow/unfollow mutations
-  const { mutate: followUser } = useMutation({
-    mutationFn: (followId) => APIS.followUser(currentUser?._id, followId),
-    onMutate: async (followId) => {
-      // Cancel any outgoing refetches to avoid overwriting optimistic update
+    onMutate: async ({ followerId, followId }) => {
       await queryClient.cancelQueries(["userProfile", followId]);
 
-      // Optimistically update the profile
+      // Optimistic update: add follower ID
       queryClient.setQueryData(["userProfile", followId], (old) => ({
         ...old,
-        followers: [...(old.followers || []), currentUser?._id],
+        followers: [...(old?.followers || []), followerId],
       }));
     },
-    onSuccess: () => {
-      // Invalidate both profile and posts queries
-      queryClient.invalidateQueries(["userProfile", profile._id]);
-      queryClient.invalidateQueries(["userPosts"]);
+
+    onError: (err, variables, context) => {
+      // Rollback
+      queryClient.invalidateQueries(["userProfile", variables.followId]);
+      console.error("Error following user:", err);
     },
-    onError: (err, followId) => {
-      // Revert on error
-      queryClient.invalidateQueries(["userProfile", followId]);
+
+    onSuccess: () => {
+      console.log("Followed successfully");
+      queryClient.invalidateQueries(["userProfile"]); // refetch updated data
     },
   });
 
-  const { mutate: unfollowUser } = useMutation({
-    mutationFn: (followId) => APIS.unfollowUser(currentUser?._id, followId),
-    onMutate: async (followId) => {
+  // --- UNFOLLOW USER MUTATION ---
+  const unfollowMutation = useMutation({
+    mutationFn: async ({ followerId, followId }) =>
+      await APIS.unfollowUser(followerId, followId),
+
+    onMutate: async ({ followerId, followId }) => {
       await queryClient.cancelQueries(["userProfile", followId]);
 
+      // Optimistic update: remove follower ID
       queryClient.setQueryData(["userProfile", followId], (old) => ({
         ...old,
-        followers: old.followers?.filter((id) => id !== currentUser?._id),
+        followers: old?.followers?.filter((id) => id !== followerId) || [],
       }));
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries(["userProfile", profile._id]);
-      queryClient.invalidateQueries(["userPosts"]);
+
+    onError: (err, variables, context) => {
+      queryClient.invalidateQueries(["userProfile", variables.followId]);
+      console.error("Failed to unfollow", err);
     },
-    onError: (err, followId) => {
-      queryClient.invalidateQueries(["userProfile", followId]);
+
+    onSuccess: () => {
+      console.log("Unfollowed successfully");
+      queryClient.invalidateQueries(["userProfile"]);
     },
   });
 
-  const handleFollowAction = () => {
-    if (isFollowing) {
-      unfollowUser(profile._id);
-    } else {
-      followUser(profile._id);
-    }
+  const fetchPosts = async ({ pageParam = 1 }) => {
+    console.log("making call for user", owner);
+    const res = await APIS.getUserPosts({
+      page: pageParam,
+      limit: LIMIT,
+      userId: owner?.id ? owner?.id : owner?._id,
+    });
+    return {
+      data: res.data.data,
+      nextPage: pageParam + 1,
+      hasMore: res.data.hasMore,
+    };
   };
 
-  // Fetch posts
   const {
     data,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-    isLoading: postsLoading,
+    status,
+    isLoading,
   } = useInfiniteQuery({
-    queryKey: ["userPosts", profile?._id],
-    queryFn: async ({ pageParam = 1 }) => {
-      const res = await APIS.getUserPosts({
-        page: pageParam,
-        limit: LIMIT,
-        userId: profile?._id,
-      });
-      return {
-        data: res.data.data,
-        nextPage: pageParam + 1,
-        hasMore: res.data.hasMore,
-      };
-    },
+    queryKey: ["userPosts", owner?.id ? owner?.id : owner?._id],
+    queryFn: fetchPosts,
     getNextPageParam: (lastPage) =>
       lastPage.hasMore ? lastPage.nextPage : undefined,
-    enabled: !!profile?._id,
+    enabled: !!owner,
   });
+
+  console.log("current", currentUser);
+
+  const [profile, setProfile] = useState(owner || {});
+
+  const [showModal, setShowModal] = useState(false);
+
+  const handleOpen = () => setShowModal(true);
+  const handleClose = () => setShowModal(false);
+
+  const handleSave = (updatedData) => {
+    setProfile(updatedData);
+    handleClose();
+  };
 
   // Infinite scroll
   useEffect(() => {
@@ -131,16 +144,13 @@ export const UserInfo = () => {
     return () => window.removeEventListener("scroll", onScroll);
   }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
-  // Refetch profile when currentUser changes (when visiting own profile)
-  useEffect(() => {
-    if (profile?._id === currentUser?._id) {
-      refetchProfile();
-    }
-  }, [currentUser, profile?._id, refetchProfile]);
+  const handleFollow = (followerId, followId) => {
+    followMutation.mutate({ followerId, followId });
+  };
 
-  if (!profile || profileLoading) {
-    return <ProfileSkeleton />;
-  }
+  const handleUnfollow = (followerId, followId) => {
+    unfollowMutation.mutate({ followerId, followId });
+  };
 
   return (
     <div className="max-w-3xl bg-white mx-auto p-4 space-y-6 rounded-xl shadow">
@@ -156,77 +166,70 @@ export const UserInfo = () => {
             <h1 className="text-xl font-semibold">{profile?.user_name}</h1>
             {profile?._id === currentUser?._id ? (
               <button
-                onClick={() => setShowModal(true)}
+                onClick={handleOpen}
                 className="px-4 py-1 rounded-md border text-sm font-medium hover:bg-gray-100 w-fit"
               >
                 Edit Profile
               </button>
+            ) : profile?.followers?.includes(currentUser?._id) ? (
+              <button
+                onClick={() => handleUnfollow(currentUser?._id, profile?._id)}
+                className="px-4 py-1 rounded-md border text-sm font-medium hover:bg-gray-100 w-fit"
+              >
+                Unfollow
+              </button>
             ) : (
               <button
-                className={`px-4 py-1 rounded-md text-sm font-medium w-fit transition-all ${
-                  isFollowing
-                    ? "bg-gray-100 hover:bg-gray-200 border"
-                    : "bg-blue-500 hover:bg-blue-600 text-white"
-                }`}
-                onClick={handleFollowAction}
+                className="text-xs border px-2 py-0.5 cursor-pointer"
+                onClick={() => handleFollow(currentUser?._id, profile?._id)}
               >
-                {isFollowing ? "Following" : "Follow"}
+                Follow
               </button>
             )}
           </div>
         </div>
 
+        {/* Bio ko neeche center mein la rahe hain */}
+        {/* <div className="text-center text-gray-600 text-sm max-w-md">
+          {profile.bio}
+        </div> */}
+
         {/* Stats section */}
         <div className="flex justify-center space-x-12 border-y py-4 w-full">
           <div className="text-center">
-            <span className="block font-bold">
-              {profile?.posts?.length || 0}
-            </span>
+            <span className="block font-bold">{profile?.posts?.length}</span>
             <span className="text-sm text-gray-500">Posts</span>
           </div>
           <div className="text-center">
             <span className="block font-bold">
-              {profile?.followers?.length || 0}
+              {profile?.followers?.length}
             </span>
             <span className="text-sm text-gray-500">Followers</span>
           </div>
           <div className="text-center">
             <span className="block font-bold">
-              {profile?.following?.length || 0}
+              {profile?.following?.length}
             </span>
             <span className="text-sm text-gray-500">Following</span>
           </div>
         </div>
       </div>
 
-      {/* Posts Section */}
-      {postsLoading ? (
-        <>
-          <PostSkeleton />
-          <PostSkeleton />
-          <PostSkeleton />
-        </>
-      ) : (
-        data?.pages.map((page, pageIndex) =>
-          page.data.map((post, idx) => (
-            <PostCard
-              key={post._id + "-" + pageIndex + "-" + idx}
-              post={post}
-              currentUser={currentUser}
-            />
-          ))
-        )
+      {data?.pages.map((page, pageIndex) =>
+        page.data.map((post, idx) => (
+          <PostCard
+            key={post._id + "-" + pageIndex + "-" + idx}
+            post={post}
+            currentUser={currentUser}
+            // onPostUpdated={handlePostUpdated}
+          />
+        ))
       )}
 
-      {isFetchingNextPage && <PostSkeleton />}
-
-      {showModal && profile && (
+      {showModal && (
         <EditProfileModal
-          onClose={() => setShowModal(false)}
-          onSave={(updatedData) => {
-            queryClient.setQueryData(["userProfile", profile._id], updatedData);
-            setShowModal(false);
-          }}
+          onClose={handleClose}
+          onSave={handleSave}
           initialData={profile}
         />
       )}
