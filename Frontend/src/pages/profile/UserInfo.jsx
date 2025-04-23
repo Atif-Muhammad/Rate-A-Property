@@ -30,7 +30,7 @@ export const UserInfo = () => {
     queryKey: ["userProfile", initialOwner?._id],
     queryFn: () => APIS.getUserProfile(initialOwner?._id),
     initialData: initialOwner, // Use location state as initial data
-    enabled: !!initialOwner?._id,
+    enabled: !!initialOwner?._id || !!currentUser?._id,
   });
 
   // Derive isFollowing from the profile data
@@ -38,7 +38,7 @@ export const UserInfo = () => {
 
   // Optimistic follow/unfollow mutations
   const { mutate: followUser } = useMutation({
-    mutationFn: (followId) => APIS.followUser(currentUser?._id, followId),
+    mutationFn: async (followId) => await APIS.followUser(currentUser?._id, followId),
     onMutate: async (followId) => {
       // Cancel any outgoing refetches to avoid overwriting optimistic update
       await queryClient.cancelQueries(["userProfile", followId]);
@@ -52,6 +52,7 @@ export const UserInfo = () => {
     onSuccess: () => {
       // Invalidate both profile and posts queries
       queryClient.invalidateQueries(["userProfile", profile._id]);
+      queryClient.invalidateQueries(["userProfile", currentUser?._id]);
       queryClient.invalidateQueries(["userPosts"]);
     },
     onError: (err, followId) => {
@@ -72,6 +73,7 @@ export const UserInfo = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(["userProfile", profile._id]);
+      queryClient.invalidateQueries(["userProfile", currentUser?._id]);
       queryClient.invalidateQueries(["userPosts"]);
     },
     onError: (err, followId) => {
