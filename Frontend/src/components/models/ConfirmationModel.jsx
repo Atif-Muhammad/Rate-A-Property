@@ -1,6 +1,7 @@
 import React from "react";
 import { X, Trash2 } from "lucide-react";
 import { motion } from "framer-motion";
+import { createPortal } from "react-dom";
 
 export const ConfirmationModal = ({
   title,
@@ -9,14 +10,14 @@ export const ConfirmationModal = ({
   onConfirm,
   button,
 }) => {
-  return (
-    <div className="fixed inset-0 z-auto flex items-center justify-center bg-black/50 backdrop-blur-sm">
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: -20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: -20 }}
         transition={{ duration: 0.3 }}
-        className="bg-white w-full max-w-sm lg:max-w-sm rounded-3xl shadow-2xl p-6 relative overflow-hidden"
+        className="bg-white w-full max-w-sm lg:max-w-sm z-50 rounded-3xl shadow-2xl p-6 relative overflow-hidden"
       >
         {/* Accent Bar */}
         <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-red-500 to-pink-500 rounded-t-3xl"></div>
@@ -58,6 +59,7 @@ export const ConfirmationModal = ({
           </button>
         </div>
       </motion.div>
-    </div>
+    </div>,
+    document.body
   );
 };
