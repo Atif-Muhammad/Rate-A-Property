@@ -29,81 +29,110 @@ const ShareModal = ({ post, onClose }) => {
     setTimeout(() => setCopied(false), 1500);
   };
 
-  const handleWhatsAppShare = () => {
-    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(
-      shareMessage
-    )}`;
-    window.open(whatsappUrl, "_blank");
-  };
+   const handleFacebookShare = () => {
+     window.open(
+       `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
+         shareUrl
+       )}&quote=${encodeURIComponent(shareMessage)}`,
+       "_blank"
+     );
+   };
 
-  const handleTikTokShare = () => {
-    window.open(
-      `https://www.tiktok.com/share?url=${encodeURIComponent(shareUrl)}`,
-      "_blank"
-    );
-  };
+   const handleTwitterShare = () => {
+     window.open(
+       `https://twitter.com/intent/tweet?text=${encodeURIComponent(
+         shareMessage
+       )}&url=${encodeURIComponent(shareUrl)}`,
+       "_blank"
+     );
+   };
 
-  const handleInstagramShare = () => {
-    window.open(
-      `https://www.instagram.com/?url=${encodeURIComponent(shareUrl)}`,
-      "_blank"
-    );
-  };
+   const handleWhatsAppShare = () => {
+     window.open(
+       `https://wa.me/?text=${encodeURIComponent(shareMessage)}`,
+       "_blank"
+     );
+   };
 
-  const allPlatforms = [
-    {
-      name: "Facebook",
-      Button: FacebookShareButton,
-      Icon: FacebookIcon,
-      color: "#1877F2",
-      props: { quote: shareMessage, url: shareUrl },
-    },
-    {
-      name: "Twitter",
-      Button: TwitterShareButton,
-      Icon: TwitterIcon,
-      color: "#1DA1F2",
-      props: { title: shareMessage, url: shareUrl },
-    },
-    {
-      name: "WhatsApp",
-      custom: true,
-      onClick: handleWhatsAppShare,
-      Icon: WhatsappIcon,
-      color: "#25D366",
-    },
-    {
-      name: "TikTok",
-      custom: true,
-      onClick: handleTikTokShare,
-      Icon: FaTiktok,
-      color: "#000000",
-    },
-    {
-      name: "Instagram",
-      custom: true,
-      onClick: handleInstagramShare,
-      Icon: FaInstagram,
-      color: "#E1306C",
-    },
-    {
-      name: "Telegram",
-      Button: TelegramShareButton,
-      Icon: TelegramIcon,
-      color: "#0088CC",
-      props: { title: shareMessage, url: shareUrl },
-    },
-    {
-      name: "LinkedIn",
-      Button: LinkedinShareButton,
-      Icon: LinkedinIcon,
-      color: "#0077B5",
-      props: { title: shareMessage, url: shareUrl, summary: shareMessage },
-    },
-  ];
+   const handleLinkedInShare = () => {
+     window.open(
+       `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(
+         shareUrl
+       )}`,
+       "_blank"
+     );
+   };
+
+   const handleTelegramShare = () => {
+     window.open(
+       `https://telegram.me/share/url?url=${encodeURIComponent(
+         shareUrl
+       )}&text=${encodeURIComponent(shareMessage)}`,
+       "_blank"
+     );
+   };
+
+   const handleTikTokShare = () => {
+     window.open(
+       `https://www.tiktok.com/share?url=${encodeURIComponent(shareUrl)}`,
+       "_blank"
+     );
+   };
+
+   const handleInstagramShare = () => {
+     window.open(
+       `https://www.instagram.com/?url=${encodeURIComponent(shareUrl)}`,
+       "_blank"
+     );
+   };
+
+   const allPlatforms = [
+     {
+       name: "Facebook",
+       onClick: handleFacebookShare,
+       Icon: FacebookIcon,
+       color: "#1877F2",
+     },
+     {
+       name: "Twitter",
+       onClick: handleTwitterShare,
+       Icon: TwitterIcon,
+       color: "#1DA1F2",
+     },
+     {
+       name: "WhatsApp",
+       onClick: handleWhatsAppShare,
+       Icon: WhatsappIcon,
+       color: "#25D366",
+     },
+     {
+       name: "LinkedIn",
+       onClick: handleLinkedInShare,
+       Icon: LinkedinIcon,
+       color: "#0077B5",
+     },
+     {
+       name: "Telegram",
+       onClick: handleTelegramShare,
+       Icon: TelegramIcon,
+       color: "#0088CC",
+     },
+     {
+       name: "TikTok",
+       onClick: handleTikTokShare,
+       Icon: FaTiktok,
+       color: "#000000",
+     },
+     {
+       name: "Instagram",
+       onClick: handleInstagramShare,
+       Icon: FaInstagram,
+       color: "#E1306C",
+     },
+   ];
 
   const visible = showMore ? allPlatforms : allPlatforms.slice(0, 5);
-
+  
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-fade-in">
