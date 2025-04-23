@@ -15,281 +15,214 @@ export default function MediaGrid({ media }) {
   const [disagrees, setDisagrees] = useState([]);
   const [agreeOwner, setAgreeOwner] = useState("");
 
-  const MAX_VISIBLE = 4; // Number of media to show before "See More"
+  // Responsive visible count
+  const [maxVisible, setMaxVisible] = useState(3); // Default desktop value
 
   useEffect(() => {
-    // console.log(media)
+    // Set initial value based on window width
+    const handleResize = () => {
+      setMaxVisible(window.innerWidth < 768 ? 2 : 3);
+    };
+
+    // Set initial value
+    handleResize();
+
+    // Add event listener
+    window.addEventListener("resize", handleResize);
+
+    // Cleanup
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  useEffect(() => {
     APIS.userWho()
       .then((res) => setAgreeOwner(res.data.id))
       .catch((err) => console.log(err));
   }, []);
 
   useEffect(() => {
-    // Update likes and dislikes when selected media changes
     setAgrees(media[selectedIndex]?.likes || []);
     setDisagrees(media[selectedIndex]?.disLikes || []);
   }, [selectedIndex, media]);
 
-  const handleAgree = async (mediaId) => {
-    if (agrees.some((agree) => agree.owner === agreeOwner)) {
-      await APIS.unLikeMedia(mediaId);
-      setAgrees((prev) => prev.filter((agree) => agree.owner !== agreeOwner));
-    } else {
-      await APIS.likeMedia(mediaId);
-      setAgrees((prev) => [...prev, { owner: agreeOwner, of_post: mediaId }]);
+  // Media grid layout calculation - now responsive
+  const getGridLayout = () => {
+    const visibleCount = Math.min(media.length, maxVisible);
 
-      // Remove from disagrees if user had already disliked
-      setDisagrees((prev) => {
-        if (prev.some((disagree) => disagree.owner === agreeOwner)) {
-          APIS.unDisLikeMedia(mediaId);
-          return prev.filter((disagree) => disagree.owner !== agreeOwner);
-        }
-        return prev;
-      });
-    }
-  };
-  const handleDisagree = async (mediaId) => {
-    if (disagrees.some((disagree) => disagree.owner === agreeOwner)) {
-      await APIS.unDisLikeMedia(mediaId);
-      setDisagrees((prev) =>
-        prev.filter((disagree) => disagree.owner !== agreeOwner)
-      );
-    } else {
-      await APIS.disLikeMedia(mediaId);
-      setDisagrees((prev) => [
-        ...prev,
-        { owner: agreeOwner, of_post: mediaId },
-      ]);
-
-      // Remove from agrees if user had already liked
-      setAgrees((prev) => {
-        if (prev.some((agree) => agree.owner === agreeOwner)) {
-          APIS.unLikeMedia(mediaId);
-          return prev.filter((agree) => agree.owner !== agreeOwner);
-        }
-        return prev;
-      });
-    }
+    if (visibleCount === 1) return "grid-cols-1";
+    if (visibleCount === 2) return "grid-cols-2";
+    return "grid-cols-3"; // For 3 items
   };
 
-  // Handle swipe gestures
-  let touchStartX = 0;
-  let touchEndX = 0;
-  const handleTouchStart = (e) => (touchStartX = e.touches[0].clientX);
-  const handleTouchMove = (e) => (touchEndX = e.touches[0].clientX);
-  const handleTouchEnd = () => {
-    if (touchStartX - touchEndX > 50) nextMedia(); // Swipe Left
-    if (touchEndX - touchStartX > 50) prevMedia(); // Swipe Right
+  // Card size classes - responsive
+  const getCardSizeClass = () => {
+    return "w-full h-48 sm:h-56 md:h-64 lg:h-72 xl:h-80"; // Responsive heights
   };
 
-  // Next & Previous Media
-  const nextMedia = () => setSelectedIndex((prev) => (prev + 1) % media.length);
-  const prevMedia = () =>
-    setSelectedIndex((prev) => (prev - 1 + media.length) % media.length);
+
+    useEffect(() => {
+      // Update likes and dislikes when selected media changes
+      setAgrees(media[selectedIndex]?.likes || []);
+      setDisagrees(media[selectedIndex]?.disLikes || []);
+    }, [selectedIndex, media]);
+
+    const handleAgree = async (mediaId) => {
+      if (agrees.some((agree) => agree.owner === agreeOwner)) {
+        await APIS.unLikeMedia(mediaId);
+        setAgrees((prev) => prev.filter((agree) => agree.owner !== agreeOwner));
+      } else {
+        await APIS.likeMedia(mediaId);
+        setAgrees((prev) => [...prev, { owner: agreeOwner, of_post: mediaId }]);
+
+        // Remove from disagrees if user had already disliked
+        setDisagrees((prev) => {
+          if (prev.some((disagree) => disagree.owner === agreeOwner)) {
+            APIS.unDisLikeMedia(mediaId);
+            return prev.filter((disagree) => disagree.owner !== agreeOwner);
+          }
+          return prev;
+        });
+      }
+    };
+    const handleDisagree = async (mediaId) => {
+      if (disagrees.some((disagree) => disagree.owner === agreeOwner)) {
+        await APIS.unDisLikeMedia(mediaId);
+        setDisagrees((prev) =>
+          prev.filter((disagree) => disagree.owner !== agreeOwner)
+        );
+      } else {
+        await APIS.disLikeMedia(mediaId);
+        setDisagrees((prev) => [
+          ...prev,
+          { owner: agreeOwner, of_post: mediaId },
+        ]);
+
+        // Remove from agrees if user had already liked
+        setAgrees((prev) => {
+          if (prev.some((agree) => agree.owner === agreeOwner)) {
+            APIS.unLikeMedia(mediaId);
+            return prev.filter((agree) => agree.owner !== agreeOwner);
+          }
+          return prev;
+        });
+      }
+    };
 
   return (
     <>
-      <div className="grid gap-2   py-2">
-        {media.length >= 2 &&
-        media[0].width > media[0].height &&
-        media[1].width > media[1].height ? (
-          <>
-            {/* First 2 images (if both are landscape) in a row */}
-            <div className="grid grid-cols-2 gap-2">
-              {media.slice(0, 2).map((item, index) => (
-                <div
-                  key={index}
-                  className="relative cursor-pointer"
-                  onClick={() => {
-                    setSelectedIndex(index);
-                    setIsModalOpen(true);
-                  }}
-                >
-                  <img
-                    src={item.url}
-                    alt="Post"
-                    className="w-full h-auto rounded-lg object-cover"
-                  />
-                </div>
-              ))}
-            </div>
-
-            {/* Remaining images in grid */}
+      <div className="grid gap-2 py-2">
+        {/* Main media grid */}
+        <div className={`grid ${getGridLayout()} gap-2`}>
+          {media.slice(0, maxVisible).map((item, index) => (
             <div
-              className={`grid gap-2 ${
-                media.length - 2 === 1
-                  ? "grid-cols-1"
-                  : "grid-cols-2 md:grid-cols-3"
-              }`}
+              key={index}
+              className={`relative overflow-hidden rounded-lg bg-gray-100 ${getCardSizeClass()}`}
+              onClick={() => {
+                setSelectedIndex(index);
+                setIsModalOpen(true);
+              }}
             >
-              {media.slice(2).map((item, index) => (
-                <div
-                  key={index + 2}
-                  className="relative cursor-pointer"
-                  onClick={() => {
-                    setSelectedIndex(index + 2);
-                    setIsModalOpen(true);
-                  }}
-                >
-                  {item.type.startsWith("image") ? (
-                    <img
-                      src={item.url}
-                      alt="Post"
-                      className="w-full h-auto rounded-lg object-cover"
-                    />
-                  ) : (
-                    <video controls className="w-full h-auto rounded-lg">
-                      <source src={item.url} type="video/mp4" />
-                    </video>
-                  )}
-                </div>
-              ))}
+              {item.type?.startsWith("image") ? (
+                <img
+                  src={item.url}
+                  alt={`Media ${index + 1}`}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <video controls className="w-full h-full object-cover">
+                  <source src={item.url} type="video/mp4" />
+                </video>
+              )}
             </div>
-          </>
-        ) : (
-          // Default Grid Layout if first 2 are not both landscape
-          <div
-            className={`grid gap-2  ${
-              media.length === 1
-                ? "grid-cols-1"
-                : media.length === 2
-                ? "grid-cols-2 items-center"
-                : "grid-cols-3 md:grid-cols-4 items-center"
-            }`}
-          >
-            {media.slice(0, MAX_VISIBLE).map((item, index) => (
-              <div
-                key={index}
-                className="relative cursor-pointer"
-                onClick={() => {
-                  setSelectedIndex(index);
-                  setIsModalOpen(true);
-                }}
-              >
-                {item.type?.startsWith("image") ? (
-                  <img
-                    src={item.url}
-                    alt="Post"
-                    className="w-full h-auto rounded-lg object-cover"
-                  />
-                ) : (
-                  <video controls className="w-full h-auto rounded-lg">
-                    <source src={item.url} type="video/mp4" />
-                  </video>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
+          ))}
+        </div>
 
-        {/* "See More" Button */}
-        {media.length > MAX_VISIBLE && (
-          <div
-            className="flex items-center px-3 py-1.5 justify-center bg-black/50 text-white text-md  rounded-lg cursor-pointer"
+        {/* "See More" Button - shows when there are more items than maxVisible */}
+        {media.length > maxVisible && (
+          <button
+            className="w-full py-2 mt-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-center"
             onClick={() => setIsModalOpen(true)}
           >
-            +{media.length - MAX_VISIBLE} See More
-          </div>
+            +{media.length - maxVisible} See More
+          </button>
         )}
       </div>
 
+      {/* Modal View */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center p-6 z-50">
-          {/* Close Button (Top Right) */}
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex justify-center items-center p-4 z-50">
           <button
-            className="absolute top-6 right-6 bg-red-600 hover:bg-red-700 z-10 text-white px-3 py-1.5 rounded-full transition"
+            className="absolute top-4 right-4 bg-red-600 hover:bg-red-700 z-10 text-white px-2 py-1 rounded-full transition"
             onClick={() => setIsModalOpen(false)}
           >
             ✕
           </button>
 
-          {/* Next & Previous Buttons (Side Positions) */}
           {media.length > 1 && (
             <>
-              {/* Next & Previous Buttons - Vertically Centered */}
               <button
-                className="absolute md:left-2 left-0 top-1/2 -translate-y-1/2 z-10 bg-white hover:bg-gray-300 text-gray-700 md:p-3 p-1.5 rounded-full transition"
-                onClick={prevMedia}
+                className="absolute left-4 top-1/2 -translate-y-1/2 z-10 bg-white/80 hover:bg-white text-gray-800 p-2 rounded-full transition"
+                onClick={() =>
+                  setSelectedIndex(
+                    (prev) => (prev - 1 + media.length) % media.length
+                  )
+                }
               >
                 <ChevronLeft size={32} />
               </button>
-
               <button
-                className="absolute md:right-2 right-0 top-1/2 -translate-y-1/2 z-10 bg-white hover:bg-gray-300 text-gray-700 md:p-3 p-1.5 rounded-full transition"
-                onClick={nextMedia}
+                className="absolute right-4 top-1/2 -translate-y-1/2 z-10 bg-white/80 hover:bg-white text-gray-800 p-2 rounded-full transition"
+                onClick={() =>
+                  setSelectedIndex((prev) => (prev + 1) % media.length)
+                }
               >
                 <ChevronRight size={32} />
               </button>
             </>
           )}
 
-          <div className="relative bg-white rounded-xl p-6 max-w-4xl w-full max-h-[90vh] overflow-auto shadow-xl">
-            {/* Media Display */}
-            <div className="flex flex-col items-center">
-              {media[selectedIndex]?.type.startsWith("image") ? (
-                <>
-                  <img
-                    src={media[selectedIndex].url}
-                    alt="Post"
-                    className="w-full max-h-[70vh] object-contain rounded-lg shadow-md"
-                  />
-                </>
-              ) : (
-                <>
-                  <video
-                    controls
-                    className="w-full max-h-[70vh] rounded-lg shadow-md"
-                  >
-                    <source src={media[selectedIndex].url} type="video/mp4" />
-                  </video>
-                </>
-              )}
+          <div className="relative w-full max-w-4xl max-h-[90vh] flex flex-col items-center">
+            {media[selectedIndex]?.type.startsWith("image") ? (
+              <img
+                src={media[selectedIndex].url}
+                alt="Enlarged media"
+                className="max-w-full max-h-[80vh] object-contain"
+              />
+            ) : (
+              <video controls className="max-w-full max-h-[80vh]" autoPlay>
+                <source src={media[selectedIndex].url} type="video/mp4" />
+              </video>
+            )}
 
-              <div className="flex items-center gap-x-6 mt-4">
-                {/* Like Button */}
-                <button
-                  className="flex items-center gap-x-2"
-                  onClick={() => handleAgree(media[selectedIndex]._id)}
-                >
-                  <ThumbsUp
-                    size={32}
-                    className={`hover:text-green-600 ${
-                      agrees.some((a) => a.owner === agreeOwner)
-                        ? "text-green-600"
-                        : "text-gray-500"
-                    }`}
-                  />
-                  <span className="text-lg font-semibold">
-                    ({agrees.length})
-                  </span>
-                </button>
-
-                {/* Dislike Button */}
-                <button
-                  className="flex items-center gap-x-2"
-                  onClick={() => handleDisagree(media[selectedIndex]._id)}
-                >
-                  <ThumbsDown
-                    size={32}
-                    className={`hover:text-red-600 ${
-                      disagrees.some((d) => d.owner === agreeOwner)
-                        ? "text-red-600"
-                        : "text-gray-500"
-                    }`}
-                  />
-                  <span className="text-lg font-semibold">
-                    ({disagrees.length})
-                  </span>
-                </button>
-
-                {/* Comment Button */}
-                <button className="flex items-center gap-x-2 hover:text-gray-700 transition">
-                  <MessagesSquare size={24} />
-                  <span className="text-lg font-medium hidden md:inline">
-                    Comment
-                  </span>
-                </button>
-              </div>
+            <div className="flex items-center gap-6 mt-4 bg-white/10 p-3 rounded-lg">
+              <button
+                className="flex items-center gap-2"
+                onClick={() => handleAgree(media[selectedIndex]._id)}
+              >
+                <ThumbsUp
+                  size={24}
+                  className={
+                    agrees.some((a) => a.owner === agreeOwner)
+                      ? "text-green-500"
+                      : "text-gray-300"
+                  }
+                />
+                <span className="text-white">{agrees.length}</span>
+              </button>
+              <button
+                className="flex items-center gap-2"
+                onClick={() => handleDisagree(media[selectedIndex]._id)}
+              >
+                <ThumbsDown
+                  size={24}
+                  className={
+                    disagrees.some((d) => d.owner === agreeOwner)
+                      ? "text-red-500"
+                      : "text-gray-300"
+                  }
+                />
+                <span className="text-white">{disagrees.length}</span>
+              </button>
             </div>
           </div>
         </div>

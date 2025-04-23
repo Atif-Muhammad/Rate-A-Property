@@ -78,6 +78,7 @@ export const PostOptions = ({ onDelete, onEdit }) => {
           description="Do you really want to delete this post?"
           onCancel={() => setShowConfirm(false)}
           onConfirm={handleConfirmDelete}
+          button="Yes, Delete"
         />
       )}
     </div>

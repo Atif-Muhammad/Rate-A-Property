@@ -7,9 +7,10 @@ export const ConfirmationModal = ({
   description,
   onCancel,
   onConfirm,
+  button,
 }) => {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+    <div className="fixed inset-0 z-auto flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: -20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -53,7 +54,7 @@ export const ConfirmationModal = ({
             onClick={onConfirm}
             className="px-5 py-2 rounded-xl bg-gradient-to-r from-red-500 to-pink-500 text-white font-medium hover:opacity-90 shadow-lg"
           >
-            Yes, Delete
+            {button}
           </button>
         </div>
       </motion.div>
