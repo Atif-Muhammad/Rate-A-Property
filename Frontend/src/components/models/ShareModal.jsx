@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import {
   FacebookShareButton,
   TwitterShareButton,
-  EmailShareButton,
   LinkedinShareButton,
   TelegramShareButton,
 } from "react-share";
@@ -10,13 +9,11 @@ import {
   FacebookIcon,
   TwitterIcon,
   WhatsappIcon,
-  EmailIcon,
   LinkedinIcon,
   TelegramIcon,
 } from "react-share";
 import { X, Link as LinkIcon, Check, MoreHorizontal } from "lucide-react";
 import { FaInstagram, FaTiktok } from "react-icons/fa";
-
 
 const ShareModal = ({ post, onClose }) => {
   const shareUrl = `${window.location.origin}/post/${post._id}`;
@@ -102,17 +99,6 @@ const ShareModal = ({ post, onClose }) => {
       Icon: LinkedinIcon,
       color: "#0077B5",
       props: { title: shareMessage, url: shareUrl, summary: shareMessage },
-    },
-    {
-      name: "Email",
-      Button: EmailShareButton,
-      Icon: EmailIcon,
-      color: "#EA4335",
-      props: {
-        subject: "Check out this post",
-        body: shareMessage,
-        url: shareUrl,
-      },
     },
   ];
 
