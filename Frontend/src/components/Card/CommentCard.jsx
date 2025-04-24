@@ -27,8 +27,8 @@ function CommentCard(props) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [localActiveReplyCommentId, setLocalActiveReplyCommentId] =
     useState(null);
-  const activeReplyId = props.activeReplyCommentId || localActiveReplyCommentId;
-  const showReplyBox = activeReplyId === props.comment._id;
+  // const activeReplyId = props.activeReplyCommentId || localActiveReplyCommentId;
+  // const showReplyBox = activeReplyId === props.comment._id;
   const [showReplies, setShowReplies] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(props.comment.comment);
@@ -36,6 +36,9 @@ function CommentCard(props) {
   const [isLoadingMoreReplies, setIsLoadingMoreReplies] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [existingFiles, setExistingFiles] = useState(props.comment.media || []);
+  // Use the prop instead
+  const activeReplyId = props.activeReplyCommentId;
+  const showReplyBox = activeReplyId === props.comment._id;
 
   const nestingDepth = props.nestingDepth || 0;
   const maxVisualDepthDesktop = 3; // Maximum depth for visual indentation on desktop
@@ -238,7 +241,6 @@ function CommentCard(props) {
       formData.append("content", text);
       formData.append("owner", currentUser._id);
 
-      // Handle media files
       media.forEach((file) => {
         if (file instanceof File) {
           formData.append("files", file);
@@ -253,7 +255,7 @@ function CommentCard(props) {
         formData,
       });
 
-      setIsEditing(false);
+      setIsEditing(false); // Close the edit box
     } catch (error) {
       console.error("Error saving edit:", error);
     }
@@ -302,12 +304,9 @@ function CommentCard(props) {
   const handleSendReply = (text, media) => {
     if (!text.trim() && media.length === 0) return;
 
-    console.log(text);
-    console.log(media);
-    console.log(props.comment._id);
-
     const tempId = `temp-${Date.now()}`;
 
+    // Create media previews
     const mediaPreviews = media.map((file) => {
       const fileExt = file.name.split(".").pop().toLowerCase();
       const mediaType = ["mp4", "webm", "mov"].includes(fileExt)
@@ -325,6 +324,7 @@ function CommentCard(props) {
       };
     });
 
+    // Create optimistic update data
     const newReplyData = {
       _id: tempId,
       owner: {
@@ -340,8 +340,7 @@ function CommentCard(props) {
       media: mediaPreviews,
     };
 
-    // console.log(newReplyData)
-
+    // Apply optimistic update
     queryClient.setQueryData(["replies", props.comment._id], (old) => {
       if (!old) return;
       return {
@@ -358,15 +357,24 @@ function CommentCard(props) {
 
     setShowReplies(true);
 
+    // Prepare form data for API call
     const formData = new FormData();
     formData.append("owner", currentUser?._id);
     formData.append("content", text);
     formData.append("for_post", props.comment._id);
     media.forEach((file) => formData.append("files", file));
 
+    // Execute mutation
     sendReplyMutation.mutate({ formData, tempId });
-  };
 
+    // Close the reply box after 500ms
+    setTimeout(() => {
+      if (props.setActiveReplyCommentId) {
+        props.setActiveReplyCommentId(null);
+      }
+    }, 500);
+  };
+  
   const handleCommentDel = async (commentId) => {
     deleteComment(commentId);
   };
@@ -374,8 +382,6 @@ function CommentCard(props) {
   const handleReplyClick = () => {
     if (props.setActiveReplyCommentId) {
       props.setActiveReplyCommentId(showReplyBox ? null : props.comment._id);
-    } else {
-      setLocalActiveReplyCommentId(showReplyBox ? null : props.comment._id);
     }
   };
 
@@ -393,6 +399,12 @@ function CommentCard(props) {
             ? "bg-gray-50"
             : "bg-gray-100"
         }`}
+        onClick={() => {
+          if (showReplyBox || isEditing) {
+            props.setActiveReplyCommentId(null);
+            setIsEditing(false);
+          }
+        }}
       >
         <div className="flex items-start space-x-3 w-full">
           {/* User Avatar */}
@@ -527,6 +539,10 @@ function CommentCard(props) {
                           <CommentCard
                             key={reply._id}
                             comment={reply}
+                            activeReplyCommentId={props.activeReplyCommentId}
+                            setActiveReplyCommentId={
+                              props.setActiveReplyCommentId
+                            }
                             agreeOwner={props.agreeOwner}
                             currentUser={props.currentUser}
                             nestingDepth={nestingDepth + 1}
@@ -569,7 +585,10 @@ function CommentCard(props) {
         )}
 
         {(showReplyBox || isEditing) && (
-          <div className="mt-2 w-full bg-gray-100 border border-gray-100 rounded-lg overflow-hidden">
+          <div
+            className="mt-2 w-full bg-gray-100 border border-gray-100 rounded-lg overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
             {isEditing ? (
               <div className="flex items-center justify-between px-5 pt-2">
                 <span className="text-md text-gray-700">

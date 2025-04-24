@@ -78,6 +78,7 @@ export const CommentOptions = ({ onDelete, onEdit }) => {
           description="Do you really want to delete this comment?"
           onCancel={() => setShowConfirm(false)}
           onConfirm={handleConfirmDelete}
+          button="Delete"
         />
       )}
     </div>

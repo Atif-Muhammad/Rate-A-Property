@@ -31,11 +31,26 @@ export const UserInfo = () => {
   // const userPosts = owner?._id;
   const LIMIT = 10;
 
-  const followMutation = useMutation({
-    mutationFn: async ({ followerId, followId }) =>
-      await APIS.followUser(followerId, followId),
+  // Fetch profile data using React Query
+  const {
+    data: profile,
+    isLoading: profileLoading,
+    refetch: refetchProfile,
+  } = useQuery({
+    queryKey: ["userProfile", initialOwner?._id],
+    queryFn: () => APIS.getUserProfile(initialOwner?._id),
+    initialData: initialOwner, // Use location state as initial data
+    enabled: !!initialOwner?._id,
+  });
 
-    onMutate: async ({ followerId, followId }) => {
+  // Derive isFollowing from the profile data
+  const isFollowing = profile?.followers?.includes(currentUser?._id) || false;
+
+  // Optimistic follow/unfollow mutations
+  const { mutate: followUser } = useMutation({
+    mutationFn: (followId) => APIS.followUser(currentUser?._id, followId),
+    onMutate: async (followId) => {
+      // Cancel any outgoing refetches to avoid overwriting optimistic update
       await queryClient.cancelQueries(["userProfile", followId]);
 
       // Optimistic update: add follower ID
@@ -52,8 +67,13 @@ export const UserInfo = () => {
     },
 
     onSuccess: () => {
-      console.log("Followed successfully");
-      queryClient.invalidateQueries(["userProfile"]); // refetch updated data
+      // Invalidate both profile and posts queries
+      queryClient.invalidateQueries(["userProfile", profile._id]);
+      queryClient.invalidateQueries(["userPosts"]);
+    },
+    onError: (err, followId) => {
+      // Revert on error
+      queryClient.invalidateQueries(["userProfile", followId]);
     },
   });
 
@@ -78,8 +98,11 @@ export const UserInfo = () => {
     },
 
     onSuccess: () => {
-      console.log("Unfollowed successfully");
-      queryClient.invalidateQueries(["userProfile"]);
+      queryClient.invalidateQueries(["userProfile", profile._id]);
+      queryClient.invalidateQueries(["userPosts"]);
+    },
+    onError: (err, followId) => {
+      queryClient.invalidateQueries(["userProfile", followId]);
     },
   });
 
