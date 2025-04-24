@@ -23,7 +23,7 @@ function App() {
       const who = await APIS.userWho();
       const res = await APIS.getUser(who.data.id);
       const user = res.data;
-      console.log("user in app:", user);
+      // console.log("user in app:", user);
       return user; 
     },
   });

@@ -12,106 +12,122 @@ import {
 import PostCard from "../../components/post/PostCard";
 import { useMemo } from "react";
 
-
 export const UserInfo = () => {
   const location = useLocation();
   const { owner, currentUser } = location.state || {};
-  console.log("state owner:", owner);
   const queryClient = useQueryClient();
-  // const { data: userInfo = {} } = useQuery({
-  //   queryKey: ["userInfo", owner?.id],
-  //   queryFn: async () => await APIS.getUser(owner?.id),
-  //   enabled: !!owner?.id && !owner?._id,
-  // });
-
-  // const ownerFinal = useMemo(() => {
-  //   return owner?._id ? owner : userInfo?.data;
-  // }, [owner, userInfo]);
-
-  // const userPosts = owner?._id;
   const LIMIT = 10;
 
-  // Fetch profile data using React Query
-  const {
-    data: profile,
-    isLoading: profileLoading,
-    refetch: refetchProfile,
-  } = useQuery({
-    queryKey: ["userProfile", initialOwner?._id],
-    queryFn: () => APIS.getUserProfile(initialOwner?._id),
-    initialData: initialOwner, // Use location state as initial data
-    enabled: !!initialOwner?._id,
+  // Fetch profile data
+  const { data: profile, refetch: refetchProfile } = useQuery({
+    queryKey: ["userProfile", owner?._id],
+    queryFn: async () => await APIS.getUserProfile(owner._id),
+    initialData: owner,
+    enabled: !!owner?._id && !!currentUser?._id,
   });
 
-  // Derive isFollowing from the profile data
-  const isFollowing = profile?.followers?.includes(currentUser?._id) || false;
+  const isFollowing = profile?.followers?.includes(currentUser?._id);
 
-  // Optimistic follow/unfollow mutations
-  const { mutate: followUser } = useMutation({
-    mutationFn: (followId) => APIS.followUser(currentUser?._id, followId),
-    onMutate: async (followId) => {
-      // Cancel any outgoing refetches to avoid overwriting optimistic update
-      await queryClient.cancelQueries(["userProfile", followId]);
+  const followMutation = useMutation({
+    mutationFn: async () => await APIS.followUser(currentUser._id, profile._id),
 
-      // Optimistic update: add follower ID
-      queryClient.setQueryData(["userProfile", followId], (old) => ({
+    onMutate: async () => {
+      await queryClient.cancelQueries(["userProfile", profile._id]);
+      await queryClient.cancelQueries(["userProfile", currentUser._id]);
+
+      const prevProfileData = queryClient.getQueryData([
+        "userProfile",
+        profile._id,
+      ]);
+      const prevCurrentUserData = queryClient.getQueryData([
+        "userProfile",
+        currentUser._id,
+      ]);
+
+      queryClient.setQueryData(["userProfile", profile._id], (old) => ({
         ...old,
-        followers: [...(old?.followers || []), followerId],
+        followers: [...(old?.followers || []), currentUser._id],
       }));
+
+      queryClient.setQueryData(["userProfile", currentUser._id], (old) => ({
+        ...old,
+        following: [...(old?.following || []), profile._id],
+      }));
+
+      return { prevProfileData, prevCurrentUserData };
     },
 
-    onError: (err, variables, context) => {
-      // Rollback
-      queryClient.invalidateQueries(["userProfile", variables.followId]);
-      console.error("Error following user:", err);
+    onError: (err, _, context) => {
+      queryClient.setQueryData(
+        ["userProfile", profile._id],
+        context.prevProfileData
+      );
+      queryClient.setQueryData(
+        ["userProfile", currentUser._id],
+        context.prevCurrentUserData
+      );
     },
 
     onSuccess: () => {
-      // Invalidate both profile and posts queries
       queryClient.invalidateQueries(["userProfile", profile._id]);
+      queryClient.invalidateQueries(["userProfile", currentUser._id]);
       queryClient.invalidateQueries(["userPosts"]);
-    },
-    onError: (err, followId) => {
-      // Revert on error
-      queryClient.invalidateQueries(["userProfile", followId]);
     },
   });
 
-  // --- UNFOLLOW USER MUTATION ---
   const unfollowMutation = useMutation({
-    mutationFn: async ({ followerId, followId }) =>
-      await APIS.unfollowUser(followerId, followId),
+    mutationFn: async () =>
+      await APIS.unfollowUser(currentUser._id, profile._id),
 
-    onMutate: async ({ followerId, followId }) => {
-      await queryClient.cancelQueries(["userProfile", followId]);
+    onMutate: async () => {
+      await queryClient.cancelQueries(["userProfile", profile._id]);
+      await queryClient.cancelQueries(["userProfile", currentUser._id]);
 
-      // Optimistic update: remove follower ID
-      queryClient.setQueryData(["userProfile", followId], (old) => ({
+      const prevProfileData = queryClient.getQueryData([
+        "userProfile",
+        profile._id,
+      ]);
+      const prevCurrentUserData = queryClient.getQueryData([
+        "userProfile",
+        currentUser._id,
+      ]);
+
+      queryClient.setQueryData(["userProfile", profile._id], (old) => ({
         ...old,
-        followers: old?.followers?.filter((id) => id !== followerId) || [],
+        followers: old?.followers?.filter((id) => id !== currentUser._id) || [],
       }));
+
+      queryClient.setQueryData(["userProfile", currentUser._id], (old) => ({
+        ...old,
+        following: old?.following?.filter((id) => id !== profile._id) || [],
+      }));
+
+      return { prevProfileData, prevCurrentUserData };
     },
 
-    onError: (err, variables, context) => {
-      queryClient.invalidateQueries(["userProfile", variables.followId]);
-      console.error("Failed to unfollow", err);
+    onError: (err, _, context) => {
+      queryClient.setQueryData(
+        ["userProfile", profile._id],
+        context.prevProfileData
+      );
+      queryClient.setQueryData(
+        ["userProfile", currentUser._id],
+        context.prevCurrentUserData
+      );
     },
 
     onSuccess: () => {
       queryClient.invalidateQueries(["userProfile", profile._id]);
-      queryClient.invalidateQueries(["userPosts"]);
-    },
-    onError: (err, followId) => {
-      queryClient.invalidateQueries(["userProfile", followId]);
+      queryClient.invalidateQueries(["userProfile", currentUser._id]);
+      // queryClient.invalidateQueries(["userPosts"]);
     },
   });
 
   const fetchPosts = async ({ pageParam = 1 }) => {
-    console.log("making call for user", owner);
     const res = await APIS.getUserPosts({
       page: pageParam,
       limit: LIMIT,
-      userId: owner?.id ? owner?.id : owner?._id,
+      userId: owner._id,
     });
     return {
       data: res.data.data,
@@ -120,36 +136,24 @@ export const UserInfo = () => {
     };
   };
 
-  const {
-    data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    status,
-    isLoading,
-  } = useInfiniteQuery({
-    queryKey: ["userPosts", owner?.id ? owner?.id : owner?._id],
-    queryFn: fetchPosts,
-    getNextPageParam: (lastPage) =>
-      lastPage.hasMore ? lastPage.nextPage : undefined,
-    enabled: !!owner,
-  });
-
-  console.log("current", currentUser);
-
-  const [profile, setProfile] = useState(owner || {});
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useInfiniteQuery({
+      queryKey: ["userPosts", owner._id],
+      queryFn: fetchPosts,
+      getNextPageParam: (lastPage) =>
+        lastPage.hasMore ? lastPage.nextPage : undefined,
+      enabled: !!owner?._id,
+    });
 
   const [showModal, setShowModal] = useState(false);
-
   const handleOpen = () => setShowModal(true);
   const handleClose = () => setShowModal(false);
 
   const handleSave = (updatedData) => {
-    setProfile(updatedData);
+    queryClient.setQueryData(["userProfile", updatedData._id], updatedData);
     handleClose();
   };
 
-  // Infinite scroll
   useEffect(() => {
     const onScroll = () => {
       const { scrollTop, scrollHeight, clientHeight } =
@@ -166,14 +170,6 @@ export const UserInfo = () => {
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
   }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
-
-  const handleFollow = (followerId, followId) => {
-    followMutation.mutate({ followerId, followId });
-  };
-
-  const handleUnfollow = (followerId, followId) => {
-    unfollowMutation.mutate({ followerId, followId });
-  };
 
   return (
     <div className="max-w-3xl bg-white mx-auto p-4 space-y-6 rounded-xl shadow">
@@ -194,9 +190,14 @@ export const UserInfo = () => {
               >
                 Edit Profile
               </button>
-            ) : profile?.followers?.includes(currentUser?._id) ? (
+            ) : isFollowing ? (
               <button
-                onClick={() => handleUnfollow(currentUser?._id, profile?._id)}
+                onClick={() =>
+                  unfollowMutation.mutate({
+                    followerId: currentUser?._id,
+                    followId: profile?._id,
+                  })
+                }
                 className="px-4 py-1 rounded-md border text-sm font-medium hover:bg-gray-100 w-fit"
               >
                 Unfollow
@@ -204,7 +205,12 @@ export const UserInfo = () => {
             ) : (
               <button
                 className="text-xs border px-2 py-0.5 cursor-pointer"
-                onClick={() => handleFollow(currentUser?._id, profile?._id)}
+                onClick={() =>
+                  followMutation.mutate({
+                    followerId: currentUser?._id,
+                    followId: profile?._id,
+                  })
+                }
               >
                 Follow
               </button>

@@ -10,6 +10,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import ShareModal from "../models/ShareModal";
 
 const PostCard = (props) => {
+  const queryClient = useQueryClient();
+
   const postId = props.postId;
 
   const [post, setPost] = useState({});
@@ -28,8 +30,6 @@ const PostCard = (props) => {
   );
   // Inside your PostCard component, add this state:
   const [showShareModal, setShowShareModal] = useState(false);
-
-  const queryClient = useQueryClient();
 
   const { mutate: deletePost } = useMutation({
     mutationFn: (postId) => APIS.delPost(postId),
@@ -109,45 +109,124 @@ const PostCard = (props) => {
     );
   }, [props.post]);
 
-  const { mutate: followUser } = useMutation({
-    mutationFn: (followId) => APIS.followUser(agreeOwner, followId),
-    onMutate: (followId) => {
-      // Optimistically update the UI
-      setIsFollowing(true);
-      return { previousFollowState: isFollowing };
+  const followMutation = useMutation({
+    mutationFn: async ({ followerId, followId }) =>
+      await APIS.followUser(followerId, followId),
+
+    onMutate: async () => {
+      await queryClient.cancelQueries(["userProfile", post.owner?._id]);
+      await queryClient.cancelQueries(["userProfile", props.currentUser?._id]);
+
+      const prevOwnerData = queryClient.getQueryData([
+        "userProfile",
+        post.owner?._id,
+      ]);
+      const prevCurrentUserData = queryClient.getQueryData([
+        "userProfile",
+        props.currentUser?._id,
+      ]);
+
+      // Optimistically update post owner (i.e., being followed)
+      queryClient.setQueryData(["userProfile", post.owner?._id], (old) => ({
+        ...old,
+        followers: [...(old?.followers || []), props.currentUser?._id],
+      }));
+
+      // Optimistically update current user (i.e., following someone new)
+      queryClient.setQueryData(
+        ["userProfile", props.currentUser?._id],
+        (old) => ({
+          ...old,
+          following: [...(old?.following || []), post.owner?._id],
+        })
+      );
+
+      return { prevOwnerData, prevCurrentUserData };
     },
-    onError: (err, followId, context) => {
-      // Rollback on error
-      setIsFollowing(context.previousFollowState);
+
+    onError: (err, _, context) => {
+      queryClient.setQueryData(
+        ["userProfile", post.owner?._id],
+        context.prevOwnerData
+      );
+      queryClient.setQueryData(
+        ["userProfile", props.currentUser?._id],
+        context.prevCurrentUserData
+      );
     },
+
     onSuccess: () => {
-      queryClient.invalidateQueries(["posts"]);
-      queryClient.invalidateQueries(["userProfile", agreeOwner]);
+      queryClient.invalidateQueries(["userProfile", post.owner?._id]);
+      queryClient.invalidateQueries(["userProfile", props.currentUser?._id]);
+      queryClient.invalidateQueries(["userPosts"]);
     },
   });
 
-  const { mutate: unfollowUser } = useMutation({
-    mutationFn: (followId) => APIS.unfollowUser(agreeOwner, followId),
-    onMutate: (followId) => {
-      // Optimistically update the UI
-      setIsFollowing(false);
-      return { previousFollowState: isFollowing };
+  const unfollowMutation = useMutation({
+    mutationFn: async ({ followerId, followId }) =>
+      await APIS.unfollowUser(followerId, followId),
+
+    onMutate: async () => {
+      await queryClient.cancelQueries(["userProfile", post.owner?._id]);
+      await queryClient.cancelQueries(["userProfile", props.currentUser?._id]);
+
+      const prevOwnerData = queryClient.getQueryData([
+        "userProfile",
+        post.owner?._id,
+      ]);
+      const prevCurrentUserData = queryClient.getQueryData([
+        "userProfile",
+        props.currentUser?._id,
+      ]);
+
+      // Optimistically update post owner (remove current user from their followers)
+      queryClient.setQueryData(["userProfile", post.owner?._id], (old) => ({
+        ...old,
+        followers:
+          old?.followers?.filter((id) => id !== props.currentUser?._id) || [],
+      }));
+
+      // Optimistically update current user (remove followed user from their following)
+      queryClient.setQueryData(
+        ["userProfile", props.currentUser?._id],
+        (old) => ({
+          ...old,
+          following:
+            old?.following?.filter((id) => id !== post.owner?._id) || [],
+        })
+      );
+
+      return { prevOwnerData, prevCurrentUserData };
     },
-    onError: (err, followId, context) => {
-      // Rollback on error
-      setIsFollowing(context.previousFollowState);
+
+    onError: (err, _, context) => {
+      queryClient.setQueryData(
+        ["userProfile", post.owner?._id],
+        context.prevOwnerData
+      );
+      queryClient.setQueryData(
+        ["userProfile", props.currentUser?._id],
+        context.prevCurrentUserData
+      );
     },
+
     onSuccess: () => {
-      queryClient.invalidateQueries(["posts"]);
-      queryClient.invalidateQueries(["userProfile", agreeOwner]);
+      queryClient.invalidateQueries(["userProfile", post.owner?._id]);
+      queryClient.invalidateQueries(["userProfile", props.currentUser?._id]);
     },
   });
 
   const handleFollowAction = (followId) => {
     if (isFollowing) {
-      unfollowUser(followId);
+      unfollowMutation.mutate({
+        followerId: props.currentUser?._id,
+        followId,
+      });
     } else {
-      followUser(followId);
+      followMutation.mutate({
+        followerId: props.currentUser?._id,
+        followId,
+      });
     }
   };
 

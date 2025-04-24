@@ -24,21 +24,18 @@ export const NewPost = ({
   const createPostMutation = useCreatePost();
   const updatePostMutation = useUpdatePost();
 
-  const { data: user = {}, isLoading } = useQuery({
-    queryKey: ["user"],
-    queryFn: async () => {
-      const who = await APIS.userWho();
-      const res = await APIS.getUser(who.data.id);
-      const user = res.data;
-      // console.log("user", res.data)
-      return {
-        id: user._id,
-        image: user.image,
-        user_name: user.user_name,
-        posts: user.posts || [],
-      };
-    },
-  });
+  const queryClient = useQueryClient();
+
+  const user = queryClient.getQueryData(["userInfo"]);
+
+  // console.log("user:", user);
+
+  // return {
+  //   id: user._id,
+  //   image: user.image,
+  //   user_name: user.user_name,
+  //   posts: user.posts || [],
+  // };
 
   useEffect(() => {
     if (isEdit) {
@@ -77,7 +74,7 @@ export const NewPost = ({
     setIsPosting(true);
     const formData = new FormData();
     // console.log(user)
-    formData.append("owner", user.id);
+    formData.append("owner", user?._id);
     formData.append("description", textRef.current?.value);
     formData.append("location", location);
     // console.log(selectedMedia)
@@ -105,7 +102,8 @@ export const NewPost = ({
     } else {
       createPostMutation.mutate(formData, {
         onSuccess: () => {
-          navigate("/");
+          // navigate("/");
+          queryClient.invalidateQueries(["userProfile", user._id]);
           onClose();
         },
         onError: (err) => console.log(err),
