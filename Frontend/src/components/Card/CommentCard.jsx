@@ -461,13 +461,21 @@ function CommentCard(props) {
             <div className="flex space-x-4 text-sm text-gray-500 mt-2">
               <button
                 onClick={handleAgree}
-                className="flex items-center space-x-1 hover:text-blue-600"
+                className={`flex items-center space-x-1 hover:text-blue-600 ${
+                  agrees.some((agree) => agree.owner === agreeOwner)
+                    ? "text-blue-500"
+                    : "text-gray-500"
+                }`}
               >
                 <ThumbsUp size={16} /> <span>({agrees?.length || 0})</span>
               </button>
               <button
                 onClick={handleDisagree}
-                className="flex items-center space-x-1 hover:text-red-600"
+                className={`flex items-center space-x-1 hover:text-blue-600 ${
+                  disagrees.some((disagree) => disagree.owner === agreeOwner)
+                    ? "text-red-500"
+                    : "text-gray-500"
+                }`}
               >
                 <ThumbsDown size={16} /> <span>({disagrees?.length || 0})</span>
               </button>

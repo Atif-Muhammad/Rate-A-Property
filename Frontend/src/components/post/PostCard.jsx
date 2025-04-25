@@ -233,72 +233,67 @@ const PostCard = (props) => {
   return (
     <>
       {post ? (
-        <div className="bg-white shadow-md rounded-lg p-3.5  w-full lg:max-w-3xl border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center justify-between w-full space-x-3">
-              {/* Profile & Username */}
-              <NavLink
-                to={`/profile/${post?.owner?.user_name}`}
-                state={{ owner: post?.owner, currentUser: props.currentUser }}
-                className="flex items-center gap-x-3"
-              >
-                <img
-                  src={post?.owner?.image}
-                  alt="profile"
-                  className="w-12 h-12 rounded-full border-2 border-blue-500"
-                />
-                <div className="leading-tight">
-                  <p className="text-sm font-semibold text-black">
-                    {post?.owner?.user_name}
-                  </p>
-                  <span className="text-xs text-gray-500">
-                    {getTimeAgo(post.createdAt)}
-                  </span>
-                </div>
-              </NavLink>
-
-              {/* Follow & PostOptions (right side) */}
-              <div className="flex items-center gap-x-2">
-                {/* Follow/Following Button with Unfollow on hover */}
-                {agreeOwner != post.owner?._id && (
-                  <button
-                    className={`text-sm font-medium px-4 py-1.5 rounded-lg transition-all duration-200 active:scale-95 relative group ${
-                      isFollowing
-                        ? "bg-gray-100 hover:bg-red-50 text-black border border-gray-300 hover:border-red-300"
-                        : "bg-blue-500 hover:bg-blue-600 text-white"
-                    }`}
-                    onClick={() => handleFollowAction(post.owner?._id)}
-                  >
-                    <span
-                      className={`${isFollowing ? "group-hover:hidden" : ""}`}
-                    >
-                      {isFollowing ? "Following" : "Follow"}
-                    </span>
-                    {isFollowing && (
-                      <span className="hidden group-hover:block text-red-500">
-                        Unfollow
-                      </span>
-                    )}
-                  </button>
-                )}
-
-                {/* Post Options (if owner) */}
-                {agreeOwner == post.owner?._id && (
-                  <PostOptions
-                    onDelete={() => handlePostDel(post._id)}
-                    onEdit={() => {
-                      setEditData(post);
-                      setOpenPostModal(true);
-                    }}
-                  />
-                )}
+        <div className="bg-white border border-gray-200 rounded-xl shadow-sm w-full lg:max-w-[50rem] p-5">
+          {/* Header */}
+          <div className="flex justify-between items-start gap-4">
+            {/* Profile & Info */}
+            <NavLink
+              to={`/profile/${post?.owner?.user_name}`}
+              state={{ owner: post?.owner, currentUser: props.currentUser }}
+              className="flex items-center gap-3"
+            >
+              <img
+                src={post?.owner?.image}
+                alt="profile"
+                className="w-12 h-12 rounded-full border-2 border-blue-500"
+              />
+              <div>
+                <p className="font-semibold text-sm text-gray-900">
+                  {post?.owner?.user_name}
+                </p>
+                <span className="text-xs text-gray-500">
+                  {getTimeAgo(post.createdAt)}
+                </span>
               </div>
+            </NavLink>
+
+            {/* Actions: Follow or Post Options */}
+            <div className="flex items-center gap-2">
+              {agreeOwner !== post.owner?._id ? (
+                <button
+                  className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all duration-200 group ${
+                    isFollowing
+                      ? "bg-gray-100 hover:bg-red-50 text-gray-800 border border-gray-300 hover:border-red-300"
+                      : "bg-blue-500 hover:bg-blue-600 text-white"
+                  }`}
+                  onClick={() => handleFollowAction(post.owner?._id)}
+                >
+                  <span
+                    className={`${isFollowing ? "group-hover:hidden" : ""}`}
+                  >
+                    {isFollowing ? "Following" : "Follow"}
+                  </span>
+                  {isFollowing && (
+                    <span className="hidden group-hover:block text-red-500">
+                      Unfollow
+                    </span>
+                  )}
+                </button>
+              ) : (
+                <PostOptions
+                  onDelete={() => handlePostDel(post._id)}
+                  onEdit={() => {
+                    setEditData(post);
+                    setOpenPostModal(true);
+                  }}
+                />
+              )}
             </div>
           </div>
 
-          {/* Location Section - Moved Up */}
-          <div className="bg-gray-100 lg:text-sm md:text-sm text-[0.9rem] font-semibold text-blue-600 flex items-center  tracking-wide justify-center lg:px-5 md:px-3 px-2 py-2 mt-2 rounded-md hover:underline cursor-pointer">
-            <MapPin size={16} className="text-blue-500 mr-1" />
+          {/* Location */}
+          <div className="bg-gray-100 text-blue-600 text-sm font-medium rounded-md flex items-center justify-center mt-4 px-3 py-1.5 hover:underline cursor-pointer">
+            <MapPin size={16} className="mr-1 text-blue-500" />
             <a
               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
                 post.location
@@ -310,75 +305,67 @@ const PostCard = (props) => {
             </a>
           </div>
 
-          {/* Post Content */}
-          <p className="text-gray-800 text-sm mt-2">{post.description}</p>
+          {/* Description */}
+          <p className="text-gray-800 text-sm mt-4">{post.description}</p>
 
+          {/* Media */}
           {post.media && <MediaGrid media={post.media} />}
-          {/* Action Buttons */}
-          <div className="flex justify-between gap-2 p-2 border-t border-gray-300 pt-3 items-center  text-gray-600 text-sm">
-            <div className="flex items-center gap-x-4">
-              <button
-                onClick={handleAgree}
-                className="flex items-center gap-x-1"
-              >
+
+          {/* Actions */}
+          <div className="border-t mt-4 pt-3 flex items-center justify-between text-sm text-gray-600">
+            <div className="flex items-center w-full justify-between gap-4">
+              <button onClick={handleAgree} className="flex items-center gap-1">
                 <span
-                  className={`cursor-pointer transition-colors text-base font-medium ${
+                  className={`font-medium text-base transition-colors ${
                     agrees.some((agree) => agree.owner === agreeOwner)
                       ? "text-blue-500"
                       : "text-gray-500"
                   }`}
                 >
-                  Agree
+                  {agrees.some((agree) => agree.owner === agreeOwner)
+                    ? "Agreed"
+                    : "Agree"}
                 </span>
                 <span className="text-base font-medium">({agrees.length})</span>
               </button>
 
               <button
                 onClick={handleDisagree}
-                className="flex items-center gap-x-1"
+                className="flex items-center gap-1"
               >
                 <span
-                  className={`cursor-pointer transition-colors text-base font-medium ${
+                  className={`font-medium text-base transition-colors ${
                     disagrees.some((disagree) => disagree.owner === agreeOwner)
                       ? "text-red-500"
                       : "text-gray-500"
                   }`}
                 >
-                  Disagree
+                  {disagrees.some((disagree) => disagree.owner === agreeOwner)
+                    ? "Disagreed"
+                    : "Disagree"}
                 </span>
                 <span className="text-base font-medium">
                   ({disagrees.length})
                 </span>
               </button>
+            
+              <NavLink
+                to={`/post/${post._id}`}
+                state={{ post, currentUser: props.currentUser }}
+                className="flex items-center gap-2 hover:text-gray-800"
+              >
+                <MessagesSquare size={20} />
+                <span className="hidden md:inline font-medium">Comment</span>
+              </NavLink>
+
+              <button
+                onClick={() => setShowShareModal(true)}
+                className="flex items-center gap-2 hover:text-green-500"
+              >
+                <Share2 size={20} />
+                <span className="hidden md:inline font-medium">Share</span>
+              </button>
             </div>
-
-            <NavLink
-              to={`/post/${post._id}`}
-              state={{ post, currentUser: props.currentUser }}
-              className="flex items-center md:gap-x-2 hover:text-gray-700 transition"
-            >
-              <MessagesSquare size={22} />
-              <span className="text-base hidden md:flex font-medium">
-                Comment
-              </span>
-            </NavLink>
-
-            {/* <button className="flex items-center md:gap-x-2 hover:text-green-500 transition">
-              <Share2 size={22} />
-              <span className="text-base font-medium hidden md:flex">
-                Share
-              </span>
-            </button> */}
-
-            <button
-              className="flex items-center md:gap-x-2 hover:text-green-500 transition"
-              onClick={() => setShowShareModal(true)}
-            >
-              <Share2 size={22} />
-              <span className="text-base font-medium hidden md:flex">
-                Share
-              </span>
-            </button>
           </div>
         </div>
       ) : (
