@@ -67,8 +67,8 @@ const postController = {
             await post.updateOne({ _id: created_post._id }, { $push: { media: { $each: ids } } })
             // Step 6: Update user with the new post
             await user.updateOne({ _id: ownerId }, { $push: { posts: created_post._id } });
-
-            return res.status(200).send("Post Created");
+            const newPost = await post.findById(created_post._id);
+            return res.status(200).send(newPost);
         } catch (error) {
             console.error("Error Creating Post:", error);
             res.status(500).json({ error: "Internal Server Error", details: error.message });

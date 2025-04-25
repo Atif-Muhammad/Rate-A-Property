@@ -104,6 +104,7 @@ export const NewPost = ({
         onSuccess: () => {
           // navigate("/");
           queryClient.invalidateQueries(["userProfile", user._id]);
+          // console.log("user profile:",queryClient.getQueryData(["userProfile", user._id]));
           onClose();
         },
         onError: (err) => console.log(err),

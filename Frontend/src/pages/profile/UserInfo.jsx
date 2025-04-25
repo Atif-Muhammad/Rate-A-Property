@@ -19,11 +19,19 @@ export const UserInfo = () => {
   const LIMIT = 10;
 
   // Fetch profile data
-  const { data: profile, refetch: refetchProfile } = useQuery({
+  const { data: profile } = useQuery({
     queryKey: ["userProfile", owner?._id],
-    queryFn: async () => await APIS.getUserProfile(owner._id),
-    initialData: owner,
-    enabled: !!owner?._id && !!currentUser?._id,
+    queryFn: async () => {
+      try {
+        const data = await APIS.getUser(owner._id);
+        console.log("Fetched profile:", data);
+        return data.data;
+      } catch (err) {
+        console.error("Failed to fetch profile:", err);
+        throw err;
+      }
+    },
+    enabled: !!owner?._id,
   });
 
   const isFollowing = profile?.followers?.includes(currentUser?._id);

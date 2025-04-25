@@ -4,13 +4,34 @@ import { APIS } from "../../config/Config";
 // CREATE POST
 export const useCreatePost = () => {
   const queryClient = useQueryClient();
+
   return useMutation({
-    mutationFn: async (formData) => await APIS.createPost(formData),
-    onSuccess: () => {
-      queryClient.invalidateQueries(["posts"]);
+    mutationFn: async (formData) => {
+      const res = await APIS.createPost(formData);
+      const newPost = res.data;
+      return newPost;
+    },
+    onSuccess: async (newPost) => {
+      // Append the new post to the cached posts list
+      queryClient.setQueryData(["userPosts", newPost.owner._id], (oldData) => {
+        if (!oldData) return [newPost];
+        return [newPost, ...oldData];
+      });
+      // await queryClient.cancelQueries(["userProfile",  newPost.owner._id]);
+      // // queryClient.invalidateQueries(["userProfile",  newPost.owner._id]);
+      // // Optionally update userProfile if you need to:
+      // queryClient.setQueryData(["userProfile", newPost.owner._id], (oldProfile) => {
+      //   console.log(oldProfile)
+      //   if (!oldProfile) return oldProfile;
+      //   return {
+      //     ...oldProfile,
+      //     posts: [newPost, ...(oldProfile.posts || [])],
+      //   };
+      // });
     },
   });
 };
+
 
 // UPDATE POST
 export const useUpdatePost = () => {
