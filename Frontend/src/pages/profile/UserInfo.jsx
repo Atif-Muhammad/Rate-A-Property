@@ -181,12 +181,12 @@ export const UserInfo = () => {
             alt="profile"
             className="w-24 h-24 rounded-full object-cover border-4 border-blue-500"
           />
-          <div className="flex flex-col space-y-2">
+          <div className="flex flex-col space-y-3">
             <h1 className="text-xl font-semibold">{profile?.user_name}</h1>
             {profile?._id === currentUser?._id ? (
               <button
                 onClick={handleOpen}
-                className="px-4 py-1 rounded-md border text-sm font-medium hover:bg-gray-100 w-fit"
+                className="px-4 py-1.5 rounded-lg border border-gray-300 text-sm font-medium hover:bg-gray-50 w-fit transition-colors"
               >
                 Edit Profile
               </button>
@@ -198,19 +198,19 @@ export const UserInfo = () => {
                     followId: profile?._id,
                   })
                 }
-                className="px-4 py-1 rounded-md border text-sm font-medium hover:bg-gray-100 w-fit"
+                className="px-4 py-1.5 rounded-lg border border-gray-300 bg-white text-sm font-medium hover:bg-gray-50 w-fit transition-colors"
               >
-                Unfollow
+                Following
               </button>
             ) : (
               <button
-                className="text-xs border px-2 py-0.5 cursor-pointer"
                 onClick={() =>
                   followMutation.mutate({
                     followerId: currentUser?._id,
                     followId: profile?._id,
                   })
                 }
+                className="px-4 py-1.5 rounded-lg bg-black text-white text-sm font-medium hover:bg-gray-800 w-fit transition-colors"
               >
                 Follow
               </button>
@@ -218,7 +218,6 @@ export const UserInfo = () => {
           </div>
         </div>
 
-        {/* Bio ko neeche center mein la rahe hain */}
         {/* <div className="text-center text-gray-600 text-sm max-w-md">
           {profile.bio}
         </div> */}
