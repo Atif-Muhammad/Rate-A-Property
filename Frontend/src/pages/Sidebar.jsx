@@ -109,6 +109,11 @@ export const Sidebar = () => {
           <NavLink
             key={to}
             to={to}
+            state={
+              currentUser
+                ? { owner: currentUser, currentUser: currentUser }
+                : {}
+            }
             className={({ isActive }) =>
               `flex flex-col items-center text-sm ${
                 isActive ? "text-blue-600" : "text-gray-500 hover:text-blue-500"

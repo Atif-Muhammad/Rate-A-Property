@@ -146,12 +146,13 @@ export const UserInfo = () => {
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteQuery({
-      queryKey: ["userPosts", owner._id],
+      queryKey: ["userPosts", owner?._id],
       queryFn: fetchPosts,
       getNextPageParam: (lastPage) =>
         lastPage.hasMore ? lastPage.nextPage : undefined,
       enabled: !!owner?._id,
     });
+  console.log(owner)
 
   const [showModal, setShowModal] = useState(false);
   const handleOpen = () => setShowModal(true);
