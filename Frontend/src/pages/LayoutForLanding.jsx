@@ -11,7 +11,7 @@ export const LayoutForLanding = () => {
           <Sidebar />
         </div>
 
-        <div className="lg:ml-64 p-4 space-y-5 w-full h-full overflow-auto py-14 lg:py-6">
+        <div className="lg:ml-64 p-4 space-y-5 w-full h-full overflow-auto py-14 lg:py-3">
           <Outlet />
         </div>
       </div>

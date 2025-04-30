@@ -40,7 +40,7 @@ const logout = async () => {
     const response = await axios.post(
       `${Baseurl}/user/logout`,
       {},
-      { withCredentials }
+      { withCredentials : true}
     );
     return response;
   } catch (error) {

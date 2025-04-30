@@ -64,7 +64,7 @@ export const Sidebar = () => {
   return (
     <>
       {/* Large Screens Sidebar */}
-      <div className="h-full w-full bg-gray-900 text-white p-4 transition-transform z-50 lg:translate-x-0 lg:relative hidden lg:block">
+      <div className="h-full w-full bg-white text-gray-800 p-4 border-r border-gray-200 transition-transform z-50 lg:translate-x-0 lg:relative hidden lg:block">
         <nav className="space-y-4">
           {navLinks.map(({ to, label, icon }) => (
             <NavLink
@@ -76,8 +76,10 @@ export const Sidebar = () => {
                   : {}
               }
               className={({ isActive }) =>
-                `flex items-center gap-3 py-2 px-4 w-full text-left rounded-md transition ${
-                  isActive ? "bg-gray-700 text-white" : "hover:bg-gray-800"
+                `flex items-center gap-3 py-2 px-4 w-full text-left rounded-lg transition font-medium ${
+                  isActive
+                    ? "bg-gray-100 text-blue-600"
+                    : "hover:bg-gray-100 text-gray-700"
                 }`
               }
             >
@@ -89,7 +91,7 @@ export const Sidebar = () => {
           {/* Logout Button */}
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 py-2 px-4 w-full text-left bg-red-600 hover:bg-red-700 rounded-md mt-4"
+            className="flex items-center gap-3 py-2 px-4 w-full text-left bg-red-50 hover:bg-red-100 text-red-600 rounded-lg mt-6 font-medium"
           >
             <LogOut size={24} />
             <span>Logout</span>
@@ -99,17 +101,22 @@ export const Sidebar = () => {
 
       {/* Small & Medium Screens Navbar */}
       <div
-        className={`flex lg:hidden w-full bg-white py-3 px-4 justify-around fixed left-0 z-40 transition-all duration-300 ${
-          isScrolled ? "top-0 shadow-lg" : "top-16 shadow-md"
+        className={`flex lg:hidden w-full bg-white py-3 px-4 justify-around fixed left-0 z-40 transition-all duration-300 border-t border-gray-200 ${
+          isScrolled ? "top-0 shadow-sm" : "top-16"
         }`}
       >
         {navLinks.map(({ to, icon }) => (
           <NavLink
             key={to}
             to={to}
+            state={
+              currentUser
+                ? { owner: currentUser, currentUser: currentUser }
+                : {}
+            }
             className={({ isActive }) =>
-              `flex flex-col items-center text-gray-700 ${
-                isActive ? "text-red-600" : "hover:text-gray-500"
+              `flex flex-col items-center text-sm ${
+                isActive ? "text-blue-600" : "text-gray-500 hover:text-blue-500"
               }`
             }
           >
@@ -129,4 +136,5 @@ export const Sidebar = () => {
       )}
     </>
   );
+
 };
