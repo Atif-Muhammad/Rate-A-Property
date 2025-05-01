@@ -13,7 +13,7 @@ import { Messages } from "./pages/messages/Messages";
 import { UserInfo } from "./pages/profile/UserInfo";
 import { useQuery } from "@tanstack/react-query";
 import { APIS } from "../config/Config";
-// import State from "./context/state";
+import State from "./context/state";
 
 function App() {
 
@@ -31,7 +31,7 @@ function App() {
   return (
     <>
       {/* <div className=" h-screen"> */}
-        {/* <State> */}
+        <State>
         <BrowserRouter>
           <Header />
           <Routes>
@@ -50,7 +50,7 @@ function App() {
             <Route path="/signup" element={<Sign_Up />} />
           </Routes>
         </BrowserRouter>
-        {/* </State> */}
+        </State>
       {/* </div> */}
     </>
   );

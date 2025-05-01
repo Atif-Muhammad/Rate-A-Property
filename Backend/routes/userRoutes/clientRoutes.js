@@ -19,4 +19,6 @@ router.get("/getUser", userController.getUser);
 router.put("/followUser", userController.followUser);
 router.put("/unfollowUser", userController.unfollowUser);
 
+router.get("/search/:data", userController.search)
+
 module.exports = router;

@@ -364,6 +364,17 @@ const getReplies = async ({ pageParam = 1, commentId }) => {
   return { data: response.data, nextPage: pageParam + 1, hasMore: response.data.length === 5 };
 };
 
+const search = async(data)=>{
+  try {
+    const response = await axios.get(
+      `${Baseurl}/user/search/${data}`,
+      { withCredentials: true }
+    );
+    return response;
+  } catch (error) {
+    return error;
+  }
+}
 
 
 export const APIS = {
@@ -397,6 +408,7 @@ export const APIS = {
   disLikeComment,
   unDisLikeComment,
   addReply,
-  getReplies
+  getReplies,
+  search
 
 };

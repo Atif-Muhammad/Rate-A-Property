@@ -196,7 +196,7 @@ const postController = {
 
             // console.log(posts)
             const total = await post.countDocuments();
-            console.log(`total: ${total} || fetched: ${posts.length}`)
+            // console.log(`total: ${total} || fetched: ${posts.length}`)
             const hasMore = (skip + posts.length) < total;
             // console.log(hasMore)
 
@@ -1269,7 +1269,8 @@ const postController = {
         } catch (error) {
             res.send(error);
         }
-    }
+    },
+
 
 }
 

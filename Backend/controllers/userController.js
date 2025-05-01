@@ -3,6 +3,7 @@ const crypto = require("crypto");
 const bcrypt = require("bcrypt");
 const nodemailer = require("nodemailer")
 const jwt = require("jsonwebtoken")
+const post = require('../models/postModel')
 
 
 const userController = {
@@ -266,6 +267,92 @@ const userController = {
             }
         } catch (error) {
             res.status(500).send(error);
+        }
+
+    },
+    search: async (req, res) => {
+        // search for the 'data' in all database/only user name and post's location
+
+        try {
+            const { data } = req.params;
+            const foundUser = await user.find({ user_name: { $regex: data, $options: 'i' } });
+
+            const finalUsers = foundUser.map(user => ({
+                ...user._doc,
+                image: user.image?.data
+                    ? `data:image/png;base64,${user.image.data.toString("base64")}`
+                    : null,
+            }));
+
+            // console.log(foundUser)
+            // const foundPost = await post.find({ location: { $regex: data, $options: 'i' }})
+            const posts = await post
+                .find({ location: { $regex: data, $options: 'i' } }).sort({ createdAt: -1 })
+                // .skip(skip)
+                // .limit(limit)
+                .populate("owner")
+                .populate("likes")
+                .populate("disLikes")
+                .populate({
+                    path: "media",
+                    populate: [
+                        { path: "likes" },
+                        { path: "disLikes" },
+                    ],
+                })
+
+            // console.log(posts)
+            // const total = await post.countDocuments();
+            // console.log(`total: ${total} || fetched: ${posts.length}`)
+            // const hasMore = (skip + posts.length) < total;
+            // console.log(hasMore)
+
+            const updatedPosts = posts.map(post => {
+                const mediaUrls = post.media
+                    .map(file => {
+                        // console.log(file)
+                        const fileData = file.toObject();
+                        const fileExt = fileData.identifier.filename.split(".").pop()?.toLowerCase();
+                        const mediaType = ["mp4", "webm", "mov"].includes(fileExt) ? "video" : "image";
+                        const ownerId = post.owner?._id?.toString() || post.owner?.toString();
+
+                        if (!ownerId) {
+                            console.error("Missing owner ID for post:", post._id);
+                            return null;
+                        }
+
+                        return {
+                            url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${fileData.identifier.filename}`,
+                            type: mediaType,
+                            filename: fileData.identifier.filename,
+                            likes: file.likes,
+                            disLikes: file.disLikes,
+                            of_post: file.of_post,
+                            owner: file.owner,
+                            _id: file._id
+                        };
+                    })
+                    .filter(Boolean);
+
+                return {
+                    ...post.toObject(),
+                    media: mediaUrls,
+                    owner: {
+                        ...post.owner.toObject(),
+                        image: post.owner.image?.data
+                            ? `data:image/png;base64,${post.owner.image.data.toString("base64")}`
+                            : null
+                    }
+                };
+            });
+
+            const final = {
+                users: finalUsers,
+                posts: updatedPosts
+            };
+            res.send(final)
+        } catch (error) {
+            res.send(error);
         }
 
     }

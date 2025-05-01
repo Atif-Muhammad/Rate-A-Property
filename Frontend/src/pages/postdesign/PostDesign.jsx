@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import {
   useInfiniteQuery,
   useQuery,
@@ -8,6 +8,7 @@ import { APIS } from "../../../config/Config";
 import PostCard from "../../components/post/PostCard";
 import DiscoverSkeleton from "../../components/skeletons/DiscoverSkeleton";
 import Loader from "../../Loaders/Loader";
+// import context from "../../context/context";
 
 const LIMIT = 10;
 
@@ -21,8 +22,9 @@ const fetchPosts = async ({ pageParam = 1 }) => {
 };
 
 export const PostDesign = () => {
+  // const {userQuery} = useContext(context);
   const queryClient = useQueryClient();
-  // get cached user 
+  // get cached user
   const currentUser = queryClient.getQueryData(["userInfo"]);
 
   const {
@@ -39,7 +41,6 @@ export const PostDesign = () => {
       lastPage.hasMore ? lastPage.nextPage : undefined,
     enabled: true,
   });
-
 
   // Infinite scroll
   useEffect(() => {
@@ -58,6 +59,9 @@ export const PostDesign = () => {
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
   }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+
+  
+
 
   return (
     <div className="w-full flex flex-col gap-5 items-center">

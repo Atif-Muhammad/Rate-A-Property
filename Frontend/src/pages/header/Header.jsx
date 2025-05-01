@@ -1,15 +1,18 @@
-import React, { useEffect, useState } from "react";
-import { Search } from "lucide-react";
+import React, { useContext, useEffect, useRef, useState } from "react";
+import { Search, X } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { APIS } from "../../../config/Config";
 import { arrayBufferToBase64 } from "../../ReUsables/arrayTobuffer";
 import { NewPost } from "../../components/NewPost";
 import { useQuery } from "@tanstack/react-query";
+import context from "../../context/context";
 
 export const Header = () => {
-  const [loading, setLoading] = useState(true);
+  const searchRef = useRef();
+  const [query, setQuery] = useState("");
   // open the new post model
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { setUserQuery, userQuery } = useContext(context);
 
   const { data: currentUser = {}, isLoading } = useQuery({
     queryKey: ["user"],
@@ -27,6 +30,27 @@ export const Header = () => {
     },
   });
 
+  const { data, refetch, isFetching, isError, error } = useQuery({
+    queryKey: ["search"],
+    queryFn: async () => await APIS.search(searchRef.current.value),
+    enabled: false,
+  });
+  
+  useEffect(() => {
+    if (data?.data) {
+      setUserQuery(data.data);
+    }
+  }, [data]);
+
+  const handleSearch = async () => {
+    refetch();
+    // console.log(searchRef.current.value)
+  };
+
+  const handleCrossingSearch = async () => {
+    setUserQuery("");
+  };
+
   return (
     <header className="h-16 md:px-4 px-2  bg-white border-b border-gray-400  w-full sticky top-0 left-0 z-50 flex justify-between items-center">
       {/* Logo */}
@@ -35,16 +59,30 @@ export const Header = () => {
       </NavLink>
 
       {/* Search Box (Hidden in sm, Shown in md+) */}
-      <div className="relative hidden md:block">
-        <input
-          type="text"
-          placeholder="Search..."
-          className="pl-10 pr-4 py-2 border border-gray-300 rounded-full w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
+      <div className="relative hidden md:flex items-center">
         <Search
           size={20}
           className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500"
         />
+        <input
+          type="text"
+          ref={searchRef}
+          placeholder="Search..."
+          className="pl-10 pr-20 py-2 border border-gray-300 rounded-full w-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        {userQuery ? (
+          <X
+            onClick={handleCrossingSearch}
+            className="absolute right-2 cursor-pointer"
+          />
+        ) : (
+          <button
+            onClick={handleSearch}
+            className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-blue-500 text-white px-3 py-1 rounded-full hover:bg-blue-600 text-sm"
+          >
+            Search
+          </button>
+        )}
       </div>
 
       {/* Mobile Search Icon (Only in sm screens) */}
