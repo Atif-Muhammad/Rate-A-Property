@@ -11,10 +11,7 @@ const fs = require("fs");
 const path = require("path");
 const { upload_disk } = require("../multerConfig/multerConfig");
 const deleteCommentsRecursively = require("./deleteComments");
-const axios = require("axios");
 const HARD_BLOCK_WORDS = require("../Utils");
-
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
 const postController = {
   createPost: async (req, res) => {
