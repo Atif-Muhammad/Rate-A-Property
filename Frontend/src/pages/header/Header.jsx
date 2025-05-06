@@ -13,6 +13,7 @@ export const Header = () => {
   // open the new post model
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { setUserQuery, userQuery } = useContext(context);
+  const [showMobileSearch, setShowMobileSearch] = useState(false);
 
   const { data: currentUser = {}, isLoading } = useQuery({
     queryKey: ["user"],
@@ -35,7 +36,7 @@ export const Header = () => {
     queryFn: async () => await APIS.search(searchRef.current.value),
     enabled: false,
   });
-  
+
   useEffect(() => {
     if (data?.data) {
       setUserQuery(data.data);
@@ -86,9 +87,35 @@ export const Header = () => {
       </div>
 
       {/* Mobile Search Icon (Only in sm screens) */}
-      <NavLink className="md:hidden">
+      <button onClick={() => setShowMobileSearch(true)} className="md:hidden">
         <Search size={24} className="text-gray-700" />
-      </NavLink>
+      </button>
+      {showMobileSearch && (
+        <div className="absolute top-16 left-0 w-full bg-white px-4 py-3 shadow-md border-b z-50 flex items-center gap-2 md:hidden">
+          <input
+            type="text"
+            ref={searchRef}
+            placeholder="Search..."
+            className="flex-1 border border-gray-300 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <button
+            onClick={() => {
+              handleSearch();
+            }}
+            className="bg-blue-500 text-white px-4 py-2 rounded-full text-sm"
+          >
+            Search
+          </button>
+          <X
+            className="text-gray-500 ml-2 cursor-pointer"
+            onClick={() => {
+              handleCrossingSearch(); // CALL the function
+              setShowMobileSearch(false); // Close the search box
+            }}
+          />
+        </div>
+      )}
+
       <div className="flex items-center gap-2 ">
         {isLoading ? (
           <>loading...</>
