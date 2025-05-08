@@ -8,5 +8,10 @@ export const getTimeAgo = (date) => {
   if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
   if (diff < 604800) return `${Math.floor(diff / 86400)} days ago`;
 
-  return past.toLocaleDateString(); // Show actual date after a week
+  // Format the date as "Month Day, Year"
+  return past.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 };
