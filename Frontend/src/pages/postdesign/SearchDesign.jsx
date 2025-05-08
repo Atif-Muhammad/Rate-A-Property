@@ -14,7 +14,7 @@ function SearchDesign({ data }) {
   return (
     <div className=" flex flex-col gap-2  items-center ">
       {users?.length > 0 &&
-        users?.map((user, index) => <ProfileCard key={index} user={user} />)}
+        users?.map((user, index) => <ProfileCard key={index} currentUser={currentUser} user={user} />)}
 
       {posts?.length > 0 &&
         posts?.map((post, index) => (
