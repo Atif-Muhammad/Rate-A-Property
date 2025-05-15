@@ -377,6 +377,19 @@ const search = async(data)=>{
 }
 
 
+const analyzePost = async (postId) =>{
+  // console.log(postId)
+  try {
+    const response = await axios.post(`${Baseurl}/posts/analyzePost?postId=${postId}`, {},
+      { withCredentials: true }
+    )
+    return response
+  } catch (error) {
+    return error
+  }
+}
+
+
 export const APIS = {
   userWho,
   signup,
@@ -409,6 +422,7 @@ export const APIS = {
   unDisLikeComment,
   addReply,
   getReplies,
-  search
+  search,
+  analyzePost
 
 };

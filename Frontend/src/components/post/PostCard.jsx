@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { MapPin, MessagesSquare, Share2 } from "lucide-react";
+import { Link, MapPin, MessagesSquare, Share2 } from "lucide-react";
 import { APIS } from "../../../config/Config";
 import { getTimeAgo } from "../../ReUsables/GetTimeAgo";
 import MediaGrid from "./MediaGrid";
@@ -259,6 +259,7 @@ const PostCard = (props) => {
 
             {/* Actions: Follow or Post Options */}
             <div className="flex items-center gap-2">
+              <NavLink to={`/dashboard/${post._id}`} className="">Analytics</NavLink>
               {agreeOwner !== post.owner?._id ? (
                 <button
                   className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all duration-200 group ${

@@ -8,6 +8,7 @@ export const useCreatePost = () => {
   return useMutation({
     mutationFn: async (formData) => {
       const res = await APIS.createPost(formData);
+      console.log(res)
       const newPost = res.data;
       return newPost;
     },
@@ -38,6 +39,7 @@ export const useUpdatePost = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ postId, formData }) => {
+      console.log(await APIS.updatePost(postId, formData))
       return await APIS.updatePost(postId, formData);
     },
     onSuccess: (postId) => {

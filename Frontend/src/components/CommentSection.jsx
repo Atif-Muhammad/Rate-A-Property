@@ -72,14 +72,6 @@ const CommentSection = () => {
     if (isInputFocused && scrollContainerRef.current) {
       const inputHeight = commentInputRef.current?.offsetHeight || 0;
       setScrollPadding(inputHeight + 20); // Add some extra padding
-
-      // Scroll to bottom to ensure input is visible
-      setTimeout(() => {
-        scrollContainerRef.current.scrollTo({
-          top: scrollContainerRef.current.scrollHeight,
-          behavior: "smooth",
-        });
-      }, 100);
     } else {
       setScrollPadding(0);
     }
@@ -116,11 +108,11 @@ const CommentSection = () => {
     await APIS.addComment(formData);
     queryClient.invalidateQueries({ queryKey: ["comments", postId] });
 
-    // Scroll to bottom after adding comment
+    // Scroll to top after adding comment
     if (scrollContainerRef.current) {
       setTimeout(() => {
         scrollContainerRef.current.scrollTo({
-          top: scrollContainerRef.current.scrollHeight,
+          top: 0, // Changed from scrollHeight to 0
           behavior: "smooth",
         });
       }, 100);

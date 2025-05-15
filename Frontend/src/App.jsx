@@ -14,6 +14,7 @@ import { UserInfo } from "./pages/profile/UserInfo";
 import { useQuery } from "@tanstack/react-query";
 import { APIS } from "../config/Config";
 import State from "./context/state";
+import Dashboard from "./components/Analysis/Dashboard";
 
 function App() {
 
@@ -46,6 +47,7 @@ function App() {
             {/* others components */}
             {/* <Route path="/newPost" element={<NewPost />} /> */}
             <Route path="/post/:postId" element={<CommentSection />} />
+            <Route path="/dashboard/:postId" element={<Dashboard/>}/>
             <Route path="/signin" element={<Sign_In />} />
             <Route path="/signup" element={<Sign_Up />} />
           </Routes>
