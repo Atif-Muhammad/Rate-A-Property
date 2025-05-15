@@ -4,9 +4,11 @@ const fs = require("fs");
 const path = require("path");
 const { createCanvas, loadImage } = require("canvas");
 const sharp = require("sharp");
-const { exec } = require("child_process");
+const { execSync } = require("child_process");
 const mime = require("mime-types");
 const FileType = require('file-type')
+const { v4: uuidv4 } = require("uuid");
+const { getVideoDurationInSeconds } = require("get-video-duration");
 
 async function DetectNSFW(file) {
   const type = await FileType.fromBuffer(file);
@@ -43,30 +45,52 @@ async function detectImageNSFW(imagePath) {
 }
 
 
-async function detectVideoNSFW(videoPath) {
-  const frameDir = path.join(__dirname, "temp_frames");
+async function detectVideoNSFW(videoBuffer) {
+  const tempId = uuidv4();
+  const baseTempDir = path.resolve(__dirname, "../temps");
+  const tempDir = path.join(baseTempDir, `video-nsfw-${tempId}`);
+  const tempVideoPath = path.join(tempDir, "temp_video.mp4");
+
+  const frameDir = path.join(tempDir, "frames");
+
+
   fs.mkdirSync(frameDir, { recursive: true });
 
-  // Extract 1 frame per second
-  await new Promise((resolve, reject) => {
-    exec(
-      `ffmpeg -i "${videoPath}" -vf fps=1 "${frameDir}/frame_%03d.png" -hide_banner -loglevel error`,
-      (err) => (err ? reject(err) : resolve())
-    );
-  });
+  // Write buffer to temp video file
+  fs.mkdirSync(tempDir, { recursive: true });
+  fs.writeFileSync(tempVideoPath, videoBuffer);
+  const duration = await getVideoDurationInSeconds(tempVideoPath);
+  // console.log(duration);
 
-  const frameFiles = fs.readdirSync(frameDir).filter(f => f.endsWith(".png"));
+  const timestamps = Array.from({ length: 2 }, () =>
+    Math.floor(Math.random() * duration)
+  );
+
+  const framePaths = [];
+
+  for (let i = 0; i < timestamps.length; i++) {
+    const time = timestamps[i];
+    const outputPath = `${frameDir}/frame_${i.toString().padStart(3, '0')}.png`;
+
+    execSync(
+      `ffmpeg -ss ${time} -i "${tempVideoPath}" -frames:v 1 -vf scale=224:224 ${outputPath} -hide_banner -loglevel error`
+    );
+
+    framePaths.push(outputPath);
+  }
+
   let isNSFW = false;
 
-  for (const frame of frameFiles) {
-    const framePath = path.join(frameDir, frame);
-    isNSFW = await detectImageNSFW(framePath);
+  for (const frame of framePaths) {
+    const frameBuffer = fs.readFileSync(frame);
+    isNSFW = await detectImageNSFW(frameBuffer);
     if (isNSFW) break;
   }
 
   // Cleanup
-  fs.rmSync(frameDir, { recursive: true, force: true });
+  fs.rmSync(tempDir, { recursive: true, force: true });
   return isNSFW;
 }
+
 
 module.exports = DetectNSFW;
