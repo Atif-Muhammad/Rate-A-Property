@@ -1006,16 +1006,17 @@ const postController = {
       // Save new uploaded files
       const newFileDocs = await Promise.all(
         (req.fileNames || []).map((file) => {
-          const ext = path.extname(file.filename).toLowerCase();
+          // console.log(file)
+          const ext = path.extname(file).toLowerCase();
           const type = [".mp4", ".webm", ".mov"].includes(ext)
             ? "video"
             : "image";
 
           const newMedia = new media({
             identifier: {
-              filename: file.filename,
+              filename: file,
               type,
-              path: `/uploads/comments/${file.filename}`,
+              path: `/uploads/comments/${file}`,
             },
             owner: ownerId,
             of_comment: commentId,
