@@ -106,30 +106,29 @@ const postController = {
       const postDoc = await post.findById(postId).populate("media");
       if (!postDoc) return res.status(404).json({ error: "Post not found" });
 
-      // Step 1: Files from DB (full path/URL)
+      
       const dbFileUrls = postDoc.media.map((m) => m.identifier.path);
 
-      // Step 2: New uploads (filenames -> convert to URL form)
+   
       const uploadedFileNames = req.fileNames || [];
       const uploadedFileUrls = uploadedFileNames.map(
         (filename) => `/uploads/${owner}/${filename}`
       );
 
-      // Step 3: Detect removed files (in DB but not in existingFiles passed by frontend)
+  
       const removedFiles = postDoc.media.filter(
         (m) => !existingFiles.includes(m.identifier.path)
       );
 
-      // Step 4: Detect newly added files (uploaded now, not in existing list)
       const addedFiles = uploadedFileUrls.filter(
         (url) => !existingFiles.includes(url)
       );
 
-      console.log("addedFiles:", addedFiles);
-      console.log(
-        "removedFiles:",
-        removedFiles.map((m) => m.identifier.path)
-      );
+      // console.log("addedFiles:", addedFiles);
+      // console.log(
+      //   "removedFiles:",
+      //   removedFiles.map((m) => m.identifier.path)
+      // );
 
       // Step 5: Create media metadata for new files
       const addedFileData = addedFiles.map((url) => {
@@ -769,12 +768,12 @@ const postController = {
       });
 
       if (containsHardBlock) {
-        console.log("🚨 Blocked abusive comment:", {
-          user: owner,
-          content: content,
-          detectedWord: detectedWord,
-          timestamp: new Date().toISOString(),
-        });
+        // console.log("🚨 Blocked abusive comment:", {
+        //   user: owner,
+        //   content: content,
+        //   detectedWord: detectedWord,
+        //   timestamp: new Date().toISOString(),
+        // });
 
         return res.status(400).json({
           success: false,
@@ -1006,7 +1005,7 @@ const postController = {
 
       // Save new uploaded files
       const newFileDocs = await Promise.all(
-        (req.files || []).map((file) => {
+        (req.fileNames || []).map((file) => {
           const ext = path.extname(file.filename).toLowerCase();
           const type = [".mp4", ".webm", ".mov"].includes(ext)
             ? "video"
