@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 import { QueryClient, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCreatePost, useUpdatePost } from "../hooks/ReactQuery.js";
+import { ContentErrorModal } from "./models/ContentErrorModal";
 
 export const NewPost = ({
   isOpen,
@@ -18,6 +19,8 @@ export const NewPost = ({
   const [location, setLocation] = useState("Select Location");
   const [isPosting, setIsPosting] = useState(false);
   const navigate = useNavigate();
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const isEdit = !!editPostData;
 
@@ -95,19 +98,25 @@ export const NewPost = ({
             onPostUpdated?.();
             onClose();
           },
-          onError: (err) => console.log(err),
+          onError: (err) => {
+            setErrorMessage(
+              err.message || "An error occurred while updating the post."
+            );
+            setShowErrorModal(true);
+          },
           onSettled: () => setIsPosting(false),
         }
       );
     } else {
       createPostMutation.mutate(formData, {
         onSuccess: () => {
-          // navigate("/");
           queryClient.invalidateQueries(["userProfile", user._id]);
-          // console.log("user profile:",queryClient.getQueryData(["userProfile", user._id]));
           onClose();
         },
-        onError: (err) => console.log(err),
+        onError: (err) => {
+          setErrorMessage(err.message || "An error occurred while posting.");
+          setShowErrorModal(true);
+        },
         onSettled: () => {
           setIsPosting(false);
         },
@@ -118,135 +127,144 @@ export const NewPost = ({
   if (!isOpen) return null;
 
   return createPortal(
-    <div
-      className="fixed inset-0 bg-black/30 backdrop-blur-sm flex justify-center items-center z-50 p-6"
-      onClick={onClose}
-    >
+    <>
       <div
-        className="bg-white shadow-2xl rounded-2xl p-6 w-full max-w-2xl border border-gray-300"
-        onClick={(e) => e.stopPropagation()}
+        className="fixed inset-0 bg-black/30 backdrop-blur-sm flex justify-center items-center z-50 p-6"
+        onClick={onClose}
       >
-        {/* Header */}
-        <div className="flex justify-between items-center border-b pb-4 mb-4">
-          <h2 className="text-2xl text-center w-full font-bold text-gray-800">
-            {isEdit ? "Edit Post" : "Create Post"}
-          </h2>
-          <button onClick={onClose} className="bg-gray-200 rounded-full p-1">
-            <X size={20} />
+        <div
+          className="bg-white shadow-2xl rounded-2xl p-6 w-full max-w-2xl border border-gray-300"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="flex justify-between items-center border-b pb-4 mb-4">
+            <h2 className="text-2xl text-center w-full font-bold text-gray-800">
+              {isEdit ? "Edit Post" : "Create Post"}
+            </h2>
+            <button onClick={onClose} className="bg-gray-200 rounded-full p-1">
+              <X size={20} />
+            </button>
+          </div>
+
+          {/* Profile & Input */}
+          <div className="flex items-center space-x-4 mb-4">
+            {user.image && (
+              <img
+                src={user.image}
+                alt="user profile"
+                className="w-12 h-12 rounded-full border-2 border-blue-500"
+              />
+            )}
+            <div>
+              <p className="text-sm font-semibold text-gray-800">
+                {user.user_name}
+              </p>
+              <button
+                className="text-xs flex items-center text-gray-600 bg-gray-100 px-3 py-1 rounded-md hover:bg-gray-200"
+                onClick={handleSelectLocation}
+              >
+                <MapPin className="w-4 h-4 mr-1" />
+                {location}
+              </button>
+            </div>
+          </div>
+
+          <textarea
+            ref={textRef}
+            placeholder="What's on your mind?"
+            className="w-full p-4 text-gray-700 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none mb-4"
+            rows="4"
+          ></textarea>
+
+          {/* Preview - Horizontal Scroll */}
+          <div className="flex overflow-x-auto pb-2 gap-2">
+            {" "}
+            {/* Added overflow-x-auto and pb-2 for scrollbar space */}
+            {selectedMedia.map((media, index) => {
+              const mediaUrl = String(media.url);
+              return (
+                <div key={index} className="flex-shrink-0 relative w-28 h-28">
+                  {" "}
+                  {/* flex-shrink-0 is crucial */}
+                  {mediaUrl.endsWith(".mp4") ? (
+                    <video
+                      src={mediaUrl}
+                      controls
+                      className="w-full h-full rounded-lg object-cover"
+                    />
+                  ) : (
+                    <img
+                      src={mediaUrl}
+                      alt="Selected"
+                      className="w-full h-full object-cover rounded-lg"
+                    />
+                  )}
+                  <button
+                    onClick={() => removeMedia(index)}
+                    className="absolute top-1 right-1 bg-black/60 p-1 rounded-full text-white hover:bg-black/80"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* File input */}
+          <input
+            type="file"
+            accept="image/*,video/*"
+            ref={fileInputRef}
+            className="hidden"
+            multiple
+            onChange={handleFileSelect}
+          />
+
+          {/* Actions */}
+          <div className="border-t pt-4 mb-6">
+            <div className="text-center mb-4">
+              <p className="text-sm text-gray-600 font-semibold tracking-wide">
+                Add to your post
+              </p>
+            </div>
+            <div className="flex justify-center gap-6">
+              <button
+                className="flex flex-col items-center gap-1 hover:bg-gray-100 p-3 rounded-xl transition w-24"
+                onClick={() => fileInputRef.current.click()}
+              >
+                <Image className="text-green-500" size={26} />
+                <span className="text-xs text-gray-700">Photo/Video</span>
+              </button>
+            </div>
+          </div>
+
+          <button
+            onClick={handleSubmit}
+            disabled={isPosting}
+            className={`w-full text-white text-base font-semibold py-3 rounded-lg transition ${
+              isPosting
+                ? "bg-blue-300 cursor-not-allowed"
+                : "bg-blue-500 hover:bg-blue-600"
+            }`}
+          >
+            {isPosting
+              ? isEdit
+                ? "Updating..."
+                : "Posting..."
+              : isEdit
+              ? "Update Post"
+              : "Post"}
           </button>
         </div>
-
-        {/* Profile & Input */}
-        <div className="flex items-center space-x-4 mb-4">
-          {user.image && (
-            <img
-              src={user.image}
-              alt="user profile"
-              className="w-12 h-12 rounded-full border-2 border-blue-500"
-            />
-          )}
-          <div>
-            <p className="text-sm font-semibold text-gray-800">
-              {user.user_name}
-            </p>
-            <button
-              className="text-xs flex items-center text-gray-600 bg-gray-100 px-3 py-1 rounded-md hover:bg-gray-200"
-              onClick={handleSelectLocation}
-            >
-              <MapPin className="w-4 h-4 mr-1" />
-              {location}
-            </button>
-          </div>
-        </div>
-
-        <textarea
-          ref={textRef}
-          placeholder="What's on your mind?"
-          className="w-full p-4 text-gray-700 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none mb-4"
-          rows="4"
-        ></textarea>
-
-        {/* Preview - Horizontal Scroll */}
-        <div className="flex overflow-x-auto pb-2 gap-2">
-          {" "}
-          {/* Added overflow-x-auto and pb-2 for scrollbar space */}
-          {selectedMedia.map((media, index) => {
-            const mediaUrl = String(media.url);
-            return (
-              <div key={index} className="flex-shrink-0 relative w-28 h-28">
-                {" "}
-                {/* flex-shrink-0 is crucial */}
-                {mediaUrl.endsWith(".mp4") ? (
-                  <video
-                    src={mediaUrl}
-                    controls
-                    className="w-full h-full rounded-lg object-cover"
-                  />
-                ) : (
-                  <img
-                    src={mediaUrl}
-                    alt="Selected"
-                    className="w-full h-full object-cover rounded-lg"
-                  />
-                )}
-                <button
-                  onClick={() => removeMedia(index)}
-                  className="absolute top-1 right-1 bg-black/60 p-1 rounded-full text-white hover:bg-black/80"
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* File input */}
-        <input
-          type="file"
-          accept="image/*,video/*"
-          ref={fileInputRef}
-          className="hidden"
-          multiple
-          onChange={handleFileSelect}
-        />
-
-        {/* Actions */}
-        <div className="border-t pt-4 mb-6">
-          <div className="text-center mb-4">
-            <p className="text-sm text-gray-600 font-semibold tracking-wide">
-              Add to your post
-            </p>
-          </div>
-          <div className="flex justify-center gap-6">
-            <button
-              className="flex flex-col items-center gap-1 hover:bg-gray-100 p-3 rounded-xl transition w-24"
-              onClick={() => fileInputRef.current.click()}
-            >
-              <Image className="text-green-500" size={26} />
-              <span className="text-xs text-gray-700">Photo/Video</span>
-            </button>
-          </div>
-        </div>
-
-        <button
-          onClick={handleSubmit}
-          disabled={isPosting}
-          className={`w-full text-white text-base font-semibold py-3 rounded-lg transition ${
-            isPosting
-              ? "bg-blue-300 cursor-not-allowed"
-              : "bg-blue-500 hover:bg-blue-600"
-          }`}
-        >
-          {isPosting
-            ? isEdit
-              ? "Updating..."
-              : "Posting..."
-            : isEdit
-            ? "Update Post"
-            : "Post"}
-        </button>
       </div>
-    </div>,
+
+      {showErrorModal && (
+        <ContentErrorModal
+          message={errorMessage}
+          onClose={() => setShowErrorModal(false)}
+        />
+      )}
+    </>,
     document.body
   );
 };

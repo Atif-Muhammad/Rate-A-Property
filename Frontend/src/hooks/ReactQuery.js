@@ -1,49 +1,53 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { APIS } from "../../config/Config";
 
-// CREATE POST
 export const useCreatePost = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (formData) => {
-      const res = await APIS.createPost(formData);
-      console.log(res)
-      const newPost = res.data;
-      return newPost;
+      try {
+        const res = await APIS.createPost(formData);
+        if (res.status === 400) {
+          throw new Error(
+            "Your post appears to violate our community guidelines (e.g., adult or harmful content). Please review and edit your content."
+          );
+        }
+        return res.data;
+      } catch (error) {
+        throw error;
+      }
     },
     onSuccess: async (newPost) => {
-      // Append the new post to the cached posts list
       queryClient.setQueryData(["userPosts", newPost.owner._id], (oldData) => {
         if (!oldData) return [newPost];
         return [newPost, ...oldData];
       });
-      // await queryClient.cancelQueries(["userProfile",  newPost.owner._id]);
-      // // queryClient.invalidateQueries(["userProfile",  newPost.owner._id]);
-      // // Optionally update userProfile if you need to:
-      // queryClient.setQueryData(["userProfile", newPost.owner._id], (oldProfile) => {
-      //   console.log(oldProfile)
-      //   if (!oldProfile) return oldProfile;
-      //   return {
-      //     ...oldProfile,
-      //     posts: [newPost, ...(oldProfile.posts || [])],
-      //   };
-      // });
     },
   });
 };
 
 
-// UPDATE POST
+
+// useUpdatePost.js
 export const useUpdatePost = () => {
   const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async ({ postId, formData }) => {
-      console.log(await APIS.updatePost(postId, formData))
-      return await APIS.updatePost(postId, formData);
+      try {
+        const res = await APIS.updatePost(postId, formData);
+        if (res.status === 400) {
+          throw new Error(
+            "Your post appears to violate our community guidelines (e.g., adult or harmful content). Please review and edit your content."
+          );
+        }
+        return res.data;
+      } catch (error) {
+        throw error;
+      }
     },
-    onSuccess: (postId) => {
-      // This will re-fetch all pages of your infinite query
+    onSuccess: (updatedPost) => {
       queryClient.invalidateQueries({ queryKey: ["posts"] });
       queryClient.setQueryData(["posts"], (oldData) => {
         if (!oldData) return oldData;
@@ -53,7 +57,7 @@ export const useUpdatePost = () => {
           pages: oldData.pages.map((page) => ({
             ...page,
             data: page.data.map((post) =>
-              post._id === postId ? oldData : post
+              post._id === updatedPost._id ? updatedPost : post
             ),
           })),
         };
@@ -61,6 +65,7 @@ export const useUpdatePost = () => {
     },
   });
 };
+
 
 export const useupdateCommentMutation = () => {
   const queryClient = useQueryClient();

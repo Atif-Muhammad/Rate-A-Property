@@ -28,9 +28,11 @@ const postController = {
 
       for (const filename of req.fileNames || []) {
         const filePath = `./uploads/${owner}/${filename}`;
-       
+
         const ext = path.extname(filename);
-        const type = [".mp4", ".webm", ".MOV"].includes(ext) ? "video" : "image";
+        const type = [".mp4", ".webm", ".MOV"].includes(ext)
+          ? "video"
+          : "image";
 
         files.push({
           filename: filename.toString(),
@@ -252,8 +254,9 @@ const postController = {
             }
 
             return {
-              url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${fileData.identifier.filename
-                }`,
+              url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${
+                fileData.identifier.filename
+              }`,
               type: mediaType,
               filename: fileData.identifier.filename,
               likes: file.likes,
@@ -272,8 +275,8 @@ const postController = {
             ...post.owner.toObject(),
             image: post.owner.image?.data
               ? `data:image/png;base64,${post.owner.image.data.toString(
-                "base64"
-              )}`
+                  "base64"
+                )}`
               : null,
           },
         };
@@ -334,8 +337,9 @@ const postController = {
             }
 
             return {
-              url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${fileData.identifier.filename
-                }`,
+              url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${
+                fileData.identifier.filename
+              }`,
               type: mediaType,
               filename: fileData.identifier.filename,
               likes: file.likes,
@@ -354,8 +358,8 @@ const postController = {
             ...post.owner.toObject(),
             image: post.owner.image?.data
               ? `data:image/png;base64,${post.owner.image.data.toString(
-                "base64"
-              )}`
+                  "base64"
+                )}`
               : null,
           },
         };
@@ -404,8 +408,9 @@ const postController = {
           }
 
           return {
-            url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${fileData.identifier.filename
-              }`,
+            url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${
+              fileData.identifier.filename
+            }`,
             type: mediaType,
             filename: fileData.identifier.filename,
             likes: file.likes,
@@ -424,8 +429,8 @@ const postController = {
           ...sngpost.owner.toObject(),
           image: sngpost.owner.image?.data
             ? `data:image/png;base64,${sngpost.owner.image.data.toString(
-              "base64"
-            )}`
+                "base64"
+              )}`
             : null,
         },
       };
@@ -781,19 +786,36 @@ const postController = {
       }
 
       // Rest of your existing code for handling files and creating comment...
-      const fileNames =
-        req.files?.map((file) => {
-          const ext = path.extname(file.filename);
-          const type = [".mp4", ".webm", ".MOV"].includes(ext)
-            ? "video"
-            : "image";
-          return {
-            filename: file.filename.toString(),
-            type,
-            path: `/uploads/comments/${file.filename}`,
-          };
-        }) || []; // Added fallback for empty files
+      // const fileNames =
+      //   req.files?.map((file) => {
+      //     // const ext = path.extname(file.filename);
+      //     const ext = path.extname(file);
+      //     const type = [".mp4", ".webm", ".MOV"].includes(ext)
+      //       ? "video"
+      //       : "image";
+      //     return {
+      //       filename: file.filename.toString(),
+      //       type,
+      //       path: `/uploads/comments/${file.filename}`,
+      //     };
+      //   }) || []; // Added fallback for empty files
+      const files = [];
 
+      for (const filename of req.fileNames || []) {
+        const filePath = `./uploads/${owner}/${filename}`;
+
+        const ext = path.extname(filename);
+        const type = [".mp4", ".webm", ".MOV"].includes(ext)
+          ? "video"
+          : "image";
+
+        files.push({
+          filename: filename.toString(),
+          type: type.toString(),
+          path: `/uploads/${owner}/${filename}`,
+        });
+      }
+      
       // Create comment data
       const commentData = {
         comment: content,
@@ -812,9 +834,9 @@ const postController = {
       }
 
       // Handle media files if they exist
-      if (fileNames.length > 0) {
+      if (files.length > 0) {
         const mediaDocs = await Promise.all(
-          fileNames.map((file) => {
+          files.map((file) => {
             const mediaDoc = new media({
               identifier: {
                 filename: file.filename,
@@ -886,8 +908,9 @@ const postController = {
           }
 
           return {
-            url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${fileData.identifier.filename
-              }`,
+            url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${
+              fileData.identifier.filename
+            }`,
             type: mediaType,
             filename: fileData.identifier.filename,
             likes: file.likes,
@@ -906,8 +929,8 @@ const postController = {
           ...populatedComment.owner.toObject(),
           image: populatedComment.owner.image?.data
             ? `data:image/png;base64,${populatedComment.owner.image.data.toString(
-              "base64"
-            )}`
+                "base64"
+              )}`
             : null,
         },
       };
@@ -1044,8 +1067,9 @@ const postController = {
           updatedComment.owner?.toString();
 
         return {
-          url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${file.identifier.filename
-            }`,
+          url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${
+            file.identifier.filename
+          }`,
           type: mediaType,
           filename: file.identifier.filename,
           likes: file.likes,
@@ -1064,8 +1088,8 @@ const postController = {
           ...updatedComment.owner.toObject(),
           image: updatedComment.owner.image?.data
             ? `data:image/png;base64,${updatedComment.owner.image.data.toString(
-              "base64"
-            )}`
+                "base64"
+              )}`
             : null,
         },
       };
@@ -1151,8 +1175,9 @@ const postController = {
             }
 
             return {
-              url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${fileData.identifier.filename
-                }`,
+              url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${
+                fileData.identifier.filename
+              }`,
               type: mediaType,
               filename: fileData.identifier.filename,
               likes: file.likes,
@@ -1171,8 +1196,8 @@ const postController = {
             ...comment.owner?.toObject(),
             image: comment.owner?.image?.data
               ? `data:image/png;base64,${comment.owner?.image?.data.toString(
-                "base64"
-              )}`
+                  "base64"
+                )}`
               : null,
           },
         };
@@ -1460,8 +1485,9 @@ const postController = {
           }
 
           return {
-            url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${fileData.identifier.filename
-              }`,
+            url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${
+              fileData.identifier.filename
+            }`,
             type: mediaType,
             filename: fileData.identifier.filename,
             likes: file.likes,
@@ -1480,8 +1506,8 @@ const postController = {
           ...populatedComment.owner.toObject(),
           image: populatedComment.owner.image?.data
             ? `data:image/png;base64,${populatedComment.owner.image.data.toString(
-              "base64"
-            )}`
+                "base64"
+              )}`
             : null,
         },
       };
@@ -1534,8 +1560,9 @@ const postController = {
             }
 
             return {
-              url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${fileData.identifier.filename
-                }`,
+              url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${
+                fileData.identifier.filename
+              }`,
               type: mediaType,
               filename: fileData.identifier.filename,
               likes: file.likes,
@@ -1554,8 +1581,8 @@ const postController = {
             ...comment.owner?.toObject(),
             image: comment.owner?.image?.data
               ? `data:image/png;base64,${comment.owner?.image?.data.toString(
-                "base64"
-              )}`
+                  "base64"
+                )}`
               : null,
           },
         };
@@ -1571,18 +1598,15 @@ const postController = {
     const { postId } = req.query;
     // console.log(postId)
 
-
-    const pst = await post.findOne({ _id: postId }).select("description likes disLikes comments media").populate("media").populate("likes").populate("disLikes").populate("comments");
+    const pst = await post
+      .findOne({ _id: postId })
+      .select("description likes disLikes comments media")
+      .populate("media")
+      .populate("likes")
+      .populate("disLikes")
+      .populate("comments");
     // console.log(pst)
-
-
-
-  }
+  },
 };
-
-
-
-
-
 
 module.exports = postController;
