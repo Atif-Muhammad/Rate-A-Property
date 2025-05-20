@@ -1381,15 +1381,16 @@ const postController = {
 
       // Extract filenames from uploaded files and determine type
       const fileNames =
-        req.files?.map((file) => {
-          const ext = path.extname(file.filename);
+        req.fileNames?.map((file) => {
+          // console.log(file)
+          const ext = path.extname(file);
           const type = [".mp4", ".webm", ".MOV"].includes(ext)
             ? "video"
             : "image";
           return {
-            filename: file.filename.toString(),
+            filename: file.toString(),
             type,
-            path: `/uploads/comments/${file.filename}`,
+            path: `/uploads/comments/${file}`,
           };
         }) || []; // Added fallback for empty files array
 
@@ -1405,7 +1406,7 @@ const postController = {
 
       // Create the comment first
       const newComment = await comment.create(commentData);
-      console.log(commentData, "backend console data");
+      // console.log(commentData, "backend console data");
 
       if (!newComment) {
         return res.status(500).json({ error: "Failed to create reply" });
