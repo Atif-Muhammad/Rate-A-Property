@@ -7,6 +7,7 @@ import PostCard from "./post/PostCard";
 import CommentSkeleton from "./skeletons/CommentSkeleton";
 import Loader from "../Loaders/Loader";
 import { AddComment } from "./Card/Addcomment";
+import { ContentErrorModal } from "./models/ContentErrorModal";
 
 const CommentSection = () => {
   const [activeReplyId, setActiveReplyId] = useState(null);
@@ -21,6 +22,11 @@ const CommentSection = () => {
 
   const scrollContainerRef = useRef(null);
   const commentInputRef = useRef(null);
+
+  const [errorModal, setErrorModal] = useState({
+    isOpen: false,
+    message: "",
+  });
   const LIMIT = 10;
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
@@ -93,30 +99,96 @@ const CommentSection = () => {
       };
     });
 
-    // Actual API call
-    const formData = new FormData();
-    formData.append("owner", currentUser._id);
-    formData.append("content", newCommentObj.comment);
-    formData.append("for_post", postId);
+    try {
+      // Actual API call
+      const formData = new FormData();
+      formData.append("owner", currentUser._id);
+      formData.append("content", newCommentObj.comment);
+      formData.append("for_post", postId);
 
-    if (newFiles && newFiles.length > 0) {
-      newFiles.forEach((file) => {
-        formData.append("files", file);
+      if (newFiles && newFiles.length > 0) {
+        newFiles.forEach((file) => {
+          formData.append("files", file);
+        });
+      }
+
+      const response = await APIS.addComment(formData);
+
+      if (response.status === 400) {
+        // Show error modal
+        setErrorModal({
+          isOpen: true,
+          message:
+            response.data?.message ||
+            "Your comment violates our community guidelines. Please review the rules and try again.",
+        });
+
+
+        // Revert optimistic update
+        queryClient.setQueryData(["comments", postId], (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            pages: [
+              {
+                ...old.pages[0],
+                data: old.pages[0].data.filter(
+                  (comment) => comment._id !== newCommentObj._id
+                ),
+              },
+              ...old.pages.slice(1),
+            ],
+          };
+        });
+        return;
+      }
+
+      // Invalidate queries to get fresh data from server
+      queryClient.invalidateQueries({ queryKey: ["comments", postId] });
+
+      // Scroll to top after adding comment
+      if (scrollContainerRef.current) {
+        setTimeout(() => {
+          scrollContainerRef.current.scrollTo({
+            top: 0,
+            behavior: "smooth",
+          });
+        }, 100);
+      }
+    } catch (error) {
+      console.error("Error adding comment:", error);
+      // Show error modal
+      setErrorModal({
+        isOpen: true,
+        message:
+          error.response?.data?.message ||
+          "Failed to add comment. Please try again.",
+      });
+
+      // Revert optimistic update
+      queryClient.setQueryData(["comments", postId], (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          pages: [
+            {
+              ...old.pages[0],
+              data: old.pages[0].data.filter(
+                (comment) => comment._id !== newCommentObj._id
+              ),
+            },
+            ...old.pages.slice(1),
+          ],
+        };
       });
     }
+  };
 
-    await APIS.addComment(formData);
-    queryClient.invalidateQueries({ queryKey: ["comments", postId] });
-
-    // Scroll to top after adding comment
-    if (scrollContainerRef.current) {
-      setTimeout(() => {
-        scrollContainerRef.current.scrollTo({
-          top: 0, // Changed from scrollHeight to 0
-          behavior: "smooth",
-        });
-      }, 100);
-    }
+  const closeErrorModal = () => {
+    setErrorModal({
+      isOpen: false,
+      message: "",
+    });
   };
 
   return (
@@ -145,7 +217,7 @@ const CommentSection = () => {
           ) : (
             <>
               {data?.pages?.flatMap((page) => page.data).length === 0 ? (
-                <div className="flex items-center justify-center h-full text-gray-500 font-medium">
+                <div className="flex items-center text-center justify-center h-full text-gray-500 font-medium">
                   No comments yet. Be the first to comment!
                 </div>
               ) : (
@@ -180,6 +252,12 @@ const CommentSection = () => {
           />
         </div>
       </div>
+
+      <ContentErrorModal
+        isOpen={errorModal.isOpen}
+        message={errorModal.message}
+        onClose={closeErrorModal}
+      />
     </div>
   );
 };

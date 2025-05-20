@@ -15,6 +15,7 @@ import {
 } from "@tanstack/react-query";
 import Loader from "../../Loaders/Loader";
 import { m } from "framer-motion";
+import { ContentErrorModal } from "../models/ContentErrorModal";
 
 function CommentCard(props) {
   // console.log(props.comment)
@@ -36,6 +37,7 @@ function CommentCard(props) {
   const [isLoadingMoreReplies, setIsLoadingMoreReplies] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [existingFiles, setExistingFiles] = useState(props.comment.media || []);
+  const [error, setError] = useState(null);
   // Use the prop instead
   const activeReplyId = props.activeReplyCommentId;
   const showReplyBox = activeReplyId === props.comment._id;
@@ -255,11 +257,19 @@ function CommentCard(props) {
         formData,
       });
 
-      setIsEditing(false); // Close the edit box
+      setIsEditing(false);
+      setError(null); // Clear any previous errors
     } catch (error) {
-      console.error("Error saving edit:", error);
+      setError(error); // Set the error to show in the modal
     }
   };
+
+  // Add this near your other mutation declarations
+  useEffect(() => {
+    if (updateCommentMutation.isError) {
+      setError(updateCommentMutation.error);
+    }
+  }, [updateCommentMutation.isError, updateCommentMutation.error]);
 
   useEffect(() => {
     // console.log("comment:", props.comment)
@@ -374,7 +384,7 @@ function CommentCard(props) {
       }
     }, 500);
   };
-  
+
   const handleCommentDel = async (commentId) => {
     deleteComment(commentId);
   };
@@ -428,7 +438,7 @@ function CommentCard(props) {
 
           <div className="flex-1">
             {/* User Info */}
-            <div className="flex items-center space-x-2">
+            <div className="flex flex-col space-x-2">
               <span className="font-semibold text-gray-900">
                 {props.comment.owner?.user_name}
               </span>
@@ -638,8 +648,15 @@ function CommentCard(props) {
               isReply={!isEditing}
             />
           </div>
+          
         )}
       </div>
+
+      <ContentErrorModal
+        isOpen={!!error}
+        onClose={() => setError(null)}
+        message={error?.message}
+      />
     </>
   );
 }

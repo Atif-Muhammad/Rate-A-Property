@@ -73,7 +73,6 @@ export const AddComment = ({
           media: [
             ...existingMedia,
             ...newFiles.map((file) => ({
-              // Only for optimistic UI preview
               originalname: file.name,
               url: URL.createObjectURL(file),
               type: file.type?.startsWith("image") ? "image" : "video",
@@ -86,15 +85,18 @@ export const AddComment = ({
         await onCommentAdded?.(optimisticComment, newFiles);
       }
 
-      // Clear form if not editing
       if (!isEditing) {
         setText("");
         setNewFiles([]);
         setExistingMedia([]);
-        hasInitialized.current = false; // allow new initialMedia when switching posts
+        hasInitialized.current = false;
       }
     } catch (error) {
-      console.error("Submission failed:", error);
+      console.error(
+        "Submission failed:",
+        error.response?.data?.message || error.message
+      );
+      // You might want to show an error message to the user here
     } finally {
       setIsSubmitting(false);
     }
