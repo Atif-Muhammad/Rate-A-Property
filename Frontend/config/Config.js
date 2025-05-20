@@ -269,7 +269,8 @@ const updateComment = async (id, formData) => {
       withCredentials: true,
     }
     );
-    return response.json();;
+    
+    return response.json();
   } catch (error) {
     return error;
   }

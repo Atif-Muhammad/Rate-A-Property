@@ -951,9 +951,9 @@ const postController = {
       const ownerId = new mongoose.Types.ObjectId(owner);
 
       // 1. First validate content exists
-      if (!content || typeof content !== "string") {
-        return res.status(400).json({ error: "Comment content is required" });
-      }
+      // if (!content || typeof content !== "string") {
+      //   return res.status(400).json({ error: "Comment content is required" });
+      // }
 
       // 2. Check for abusive content (with proper regex escaping)
       const containsHardBlock = HARD_BLOCK_WORDS.some((word) => {
