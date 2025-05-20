@@ -40,7 +40,7 @@ const logout = async () => {
     const response = await axios.post(
       `${Baseurl}/user/logout`,
       {},
-      { withCredentials : true}
+      { withCredentials: true }
     );
     return response;
   } catch (error) {
@@ -67,7 +67,7 @@ const followUser = async (followerId, followId) => {
   } catch (error) {
     return error;
   }
-}
+};
 const unfollowUser = async (followerId, followId) => {
   try {
     const response = await axios.put(
@@ -79,7 +79,7 @@ const unfollowUser = async (followerId, followId) => {
   } catch (error) {
     return error;
   }
-}
+};
 // Post related APIs
 const createPost = async (data) => {
   try {
@@ -96,31 +96,40 @@ const createPost = async (data) => {
 const updatePost = async (postId, formData) => {
   // console.log(postId,formData)
   try {
-    const response = await axios.put(`${Baseurl}/posts/updatePost/${postId}`, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-      withCredentials: true,
-    })
-    return response
+    const response = await axios.put(
+      `${Baseurl}/posts/updatePost/${postId}`,
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+        withCredentials: true,
+      }
+    );
+    return response;
   } catch (error) {
-    return error
+    return error;
   }
-}
+};
 
 const delPost = async (postId) => {
   try {
-    const response = await axios.post(`${Baseurl}/posts/delPost?postId=${postId}`, {}, { withCredentials: true });
-    return response
+    const response = await axios.post(
+      `${Baseurl}/posts/delPost?postId=${postId}`,
+      {},
+      { withCredentials: true }
+    );
+    return response;
   } catch (error) {
-    return error
+    return error;
   }
-}
+};
 
 const getPosts = async ({ page, limit }) => {
   // console.log(page, limit)
   try {
-    const response = await axios.get(`${Baseurl}/posts/getPosts?page=${page}&limit=${limit}`);
+    const response = await axios.get(
+      `${Baseurl}/posts/getPosts?page=${page}&limit=${limit}`
+    );
     return response;
-
   } catch (error) {
     return error;
   }
@@ -128,9 +137,10 @@ const getPosts = async ({ page, limit }) => {
 const getUserPosts = async ({ page, limit, userId }) => {
   // console.log(page, limit)
   try {
-    const response = await axios.get(`${Baseurl}/posts/getUserPosts?user=${userId}&page=${page}&limit=${limit}`);
+    const response = await axios.get(
+      `${Baseurl}/posts/getUserPosts?user=${userId}&page=${page}&limit=${limit}`
+    );
     return response;
-
   } catch (error) {
     return error;
   }
@@ -146,7 +156,6 @@ const getSinglePost = async (post_id) => {
     return error;
   }
 };
-
 
 const like = async (postId) => {
   try {
@@ -196,7 +205,6 @@ const unDisLike = async (postId) => {
     return error;
   }
 };
-
 
 const likeMedia = async (postId) => {
   try {
@@ -249,12 +257,10 @@ const unDisLikeMedia = async (postId) => {
 
 const addComment = async (data) => {
   try {
-    const response = await axios.post(
-      `${Baseurl}/posts/addComment`, data, {
+    const response = await axios.post(`${Baseurl}/posts/addComment`, data, {
       headers: { "Content-Type": "multipart/form-data" },
       withCredentials: true,
-    }
-    );
+    });
     return response;
   } catch (error) {
     return error;
@@ -264,12 +270,14 @@ const updateComment = async (id, formData) => {
   // console.log("first", id)
   try {
     const response = await axios.put(
-      `${Baseurl}/posts/updateComment/${id}`, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-      withCredentials: true,
-    }
+      `${Baseurl}/posts/updateComment/${id}`,
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+        withCredentials: true,
+      }
     );
-    
+
     return response.json();
   } catch (error) {
     return error;
@@ -278,14 +286,16 @@ const updateComment = async (id, formData) => {
 
 const delComment = async (commentId) => {
   try {
-    const response = await axios.post(`${Baseurl}/posts/delComment?commentId=${commentId}`, {}, { withCredentials: true });
-    return response
+    const response = await axios.post(
+      `${Baseurl}/posts/delComment?commentId=${commentId}`,
+      {},
+      { withCredentials: true }
+    );
+    return response;
   } catch (error) {
     return error;
   }
-}
-
-
+};
 
 const getcomments = async ({ postId, page, limit }) => {
   try {
@@ -349,47 +359,53 @@ const unDisLikeComment = async (comntId) => {
 };
 
 const addReply = async (data) => {
-  // console.log(data)
   try {
-    const response = await axios.post(`${Baseurl}/posts/addReply`, data, { withCredentials: true });
-    return response
+    const response = await axios.post(`${Baseurl}/posts/addReply`, data, {
+      withCredentials: true,
+    });
+    console.log(response);
+    return response;
   } catch (error) {
+    console.log(error, "problem in comment");
     return error;
   }
-}
+};
 
 const getReplies = async ({ pageParam = 1, commentId }) => {
   const response = await axios.get(
     `${Baseurl}/posts/getReplies?comment=${commentId}&page=${pageParam}&limit=5`
   );
-  return { data: response.data, nextPage: pageParam + 1, hasMore: response.data.length === 5 };
+  return {
+    data: response.data,
+    nextPage: pageParam + 1,
+    hasMore: response.data.length === 5,
+  };
 };
 
-const search = async(data)=>{
+const search = async (data) => {
   try {
-    const response = await axios.get(
-      `${Baseurl}/user/search/${data}`,
+    const response = await axios.get(`${Baseurl}/user/search/${data}`, {
+      withCredentials: true,
+    });
+    return response;
+  } catch (error) {
+    return error;
+  }
+};
+
+const analyzePost = async (postId) => {
+  // console.log(postId)
+  try {
+    const response = await axios.post(
+      `${Baseurl}/posts/analyzePost?postId=${postId}`,
+      {},
       { withCredentials: true }
     );
     return response;
   } catch (error) {
     return error;
   }
-}
-
-
-const analyzePost = async (postId) =>{
-  // console.log(postId)
-  try {
-    const response = await axios.post(`${Baseurl}/posts/analyzePost?postId=${postId}`, {},
-      { withCredentials: true }
-    )
-    return response
-  } catch (error) {
-    return error
-  }
-}
-
+};
 
 export const APIS = {
   userWho,
@@ -424,6 +440,5 @@ export const APIS = {
   addReply,
   getReplies,
   search,
-  analyzePost
-
+  analyzePost,
 };
