@@ -11,7 +11,7 @@ const fs = require("fs");
 const path = require("path");
 const { upload_disk } = require("../multerConfig/multerConfig");
 const deleteCommentsRecursively = require("./deleteComments");
-const HARD_BLOCK_WORDS = require("../Utils");
+// const HARD_BLOCK_WORDS = require("../Utils");
 // const detectNSFW = require("../TensorDetect/DetectNsfw");
 const analyzeText = require("../TensorDetect/DetectOffensiveText");
 
@@ -106,16 +106,13 @@ const postController = {
       const postDoc = await post.findById(postId).populate("media");
       if (!postDoc) return res.status(404).json({ error: "Post not found" });
 
-      
       const dbFileUrls = postDoc.media.map((m) => m.identifier.path);
 
-   
       const uploadedFileNames = req.fileNames || [];
       const uploadedFileUrls = uploadedFileNames.map(
         (filename) => `/uploads/${owner}/${filename}`
       );
 
-  
       const removedFiles = postDoc.media.filter(
         (m) => !existingFiles.includes(m.identifier.path)
       );
@@ -758,31 +755,31 @@ const postController = {
       const { owner, content, for_post } = req.body;
       const ownerId = new mongoose.Types.ObjectId(owner);
 
-      // Abuse word detection
-      let detectedWord = "";
-      const containsHardBlock = HARD_BLOCK_WORDS.some((word) => {
-        const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-        const isMatch = new RegExp(`\\b${escapedWord}\\b`, "i").test(content);
-        if (isMatch) detectedWord = word;
-        return isMatch;
-      });
+      // // Abuse word detection
+      // let detectedWord = "";
+      // const containsHardBlock = HARD_BLOCK_WORDS.some((word) => {
+      //   const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      //   const isMatch = new RegExp(`\\b${escapedWord}\\b`, "i").test(content);
+      //   if (isMatch) detectedWord = word;
+      //   return isMatch;
+      // });
 
-      if (containsHardBlock) {
-        // console.log("🚨 Blocked abusive comment:", {
-        //   user: owner,
-        //   content: content,
-        //   detectedWord: detectedWord,
-        //   timestamp: new Date().toISOString(),
-        // });
+      // if (containsHardBlock) {
+      //   // console.log("🚨 Blocked abusive comment:", {
+      //   //   user: owner,
+      //   //   content: content,
+      //   //   detectedWord: detectedWord,
+      //   //   timestamp: new Date().toISOString(),
+      //   // });
 
-        return res.status(400).json({
-          success: false,
-          blocked: true,
-          error: "Comment contains prohibited language",
-          detectedWord: detectedWord,
-          timestamp: new Date().toISOString(),
-        });
-      }
+      //   return res.status(400).json({
+      //     success: false,
+      //     blocked: true,
+      //     error: "Comment contains prohibited language",
+      //     detectedWord: detectedWord,
+      //     timestamp: new Date().toISOString(),
+      //   });
+      // }
 
       // Rest of your existing code for handling files and creating comment...
       // const fileNames =
@@ -814,7 +811,7 @@ const postController = {
           path: `/uploads/${owner}/${filename}`,
         });
       }
-      
+
       // Create comment data
       const commentData = {
         comment: content,
@@ -950,24 +947,24 @@ const postController = {
       const commentId = req.params.id;
       const ownerId = new mongoose.Types.ObjectId(owner);
 
-      // 1. First validate content exists
-      // if (!content || typeof content !== "string") {
-      //   return res.status(400).json({ error: "Comment content is required" });
+      // // 1. First validate content exists
+      // // if (!content || typeof content !== "string") {
+      // //   return res.status(400).json({ error: "Comment content is required" });
+      // // }
+
+      // // 2. Check for abusive content (with proper regex escaping)
+      // const containsHardBlock = HARD_BLOCK_WORDS.some((word) => {
+      //   const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      //   return new RegExp(`\\b${escapedWord}\\b`, "i").test(content);
+      // });
+
+      // if (containsHardBlock) {
+      //   return res.status(400).json({
+      //     error: "Your comment contains prohibited language.",
+      //     blocked: true,
+      //     reason: "hard-blocked-word",
+      //   });
       // }
-
-      // 2. Check for abusive content (with proper regex escaping)
-      const containsHardBlock = HARD_BLOCK_WORDS.some((word) => {
-        const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-        return new RegExp(`\\b${escapedWord}\\b`, "i").test(content);
-      });
-
-      if (containsHardBlock) {
-        return res.status(400).json({
-          error: "Your comment contains prohibited language.",
-          blocked: true,
-          reason: "hard-blocked-word",
-        });
-      }
 
       // 3. Handle file updates (works for both comments and replies)
       let existingFiles = req.body.existingFiles;
@@ -1368,19 +1365,19 @@ const postController = {
       const { owner, content, for_post } = req.body;
       const ownerId = new mongoose.Types.ObjectId(owner);
 
-      // Abuse word detection with regex escaping
-      const containsHardBlock = HARD_BLOCK_WORDS.some((word) => {
-        const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-        return new RegExp(`\\b${escapedWord}\\b`, "i").test(content);
-      });
+      // // Abuse word detection with regex escaping
+      // const containsHardBlock = HARD_BLOCK_WORDS.some((word) => {
+      //   const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      //   return new RegExp(`\\b${escapedWord}\\b`, "i").test(content);
+      // });
 
-      if (containsHardBlock) {
-        return res.status(400).json({
-          error: "Your reply contains prohibited language.",
-          blocked: true,
-          reason: "hard-blocked-word",
-        });
-      }
+      // if (containsHardBlock) {
+      //   return res.status(400).json({
+      //     error: "Your reply contains prohibited language.",
+      //     blocked: true,
+      //     reason: "hard-blocked-word",
+      //   });
+      // }
 
       // Extract filenames from uploaded files and determine type
       const fileNames =
@@ -1408,6 +1405,7 @@ const postController = {
 
       // Create the comment first
       const newComment = await comment.create(commentData);
+      console.log(commentData, "backend console data");
 
       if (!newComment) {
         return res.status(500).json({ error: "Failed to create reply" });
