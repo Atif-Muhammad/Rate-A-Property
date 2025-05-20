@@ -27,8 +27,6 @@ export const useCreatePost = () => {
   });
 };
 
-
-
 // useUpdatePost.js
 export const useUpdatePost = () => {
   const queryClient = useQueryClient();
@@ -66,15 +64,25 @@ export const useUpdatePost = () => {
   });
 };
 
-
 export const useupdateCommentMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({ commentId, formData }) => {
-      // full updated comment returned here
-      return await APIS.updateComment(commentId, formData);
+      const response = await APIS.updateComment(commentId, formData);
+
+      if (response.status === 400) {
+        const error = new Error(
+          response.data?.message ||
+            "Your comment violates our community guidelines. Please review the rules and try again."
+        );
+        error.status = 400;
+        throw error;
+      }
+
+      return response;
     },
+
     onSuccess: (_, variables) => {
       const { postId, commentId } = variables;
       queryClient.invalidateQueries({ queryKey: ["comments", postId] });
@@ -95,8 +103,3 @@ export const useupdateCommentMutation = () => {
     },
   });
 };
-
-
-
-
-

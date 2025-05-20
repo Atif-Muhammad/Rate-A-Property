@@ -259,10 +259,15 @@ const PostCard = (props) => {
 
             {/* Actions: Follow or Post Options */}
             <div className="flex items-center gap-2">
-              <NavLink to={`/dashboard/${post._id}`} className="">Analytics</NavLink>
+              <NavLink
+                to={`/dashboard/${post._id}`}
+                className="px-4 py-1.5 rounded-md text-sm font-medium border "
+              >
+                Analytics
+              </NavLink>
               {agreeOwner !== post.owner?._id ? (
                 <button
-                  className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all duration-200 group ${
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 group ${
                     isFollowing
                       ? "bg-gray-100 hover:bg-red-50 text-gray-800 border border-gray-300 hover:border-red-300"
                       : "bg-blue-500 hover:bg-blue-600 text-white"
@@ -349,7 +354,7 @@ const PostCard = (props) => {
                   ({disagrees.length})
                 </span>
               </button>
-            
+
               <NavLink
                 to={`/post/${post._id}`}
                 state={{ post, currentUser: props.currentUser }}
