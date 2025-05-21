@@ -38,6 +38,7 @@ function CommentCard(props) {
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [existingFiles, setExistingFiles] = useState(props.comment.media || []);
   const [error, setError] = useState(null);
+  const [replyError, setReplyError] = useState(null);
   // Use the prop instead
   const activeReplyId = props.activeReplyCommentId;
   const showReplyBox = activeReplyId === props.comment._id;
@@ -146,8 +147,24 @@ function CommentCard(props) {
 
   const sendReplyMutation = useMutation({
     mutationFn: async ({ formData, tempId }) => {
-      const res = await APIS.addReply(formData);
-      return { reply: res.data, tempId };
+      try {
+        const res = await APIS.addReply(formData);
+        if (res.status === 400) {
+          // If the response status is 400 or above, throw an error
+          throw new Error(
+            res.data?.message ||
+              "Your comment violates our community guidelines. Please review the rules and try again."
+          );
+        }
+        return { reply: res.data, tempId };
+      } catch (error) {
+        // Enhance the error object with more details
+        const enhancedError = new Error(
+          error.response?.data?.message || error.message
+        );
+        enhancedError.response = error.response;
+        throw enhancedError;
+      }
     },
 
     onMutate: ({ tempId, formData }) => {
@@ -311,7 +328,7 @@ function CommentCard(props) {
     }
   };
 
-  const handleSendReply = (text, media) => {
+  const handleSendReply = async (text, media) => {
     if (!text.trim() && media.length === 0) return;
 
     const tempId = `temp-${Date.now()}`;
@@ -367,15 +384,28 @@ function CommentCard(props) {
 
     setShowReplies(true);
 
-    // Prepare form data for API call
-    const formData = new FormData();
-    formData.append("owner", currentUser?._id);
-    formData.append("content", text);
-    formData.append("for_post", props.comment._id);
-    media.forEach((file) => formData.append("files", file));
+    try {
+      const formData = new FormData();
+      formData.append("owner", currentUser?._id);
+      formData.append("content", text);
+      formData.append("for_post", props.comment._id);
+      media.forEach((file) => formData.append("files", file));
 
-    // Execute mutation
-    sendReplyMutation.mutate({ formData, tempId });
+      await sendReplyMutation.mutateAsync({ formData, tempId });
+
+      // Clear any previous errors on success
+      setReplyError(null);
+
+      // Close the reply box after successful submission
+      if (props.setActiveReplyCommentId) {
+        props.setActiveReplyCommentId(null);
+      }
+    } catch (error) {
+      // Set the error state to show the modal
+      setReplyError(error);
+      // // Keep the reply box open on error
+      // console.error("Failed to send reply:", error);
+    }
 
     // Close the reply box after 500ms
     setTimeout(() => {
@@ -404,7 +434,7 @@ function CommentCard(props) {
       <div
         className={`relative flex flex-col items-start space-y-2 p-3 sm:p-4 rounded-lg shadow-sm transition ${
           isTemp
-            ? "bg-gray-500"
+            ? "bg-gray-500 bg-opacity-30"
             : nestingDepth % 2 === 0
             ? "bg-gray-50"
             : "bg-gray-100"
@@ -648,17 +678,18 @@ function CommentCard(props) {
               isReply={!isEditing}
             />
           </div>
-          
         )}
       </div>
 
       <ContentErrorModal
-        isOpen={!!error}
-        onClose={() => setError(null)}
-        message={error?.message}
+        isOpen={!!error || !!replyError}
+        onClose={() => {
+          setError(null);
+          setReplyError(null);
+        }}
+        message={error?.message || replyError?.message}
       />
     </>
   );
 }
-
 export default CommentCard;

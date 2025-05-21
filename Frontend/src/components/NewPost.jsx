@@ -5,7 +5,8 @@ import { useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 import { QueryClient, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCreatePost, useUpdatePost } from "../hooks/ReactQuery.js";
-import { ContentErrorModal } from "./models/ContentErrorModal";
+// import { ContentErrorModal } from "./models/ContentErrorModal";
+import { ErrorModalPost } from "./models/ErrorModelforPost.jsx";
 
 export const NewPost = ({
   isOpen,
@@ -259,7 +260,7 @@ export const NewPost = ({
       </div>
 
       {showErrorModal && (
-        <ContentErrorModal
+        <ErrorModalPost
           message={errorMessage}
           onClose={() => setShowErrorModal(false)}
         />

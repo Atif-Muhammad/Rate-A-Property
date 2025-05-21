@@ -19,7 +19,7 @@ export const AddComment = ({
   const [existingMedia, setExistingMedia] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef(null);
-  const hasInitialized = useRef(false); // prevents repeated overwrite of existingMedia
+  const hasInitialized = useRef(false);
 
   useEffect(() => {
     setText(initialText || "");
@@ -32,22 +32,35 @@ export const AddComment = ({
     }
   }, [initialMedia]);
 
-  const handleFileUpload = useCallback((e) => {
-    const files = Array.from(e.target.files);
-    setNewFiles((prev) => [...prev, ...files]);
-  }, []);
+  const handleFileUpload = useCallback(
+    (e) => {
+      if (isSubmitting) return; // Prevent file upload during submission
+      const files = Array.from(e.target.files);
+      setNewFiles((prev) => [...prev, ...files]);
+      e.target.value = null; // Reset input to allow same file selection
+    },
+    [isSubmitting]
+  ); // Add isSubmitting to dependencies
 
-  const removeFile = useCallback((index, isNew) => {
-    if (isNew) {
-      setNewFiles((prev) => prev.filter((_, i) => i !== index));
-    } else {
-      setExistingMedia((prev) => prev.filter((_, i) => i !== index));
-    }
-  }, []);
+  const removeFile = useCallback(
+    (index, isNew) => {
+      if (isSubmitting) return; // Prevent file removal during submission
+      if (isNew) {
+        setNewFiles((prev) => prev.filter((_, i) => i !== index));
+      } else {
+        setExistingMedia((prev) => prev.filter((_, i) => i !== index));
+      }
+    },
+    [isSubmitting]
+  ); // Add isSubmitting to dependencies
 
-  const handleTextChange = useCallback((e) => {
-    setText(e.target.value);
-  }, []);
+  const handleTextChange = useCallback(
+    (e) => {
+      if (isSubmitting) return; // Prevent text changes during submission
+      setText(e.target.value);
+    },
+    [isSubmitting]
+  ); // Add isSubmitting to dependencies
 
   const handleSubmit = useCallback(async () => {
     if (
@@ -96,7 +109,7 @@ export const AddComment = ({
         "Submission failed:",
         error.response?.data?.message || error.message
       );
-      // You might want to show an error message to the user here
+      throw error;
     } finally {
       setIsSubmitting(false);
     }
@@ -118,7 +131,7 @@ export const AddComment = ({
     isSubmitting;
 
   return (
-    <div className="lg:max-w-3xl w-full bg-gray-100 rounded-lg   shadow-sm">
+    <div className="lg:max-w-3xl w-full bg-gray-100 rounded-lg shadow-sm">
       {/* Media preview section */}
       {(newFiles.length > 0 || existingMedia.length > 0) && (
         <div className="p-3 bg-gray-50 border-b rounded-t-lg flex gap-3 overflow-x-auto">
@@ -137,14 +150,17 @@ export const AddComment = ({
                 key={index}
                 className="relative w-24 h-24 flex-shrink-0 group"
               >
-                <button
-                  onClick={() => removeFile(index, isNew)}
-                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 z-10 "
-                  type="button"
-                  aria-label="Remove media"
-                >
-                  <X size={14} />
-                </button>
+                {!isSubmitting && ( // Only show remove button when not submitting
+                  <button
+                    onClick={() => removeFile(index, isNew)}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 z-10"
+                    type="button"
+                    aria-label="Remove media"
+                    disabled={isSubmitting}
+                  >
+                    <X size={14} />
+                  </button>
+                )}
                 {type.startsWith("image") ? (
                   <img
                     src={src}
@@ -188,7 +204,7 @@ export const AddComment = ({
                 ? "Write a reply..."
                 : "Write a comment..."
             }
-            className="w-full px-4 py-2.5 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-sm transition-all placeholder-gray-400"
+            className="w-full px-4 py-2.5 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-sm transition-all placeholder-gray-400 disabled:bg-gray-100 disabled:cursor-not-allowed"
             value={text}
             onChange={handleTextChange}
             onKeyPress={(e) =>
@@ -205,20 +221,22 @@ export const AddComment = ({
             className="hidden"
             onChange={handleFileUpload}
             disabled={isSubmitting}
+            key={newFiles.length} // Force re-render
           />
         </div>
 
         <div className="flex gap-2">
           <button
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() => !isSubmitting && fileInputRef.current?.click()}
             disabled={isSubmitting}
-            className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors disabled:opacity-50"
+            className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             type="button"
             aria-label="Attach media"
           >
             <ImagePlus size={20} />
           </button>
 
+  
           <button
             onClick={handleSubmit}
             disabled={isDisabled}
@@ -226,7 +244,7 @@ export const AddComment = ({
               isSubmitting
                 ? "bg-blue-100 text-blue-600"
                 : "bg-blue-500 text-white hover:bg-blue-600"
-            } disabled:opacity-50 disabled:bg-blue-100 disabled:text-blue-400`}
+            } disabled:opacity-50 disabled:cursor-not-allowed`}
             type="button"
             aria-label={isSubmitting ? "Submitting..." : "Submit comment"}
           >
