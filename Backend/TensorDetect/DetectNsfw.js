@@ -36,9 +36,9 @@ async function detectImageNSFW(imagePath) {
   const model = await nsfw.load();
   const predictions = await model.classify(imageTensor);
   imageTensor.dispose();
-
+  // console.log(predictions)
   const isNSFW = predictions.some(
-    (p) => ["Porn", "Sexy", "Hentai"].includes(p.className) && p.probability >= 0.5
+    (p) => ["Porn", "Sexy", "Hentai"].includes(p.className) && p.probability >= 0.3
   );
 
   return isNSFW;

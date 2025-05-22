@@ -13,7 +13,7 @@ const { upload_disk } = require("../multerConfig/multerConfig");
 const deleteCommentsRecursively = require("./deleteComments");
 // const HARD_BLOCK_WORDS = require("../Utils");
 // const detectNSFW = require("../TensorDetect/DetectNsfw");
-const analyzeText = require("../TensorDetect/DetectOffensiveText");
+const detectOffensiveText = require("../TensorDetect/DetectOffensiveText");
 
 const postController = {
   createPost: async (req, res) => {
@@ -21,8 +21,15 @@ const postController = {
       const { owner, location, description } = req.body;
       const ownerId = new mongoose.Types.ObjectId(owner);
 
-      // const result = analyzeText(description);
-      // console.log(result)
+      const isBad = await detectOffensiveText(description);
+      if (isBad) {
+        return res.status(400).json({
+          success: false,
+          error: "Post contains prohibited language",
+          timestamp: new Date().toISOString(),
+        });
+      }
+
 
       const files = [];
 
@@ -101,6 +108,15 @@ const postController = {
     try {
       const postId = req.params.id;
       const { owner, location, description, existingFiles = [] } = req.body;
+
+      const isBad = await detectOffensiveText(description);
+      if (isBad) {
+        return res.status(400).json({
+          success: false,
+          error: "Post contains prohibited language",
+          timestamp: new Date().toISOString(),
+        });
+      }
 
       const ownerId = new mongoose.Types.ObjectId(owner);
       const postDoc = await post.findById(postId).populate("media");
@@ -250,9 +266,8 @@ const postController = {
             }
 
             return {
-              url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${
-                fileData.identifier.filename
-              }`,
+              url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${fileData.identifier.filename
+                }`,
               type: mediaType,
               filename: fileData.identifier.filename,
               likes: file.likes,
@@ -271,8 +286,8 @@ const postController = {
             ...post.owner.toObject(),
             image: post.owner.image?.data
               ? `data:image/png;base64,${post.owner.image.data.toString(
-                  "base64"
-                )}`
+                "base64"
+              )}`
               : null,
           },
         };
@@ -333,9 +348,8 @@ const postController = {
             }
 
             return {
-              url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${
-                fileData.identifier.filename
-              }`,
+              url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${fileData.identifier.filename
+                }`,
               type: mediaType,
               filename: fileData.identifier.filename,
               likes: file.likes,
@@ -354,8 +368,8 @@ const postController = {
             ...post.owner.toObject(),
             image: post.owner.image?.data
               ? `data:image/png;base64,${post.owner.image.data.toString(
-                  "base64"
-                )}`
+                "base64"
+              )}`
               : null,
           },
         };
@@ -404,9 +418,8 @@ const postController = {
           }
 
           return {
-            url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${
-              fileData.identifier.filename
-            }`,
+            url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${fileData.identifier.filename
+              }`,
             type: mediaType,
             filename: fileData.identifier.filename,
             likes: file.likes,
@@ -425,8 +438,8 @@ const postController = {
           ...sngpost.owner.toObject(),
           image: sngpost.owner.image?.data
             ? `data:image/png;base64,${sngpost.owner.image.data.toString(
-                "base64"
-              )}`
+              "base64"
+            )}`
             : null,
         },
       };
@@ -754,47 +767,15 @@ const postController = {
     try {
       const { owner, content, for_post } = req.body;
       const ownerId = new mongoose.Types.ObjectId(owner);
+      const isBad = await detectOffensiveText(content);
+      if (isBad) {
+        return res.status(400).json({
+          success: false,
+          error: "Post contains prohibited language",
+          timestamp: new Date().toISOString(),
+        });
+      }
 
-      // // Abuse word detection
-      // let detectedWord = "";
-      // const containsHardBlock = HARD_BLOCK_WORDS.some((word) => {
-      //   const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      //   const isMatch = new RegExp(`\\b${escapedWord}\\b`, "i").test(content);
-      //   if (isMatch) detectedWord = word;
-      //   return isMatch;
-      // });
-
-      // if (containsHardBlock) {
-      //   // console.log("🚨 Blocked abusive comment:", {
-      //   //   user: owner,
-      //   //   content: content,
-      //   //   detectedWord: detectedWord,
-      //   //   timestamp: new Date().toISOString(),
-      //   // });
-
-      //   return res.status(400).json({
-      //     success: false,
-      //     blocked: true,
-      //     error: "Comment contains prohibited language",
-      //     detectedWord: detectedWord,
-      //     timestamp: new Date().toISOString(),
-      //   });
-      // }
-
-      // Rest of your existing code for handling files and creating comment...
-      // const fileNames =
-      //   req.files?.map((file) => {
-      //     // const ext = path.extname(file.filename);
-      //     const ext = path.extname(file);
-      //     const type = [".mp4", ".webm", ".MOV"].includes(ext)
-      //       ? "video"
-      //       : "image";
-      //     return {
-      //       filename: file.filename.toString(),
-      //       type,
-      //       path: `/uploads/comments/${file.filename}`,
-      //     };
-      //   }) || []; // Added fallback for empty files
       const files = [];
 
       for (const filename of req.fileNames || []) {
@@ -904,9 +885,8 @@ const postController = {
           }
 
           return {
-            url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${
-              fileData.identifier.filename
-            }`,
+            url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${fileData.identifier.filename
+              }`,
             type: mediaType,
             filename: fileData.identifier.filename,
             likes: file.likes,
@@ -925,8 +905,8 @@ const postController = {
           ...populatedComment.owner.toObject(),
           image: populatedComment.owner.image?.data
             ? `data:image/png;base64,${populatedComment.owner.image.data.toString(
-                "base64"
-              )}`
+              "base64"
+            )}`
             : null,
         },
       };
@@ -946,25 +926,14 @@ const postController = {
       const { content, owner } = req.body;
       const commentId = req.params.id;
       const ownerId = new mongoose.Types.ObjectId(owner);
-
-      // // 1. First validate content exists
-      // // if (!content || typeof content !== "string") {
-      // //   return res.status(400).json({ error: "Comment content is required" });
-      // // }
-
-      // // 2. Check for abusive content (with proper regex escaping)
-      // const containsHardBlock = HARD_BLOCK_WORDS.some((word) => {
-      //   const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      //   return new RegExp(`\\b${escapedWord}\\b`, "i").test(content);
-      // });
-
-      // if (containsHardBlock) {
-      //   return res.status(400).json({
-      //     error: "Your comment contains prohibited language.",
-      //     blocked: true,
-      //     reason: "hard-blocked-word",
-      //   });
-      // }
+      const isBad = await detectOffensiveText(content);
+      if (isBad) {
+        return res.status(400).json({
+          success: false,
+          error: "Post contains prohibited language",
+          timestamp: new Date().toISOString(),
+        });
+      }
 
       // 3. Handle file updates (works for both comments and replies)
       let existingFiles = req.body.existingFiles;
@@ -1064,9 +1033,8 @@ const postController = {
           updatedComment.owner?.toString();
 
         return {
-          url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${
-            file.identifier.filename
-          }`,
+          url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${file.identifier.filename
+            }`,
           type: mediaType,
           filename: file.identifier.filename,
           likes: file.likes,
@@ -1085,8 +1053,8 @@ const postController = {
           ...updatedComment.owner.toObject(),
           image: updatedComment.owner.image?.data
             ? `data:image/png;base64,${updatedComment.owner.image.data.toString(
-                "base64"
-              )}`
+              "base64"
+            )}`
             : null,
         },
       };
@@ -1172,9 +1140,8 @@ const postController = {
             }
 
             return {
-              url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${
-                fileData.identifier.filename
-              }`,
+              url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${fileData.identifier.filename
+                }`,
               type: mediaType,
               filename: fileData.identifier.filename,
               likes: file.likes,
@@ -1193,8 +1160,8 @@ const postController = {
             ...comment.owner?.toObject(),
             image: comment.owner?.image?.data
               ? `data:image/png;base64,${comment.owner?.image?.data.toString(
-                  "base64"
-                )}`
+                "base64"
+              )}`
               : null,
           },
         };
@@ -1252,9 +1219,6 @@ const postController = {
     } catch (error) {
       res.send(error);
     }
-  },
-  updatecomment: async (req, res) => {
-    console.log(req.body);
   },
   unLikeComment: async (req, res) => {
     const comntId = req.body.comntId;
@@ -1364,22 +1328,14 @@ const postController = {
     try {
       const { owner, content, for_post } = req.body;
       const ownerId = new mongoose.Types.ObjectId(owner);
-
-      // // Abuse word detection with regex escaping
-      // const containsHardBlock = HARD_BLOCK_WORDS.some((word) => {
-      //   const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      //   return new RegExp(`\\b${escapedWord}\\b`, "i").test(content);
-      // });
-
-      // if (containsHardBlock) {
-      //   return res.status(400).json({
-      //     error: "Your reply contains prohibited language.",
-      //     blocked: true,
-      //     reason: "hard-blocked-word",
-      //   });
-      // }
-
-      // Extract filenames from uploaded files and determine type
+      const isBad = await detectOffensiveText(content);
+      if (isBad) {
+        return res.status(400).json({
+          success: false,
+          error: "Post contains prohibited language",
+          timestamp: new Date().toISOString(),
+        });
+      }
       const fileNames =
         req.fileNames?.map((file) => {
           // console.log(file)
@@ -1484,9 +1440,8 @@ const postController = {
           }
 
           return {
-            url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${
-              fileData.identifier.filename
-            }`,
+            url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${fileData.identifier.filename
+              }`,
             type: mediaType,
             filename: fileData.identifier.filename,
             likes: file.likes,
@@ -1505,8 +1460,8 @@ const postController = {
           ...populatedComment.owner.toObject(),
           image: populatedComment.owner.image?.data
             ? `data:image/png;base64,${populatedComment.owner.image.data.toString(
-                "base64"
-              )}`
+              "base64"
+            )}`
             : null,
         },
       };
@@ -1559,9 +1514,8 @@ const postController = {
             }
 
             return {
-              url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${
-                fileData.identifier.filename
-              }`,
+              url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${fileData.identifier.filename
+                }`,
               type: mediaType,
               filename: fileData.identifier.filename,
               likes: file.likes,
@@ -1580,8 +1534,8 @@ const postController = {
             ...comment.owner?.toObject(),
             image: comment.owner?.image?.data
               ? `data:image/png;base64,${comment.owner?.image?.data.toString(
-                  "base64"
-                )}`
+                "base64"
+              )}`
               : null,
           },
         };
