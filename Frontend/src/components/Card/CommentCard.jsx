@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { arrayBufferToBase64 } from "../../ReUsables/arrayTobuffer";
 import { ThumbsUp, ThumbsDown, MessageCircle, X } from "lucide-react";
 import { APIS } from "../../../config/Config";
@@ -51,6 +51,8 @@ function CommentCard(props) {
   const updateCommentMutation = useupdateCommentMutation();
   // Determine if we're on a mobile device
   const [isMobile, setIsMobile] = useState(false);
+  const replyBoxRef = useRef(null);
+  const commentCardRef = useRef(null);
 
   const MAX_LENGTH = 200;
 
@@ -429,9 +431,52 @@ function CommentCard(props) {
   const shouldShowLoadMore =
     visibleReplyPages < totalPagesInCache || hasNextPage;
 
+  // Enhanced scroll handler
+  const scrollToReplyBox = () => {
+    if (!replyBoxRef.current || !commentCardRef.current) return;
+
+    const replyBox = replyBoxRef.current;
+    const commentCard = commentCardRef.current;
+
+    // Calculate positions
+    const replyBoxRect = replyBox.getBoundingClientRect();
+    const commentCardRect = commentCard.getBoundingClientRect();
+
+    // Calculate how much we need to scroll
+    const viewportHeight = window.innerHeight;
+    const replyBoxHeight = replyBoxRect.height;
+    const spaceNeeded = replyBoxHeight + 50; // 50px buffer
+
+    // If reply box is at the bottom and needs more space
+    if (replyBoxRect.bottom > viewportHeight - 50) {
+      const scrollAmount = replyBoxRect.bottom - viewportHeight + spaceNeeded;
+      window.scrollBy({
+        top: scrollAmount,
+        behavior: "smooth",
+      });
+    }
+    // If reply box is at the top and needs more space
+    else if (replyBoxRect.top < 100) {
+      // 100px buffer for headers
+      const scrollAmount = replyBoxRect.top - 100;
+      window.scrollBy({
+        top: scrollAmount,
+        behavior: "smooth",
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (showReplyBox || isEditing) {
+      // Small delay to ensure DOM is updated
+      setTimeout(scrollToReplyBox, 100);
+    }
+  }, [showReplyBox, isEditing]);
+
   return (
     <>
       <div
+        ref={commentCardRef}
         className={`relative flex flex-col items-start space-y-2 p-3 sm:p-4 rounded-lg shadow-sm transition ${
           isTemp
             ? "bg-gray-500 bg-opacity-30"
@@ -634,6 +679,7 @@ function CommentCard(props) {
 
         {(showReplyBox || isEditing) && (
           <div
+            ref={replyBoxRef}
             className="mt-2 w-full bg-gray-100 border border-gray-100 rounded-lg overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
