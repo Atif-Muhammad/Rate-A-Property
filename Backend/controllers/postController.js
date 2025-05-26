@@ -14,6 +14,7 @@ const deleteCommentsRecursively = require("./deleteComments");
 // const HARD_BLOCK_WORDS = require("../Utils");
 // const detectNSFW = require("../TensorDetect/DetectNsfw");
 const detectOffensiveText = require("../TensorDetect/DetectOffensiveText");
+const analyzeSentiment = require("./AnalyzeText");
 
 const postController = {
   createPost: async (req, res) => {
@@ -1559,6 +1560,43 @@ const postController = {
       .populate("disLikes")
       .populate("comments");
     // console.log(pst)
+    const likes = pst.likes.length;
+    const disLikes = pst.disLikes.length;
+    const comments_to_analyze = pst.comments.map((comment) => comment.comment);
+    // console.log(comments_to_analyze);
+
+    try {
+      const results = await Promise.all(
+        comments_to_analyze.map(comment => analyzeSentiment(comment))
+      );
+
+      // results.forEach((res, i) => {
+      //   if(res.compound < 0) {
+      //     console.log("Comment is negative:", comments_to_analyze[i]);
+      //   }else{
+      //     console.log("Comment is positive:", comments_to_analyze[i]);
+      //   }
+      // });
+
+      const negativeComments = results.filter(res => res.compound < 0).length;
+      const positiveComments = results.filter(res => res.compound >= 0).length;
+      const sentimentAnalysis = {
+        totalComments: comments_to_analyze.length,
+        positiveComments,
+        negativeComments,
+        likes,
+        disLikes,
+      };
+
+      res.send(sentimentAnalysis);
+    } catch (error) {
+      console.error("Error analyzing post:", error);
+      res.status(500).json({
+        error: "Internal Server Error",
+        details: error.message,
+      });
+    }
+
   },
 };
 
