@@ -1,17 +1,25 @@
-import React from 'react'
-import { useParams } from 'react-router-dom';
-import {useQuery} from "@tanstack/react-query"
-import {APIS} from "../../../config/Config"
+import React from "react";
+import { useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { APIS } from "../../../config/Config";
+import CustomPieChart from "../../pages/statistics/AnalyticsGrap";
+// import FormatterDemo from "../../pages/statistics/AnalyticsGrap";
 function Dashboard() {
-    const { postId } = useParams();
-    // console.log(postId)
+  const { postId } = useParams();
+  // console.log(postId)
 
-    const {data} = useQuery({queryKey: ['post_analytics', postId], queryFn: ()=> APIS.analyzePost(postId)})
-    console.log(data)
+  const { data } = useQuery({
+    queryKey: ["post_analytics", postId],
+    queryFn: () => APIS.analyzePost(postId),
+  });
+  console.log(data);
 
   return (
-    <div>Dashboard</div>
-  )
+    <div>
+      {/* <FormatterDemo /> */}
+      <CustomPieChart />
+    </div>
+  );
 }
 
-export default Dashboard
+export default Dashboard;
