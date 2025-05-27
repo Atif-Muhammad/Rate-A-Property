@@ -12,12 +12,13 @@ function Dashboard() {
     queryKey: ["post_analytics", postId],
     queryFn: () => APIS.analyzePost(postId),
   });
-  console.log(data);
+  // console.log(data);
+
 
   return (
     <div>
       {/* <FormatterDemo /> */}
-      <CustomPieChart />
+      <CustomPieChart data={data?.data}/>
     </div>
   );
 }

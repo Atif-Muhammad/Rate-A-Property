@@ -18,40 +18,42 @@ import {
   ThumbsDown,
   ThumbsUp,
   MessageCircle,
-} from "lucide-react"; // ✅ Lucide icons
+} from "lucide-react";
 
-const lineData = [
-  { date: "Jan 1", reviews: 10 },
-  { date: "Jan 3", reviews: 45 },
-  { date: "Jan 5", reviews: 30 },
-  { date: "Jan 7", reviews: 10 },
-  { date: "Jan 9", reviews: 28 },
-  { date: "Jan 11", reviews: 20 },
-  { date: "Jan 13", reviews: 65 },
-  { date: "Jan 15", reviews: 38 },
-  { date: "Jan 17", reviews: 18 },
-  { date: "Jan 19", reviews: 35 },
-  { date: "Jan 21", reviews: 20 },
-  { date: "Jan 23", reviews: 42 },
-  { date: "Jan 25", reviews: 15 },
-  { date: "Jan 28", reviews: 40 },
-];
 
-const pieData = [
-  { name: "Agree", value: 40 },
-  { name: "Disagree", value: 5 },
-  { name: "Comments", value: 30 },
-  { name: "Share", value: 25 },
-];
+const DashboardCharts = ({data}) => {
+  // console.log(data)
 
-const pieColorMap = {
-  Agree: "#4299E1",
-  Disagree: "#F56565",
-  Comments: "#ECC94B",
-  Share: "#48BB78",
-};
+  const lineData = [
+    { date: "Jan", reviews: data?.monthlyEngagements?.Jan || 0 },
+    { date: "Feb", reviews: data?.monthlyEngagements?.Feb || 0  },
+    { date: "Mar", reviews: data?.monthlyEngagements?.Mar || 0 },
+    { date: "Apr", reviews: data?.monthlyEngagements?.Apr || 0 },
+    { date: "May", reviews: data?.monthlyEngagements?.May || 0 },
+    { date: "June", reviews: data?.monthlyEngagements?.June || 0 },
+    { date: "July", reviews: data?.monthlyEngagements?.July || 0 },
+    { date: "Aug", reviews: data?.monthlyEngagements?.Aug || 0 },
+    { date: "Sep", reviews: data?.monthlyEngagements?.Sep || 0 },
+    { date: "Oct", reviews: data?.monthlyEngagements?.Oct || 0 },
+    { date: "Nov", reviews: data?.monthlyEngagements?.Nov || 0 },
+    { date: "Dec", reviews: data?.monthlyEngagements?.Dec || 0 },
+  ];
 
-const DashboardCharts = () => {
+  const pieData = [
+    { name: "Agree", value: data?.likes },
+    { name: "Disagree", value: data?.disLikes },
+    // { name: "Comments", value: data?.totalComments },
+    // { name: "Share", value: 25 },
+  ];
+
+  const pieColorMap = {
+    Agree: "#4299E1",
+    Disagree: "#F56565",
+    Comments: "#ECC94B",
+    Share: "#48BB78",
+  };
+
+
   return (
     <div className="max-w-screen-xl mx-auto p-4">
       <div className="flex flex-col lg:flex-row gap-6 bg-white p-6 rounded-xl shadow-md">
@@ -59,7 +61,7 @@ const DashboardCharts = () => {
         <div className="w-full flex flex-col justify-between lg:w-1/2 bg-gray-100 p-4 rounded-lg shadow-inner">
           <div className="flex justify-between items-center mb-2">
             <h2 className="text-lg font-semibold text-gray-700">Analytics</h2>
-            <span className="text-gray-500 font-medium">741</span>
+            <span className="text-gray-500 font-medium">{data?.totalComments + data?.likes + data?.disLikes}</span>
           </div>
           <ResponsiveContainer width="100%" height={280}>
             <LineChart data={lineData}>
@@ -125,11 +127,11 @@ const DashboardCharts = () => {
           </ResponsiveContainer>
 
           <div className="text-center text-xl font-bold mt-2">
-            249 <span className="text-gray-500 text-sm">reviews</span>
+            {data?.totalComments + data?.likes + data?.disLikes} <span className="text-gray-500 text-sm">reviews</span>
           </div>
 
           <div className="flex flex-row justify-center items-center gap-2 md:gap-4 mt-4">
-            {pieData.map((entry) => (
+            {pieData?.map((entry) => (
               <div key={entry.name} className="flex items-center gap-2">
                 <span
                   className="w-3 h-3 rounded-full"
@@ -156,21 +158,31 @@ const DashboardCharts = () => {
         <div className="bg-white shadow-md rounded-lg p-4 flex flex-col items-center text-center transition-transform transform hover:scale-105 hover:shadow-lg">
           <ThumbsUp className="text-blue-500 w-7 h-7" />
           <h4 className="mt-2 text-sm font-semibold text-gray-700">Agree</h4>
-          <p className="text-lg font-bold text-gray-800">3.4K</p>
+          <p className="text-lg font-bold text-gray-800">{data?.likes}</p>
         </div>
 
         {/* Disagree */}
         <div className="bg-white shadow-md rounded-lg p-4 flex flex-col items-center text-center transition-transform transform hover:scale-105 hover:shadow-lg">
           <ThumbsDown className="text-rose-500 w-7 h-7" />
           <h4 className="mt-2 text-sm font-semibold text-gray-700">Disagree</h4>
-          <p className="text-lg font-bold text-gray-800">172</p>
+          <p className="text-lg font-bold text-gray-800">{data?.disLikes}</p>
         </div>
 
         {/* Comments */}
         <div className="bg-white shadow-md rounded-lg p-4 flex flex-col items-center text-center transition-transform transform hover:scale-105 hover:shadow-lg">
           <MessageCircle className="text-yellow-600 w-7 h-7" />
           <h4 className="mt-2 text-sm font-semibold text-gray-700">Comments</h4>
-          <p className="text-lg font-bold text-gray-800">683</p>
+          <p className="text-lg font-bold text-gray-800">{data?.totalComments}</p>
+        </div>
+        <div className="bg-white shadow-md rounded-lg p-4 flex flex-col items-center text-center transition-transform transform hover:scale-105 hover:shadow-lg">
+          <MessageCircle className="text-yellow-600 w-7 h-7" />
+          <h4 className="mt-2 text-sm font-semibold text-gray-700">Positive Comments</h4>
+          <p className="text-lg font-bold text-gray-800">{data?.positiveComments}</p>
+        </div>
+        <div className="bg-white shadow-md rounded-lg p-4 flex flex-col items-center text-center transition-transform transform hover:scale-105 hover:shadow-lg">
+          <MessageCircle className="text-yellow-600 w-7 h-7" />
+          <h4 className="mt-2 text-sm font-semibold text-gray-700">Negative Comments</h4>
+          <p className="text-lg font-bold text-gray-800">{data?.negativeComments}</p>
         </div>
 
         {/* Shares */}

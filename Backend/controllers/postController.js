@@ -1562,6 +1562,18 @@ const postController = {
     // console.log(pst)
     const likes = pst.likes.length;
     const disLikes = pst.disLikes.length;
+
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+    const monthlyEngagements = Object.fromEntries(monthNames.map(name => [name, 0]));
+
+    [...pst.likes, ...pst.disLikes, ...pst.comments].forEach(item => {
+      const monthIndex = new Date(item.createdAt).getMonth();
+      const monthName = monthNames[monthIndex];
+      monthlyEngagements[monthName]++;
+    });
+
     const comments_to_analyze = pst.comments.map((comment) => comment.comment);
     // console.log(comments_to_analyze);
 
@@ -1586,6 +1598,7 @@ const postController = {
         negativeComments,
         likes,
         disLikes,
+        monthlyEngagements
       };
 
       res.send(sentimentAnalysis);
