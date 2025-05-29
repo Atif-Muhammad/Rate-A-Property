@@ -495,7 +495,7 @@ function CommentCard(props) {
           {/* User Avatar */}
           {props.comment.owner?.image?.contentType ? (
             <img
-              className="w-12 h-12 rounded-full"
+              className="w-12 h-12 rounded-full object-cover object-center border-2 border-blue-500"
               src={`data:${
                 props.comment.owner?.image.contentType
               };base64,${arrayBufferToBase64(
@@ -507,7 +507,7 @@ function CommentCard(props) {
             <img
               src={props.comment.owner?.image}
               alt="avatar"
-              className="w-12 h-12 rounded-full"
+              className="w-12 h-12 rounded-full object-cover object-center border-2 border-blue-500"
             />
           )}
 

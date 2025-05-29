@@ -135,7 +135,7 @@ export const Header = () => {
 
             <div className="w-12 h-12 rounded-full  flex items-center justify-center shadow-md transition-transform hover:scale-105">
               <img
-                className="w-full h-full rounded-full object-cover border-2 border-white"
+                className="w-full h-full rounded-full object-cover border-2 border-blue-600"
                 src={currentUser.image}
                 alt="user profile"
               />

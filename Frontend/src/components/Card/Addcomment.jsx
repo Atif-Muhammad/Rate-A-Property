@@ -191,7 +191,7 @@ export const AddComment = ({
               : currentUser?.image
           }
           alt="User avatar"
-          className="w-10 h-10 rounded-full border-2 border-white shadow-sm"
+          className="w-10 h-10 rounded-full  shadow-sm object-cover object-center border-2 border-blue-500"
         />
 
         <div className="flex-1 relative">
@@ -236,7 +236,6 @@ export const AddComment = ({
             <ImagePlus size={20} />
           </button>
 
-  
           <button
             onClick={handleSubmit}
             disabled={isDisabled}

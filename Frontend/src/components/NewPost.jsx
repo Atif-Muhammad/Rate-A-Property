@@ -32,15 +32,6 @@ export const NewPost = ({
 
   const user = queryClient.getQueryData(["userInfo"]);
 
-  // console.log("user:", user);
-
-  // return {
-  //   id: user._id,
-  //   image: user.image,
-  //   user_name: user.user_name,
-  //   posts: user.posts || [],
-  // };
-
   useEffect(() => {
     if (isEdit) {
       textRef.current.value = editPostData.description || "";
@@ -55,6 +46,15 @@ export const NewPost = ({
       setSelectedMedia(existingMedia);
     }
   }, [editPostData]);
+
+   useEffect(() => {
+     if (!isEdit && isOpen) {
+       textRef.current.value = "";
+       setLocation("Select Location");
+       setSelectedMedia([]);
+     }
+   }, [isEdit, isOpen]);
+
 
   const handleFileSelect = (event) => {
     const files = Array.from(event.target.files);
@@ -153,7 +153,7 @@ export const NewPost = ({
               <img
                 src={user.image}
                 alt="user profile"
-                className="w-12 h-12 rounded-full border-2 border-blue-500"
+                className="w-12 h-12 rounded-full border-2 border-blue-500 object-cover object-center"
               />
             )}
             <div>

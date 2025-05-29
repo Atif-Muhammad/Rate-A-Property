@@ -8,6 +8,7 @@ import { PostOptions } from "../post/PostOption";
 import { NewPost } from "../NewPost";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import ShareModal from "../models/ShareModal";
+import { PostDescription } from "./PostDescription";
 
 const PostCard = (props) => {
   const queryClient = useQueryClient();
@@ -30,6 +31,7 @@ const PostCard = (props) => {
   );
   // Inside your PostCard component, add this state:
   const [showShareModal, setShowShareModal] = useState(false);
+
 
   const { mutate: deletePost } = useMutation({
     mutationFn: (postId) => APIS.delPost(postId),
@@ -245,7 +247,7 @@ const PostCard = (props) => {
               <img
                 src={post?.owner?.image}
                 alt="profile"
-                className="w-12 h-12 rounded-full border-2 border-blue-500"
+                className="w-12 h-12 rounded-full border-2 border-blue-500 object-cover object-center"
               />
               <div>
                 <p className="font-semibold text-sm text-gray-900">
@@ -312,13 +314,13 @@ const PostCard = (props) => {
           </div>
 
           {/* Description */}
-          <p className="text-gray-800 text-sm mt-4">{post.description}</p>
+          <PostDescription description={post.description} />
 
           {/* Media */}
           {post.media && <MediaGrid media={post.media} />}
 
           {/* Actions */}
-          <div className="border-t mt-4 pt-3 flex items-center justify-between text-sm text-gray-600">
+          <div className="border-t  pt-2 flex items-center justify-between text-sm text-gray-600">
             <div className="flex items-center w-full justify-between gap-4">
               <button onClick={handleAgree} className="flex items-center gap-1">
                 <span
