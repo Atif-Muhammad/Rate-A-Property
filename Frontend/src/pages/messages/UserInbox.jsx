@@ -1,43 +1,63 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
+import io from "socket.io-client"
+import { APIS } from "../../../config/Config";
 
-const Inbox = ({ user, onBack }) => {
-  const messages = [
-    { from: "other", text: "Hi, how can I help you?" },
-    { from: "me", text: "I'm interested in your services." },
-    { from: "other", text: "Great! What kind of service are you looking for?" },
-    { from: "me", text: "Mostly UI/UX design and a bit of development." },
-    { from: "other", text: "Awesome. Can you share your project details?" },
-    { from: "me", text: "Sure, I’ll send over the document shortly." },
-    { from: "other", text: "Looking forward to it!" },
-    {
-      from: "me",
-      text: "Also, do you have experience with React and Tailwind?",
-    },
-    { from: "other", text: "Yes, I’ve worked on several projects using both." },
-    { from: "me", text: "Perfect. I think you’d be a great fit!" },
-    {
-      from: "other",
-      text: "Thanks! I’ll be happy to help. When do you plan to start?",
-    },
-    {
-      from: "me",
-      text: "As soon as next week. I’m just finalizing the scope.",
-    },
-    {
-      from: "other",
-      text: "Cool. Just send me the final scope and we’ll get started.",
-    },
-    {
-      from: "me",
-      text: "Alright. One last thing – are you comfortable working with APIs?",
-    },
-    { from: "other", text: "Absolutely. REST, GraphQL – whatever’s needed." },
-    {
-      from: "me",
-      text: "That’s great to hear. Let me finalize everything and I’ll ping you soon.",
-    },
-    { from: "other", text: "Sounds good! Speak soon." },
-  ];
+const Inbox = ({ currentUser, user, onBack }) => {
+
+  const [messages, setMessages] = useState([]);
+  const socketRef = useRef(null)
+  const inputRef = useRef("")
+
+
+  useEffect(()=>{
+    // console.log(currentUser)
+    socketRef.current = io("http://localhost:3000", {
+      query:{
+        currentUser: currentUser
+      }
+    });
+
+    return ()=>{
+      socketRef.current?.off();
+      socketRef.current?.disconnect();
+      socketRef.current?.close();
+    }
+  }, [])
+
+  const handleEmit =()=>{
+    const message = inputRef.current?.value;
+    const payload = {
+      sender: currentUser,
+      receiver: user?._id
+    }
+    if(socketRef.current){
+      socketRef.current.emit("sendMsg",{
+        to: user?._id,
+        from: currentUser,
+        text: message
+      });
+    }
+
+    // console.log(message)
+  }
+
+  const fetchMsgs = async ()=>{
+    // console.log("first", currentUser, user?._id)
+    const payload = {
+      currentUser,
+      user: user?._id
+    }
+    await APIS.fetchMsgs(payload).then(res=>{
+      // console.log(res.data)
+      setMessages(res.data)
+    }).catch(err=>{
+      console.log(err)
+    })
+  }
+
+  useEffect(()=>{
+    fetchMsgs();
+  }, [currentUser, user])
 
   return (
     <div className="w-full h-full flex flex-col bg-gray-100">
@@ -48,10 +68,10 @@ const Inbox = ({ user, onBack }) => {
         </button>
         <img
           src={user.image}
-          alt={user.name}
+          alt={user.user_name}
           className="w-10 h-10 rounded-full"
         />
-        <h3 className="font-semibold text-lg">{user.name}</h3>
+        <h3 className="font-semibold text-lg">{user.user_name}</h3>
       </div>
 
       {/* Scrollable Messages */}
@@ -65,7 +85,7 @@ const Inbox = ({ user, onBack }) => {
                 : "bg-white text-gray-800"
             }`}
           >
-            {msg.text}
+            {msg?.content}
           </div>
         ))}
       </div>
@@ -75,10 +95,11 @@ const Inbox = ({ user, onBack }) => {
         <div className="flex gap-2">
           <input
             type="text"
+            ref={inputRef}
             className="flex-1 border border-gray-300 rounded-full px-4 py-2 outline-none"
             placeholder="Type a message..."
           />
-          <button className="bg-blue-500 text-white px-4 py-2 rounded-full">
+          <button onClick={handleEmit} className="bg-blue-500 text-white px-4 py-2 rounded-full">
             Send
           </button>
         </div>

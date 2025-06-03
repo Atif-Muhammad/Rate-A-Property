@@ -1,4 +1,5 @@
 import sys
+sys.path.insert(0, "./SentimentPython/libs")
 import json
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 

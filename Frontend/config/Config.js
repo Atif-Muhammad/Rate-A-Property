@@ -80,7 +80,33 @@ const unfollowUser = async (followerId, followId) => {
     return error;
   }
 };
-// Post related APIs
+
+
+const getFriends = async (userId) => {
+  try {
+    const response = await axios.get(
+      `${Baseurl}/user/getFriends/${userId}`,
+      { withCredentials: true }
+    );
+    return response;
+  } catch (error) {
+    return error;
+  }
+}
+
+const fetchMsgs = async (payload) => {
+  try {
+    const response = await axios.post(
+      `${Baseurl}/user/getMsgs`, {body: payload}, {withCredentials: true}
+    );
+    return response;
+  } catch (error) {
+    return error;
+  }
+}
+
+
+
 const createPost = async (data) => {
   try {
     const response = await axios.post(`${Baseurl}/posts/createPost`, data, {
@@ -415,6 +441,8 @@ export const APIS = {
   logout,
   followUser,
   unfollowUser,
+  getFriends,
+  fetchMsgs,
   createPost,
   updatePost,
   getPosts,

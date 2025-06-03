@@ -13,7 +13,7 @@ import { Messages } from "./pages/messages/Messages";
 import { UserInfo } from "./pages/profile/UserInfo";
 import { useQuery } from "@tanstack/react-query";
 import { APIS } from "../config/Config";
-import State from "./context/state";
+import State from "./context/State";
 import Dashboard from "./components/Analysis/Dashboard";
 
 function App() {

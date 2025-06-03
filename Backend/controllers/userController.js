@@ -270,6 +270,50 @@ const userController = {
         }
 
     },
+    getFriends: async (req, res) => {
+        try {
+            const { userId } = req.params;
+            const friends = await user.findById(userId)
+                .select("followers following")
+                .populate({
+                    path: "followers",
+                    select: "user_name image"
+                })
+                .populate({
+                    path: "following",
+                    select: "user_name image"
+                });
+                // console.log(friends)
+            const followers = friends?.followers
+            const followings = friends?.following
+
+            const finalFollowing = followings?.map((friend) => {
+                // console.log(friend)
+                return {
+                    ...friend._doc,
+                    image: `data:image/png;base64,${friend?.image.data.toString("base64")}`,
+                }
+            })
+            const finalFollowers = followers?.map((friend) => {
+                // console.log(friend)
+                return {
+                    ...friend._doc,
+                    image: `data:image/png;base64,${friend?.image.data.toString("base64")}`,
+                }
+            })
+
+            // console.log(finalFollowing, finalFollowers)
+            const finalFriends = {
+                finalFollowers, finalFollowing
+            }
+            res.send(finalFriends)
+        } catch (error) {
+            return error
+        }
+
+    },
+
+
     search: async (req, res) => {
         // search for the 'data' in all database/only user name and post's location
 
