@@ -4,8 +4,7 @@ import ProfileCard from "../../components/Card/ProfileCard"
 import { useLocation } from "react-router-dom";
 import { APIS } from "../../../config/Config";
 import MessagePrev from "../../components/Card/MessagePrev";
-
-
+import { X } from "lucide-react";
 
 export const Messages = () => {
   const location = useLocation();
@@ -54,34 +53,77 @@ export const Messages = () => {
 
 
   return (
-    <div className="h-screen flex justify-center items-center w-full bg-gray-100">
-      <div className="w-full max-w-3xl h-full bg-white shadow-lg rounded-md overflow-hidden">
+    <div className="h-screen flex justify-center  items-center w-full bg-gray-100">
+      <div className="w-full max-w-3xl h-full bg-white shadow-lg rounded-md overflow-hidden relative">
         {!selectedUser ? (
-          <div className="h-full overflow-y-auto p-4 no-scrollbar ">
+          <div className="h-full overflow-y-auto p-4 no-scrollbar">
             <div className="w-full flex items-start justify-between">
-              <h2 className="text-2xl font-bold mb-4">Chats</h2>
-              <p className="cursor-pointer" onClick={getFriends}>New</p>
+              <h2 className="text-2xl font-bold mb-4">All Chats</h2>
+              <button
+                onClick={getFriends}
+                className="px-4 py-1.5 text-white bg-blue-600 hover:bg-blue-700 rounded-md text-sm transition"
+              >
+                New Chats
+              </button>
             </div>
             <div className="flex flex-col gap-1">
-              {dummyUsers.map((user, index)=>(
-                <MessagePrev key={`${index}+${user.id}`} user={user} setSelectedUser={setSelectedUser} />
+              {dummyUsers.map((user, index) => (
+                <MessagePrev
+                  key={`${index}+${user.id}`}
+                  user={user}
+                  setSelectedUser={setSelectedUser}
+                />
               ))}
             </div>
           </div>
         ) : (
-          <Inbox currentUser={currentUser?._id} user={selectedUser} onBack={handleBack} />
+          <Inbox
+            currentUser={currentUser?._id}
+            user={selectedUser}
+            onBack={handleBack}
+          />
         )}
       </div>
 
+      {/* Modal (AOS-like) */}
       {showFriends && (
-        <div className="absolute w-1/2 h-2/3 bg-green-300 flex flex-col">
-          <div className="cursor-pointer" onClick={() => setShowFriends(false)}>Cross</div>
-          Following
-          {following?.map((follow, index) => (<MessagePrev key={`${index}+${follow._id}`} user={follow} setSelectedUser={setSelectedUser} />))}
+        <div className="absolute   w-full max-w-3xl h-full bg-white shadow-xl rounded-xl transform  p-5 overflow-y-auto z-50 transition-all duration-300">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-xl font-semibold">Select a Friend</h3>
+            <X
+              className="w-6 h-6 cursor-pointer text-gray-700 hover:text-red-500"
+              onClick={() => setShowFriends(false)}
+            />
+          </div>
 
-          Followers
-          {followers?.map((follower, index) => (<MessagePrev key={`${index}+${follower._id}`} user={follower} setSelectedUser={setSelectedUser} />))}
+          <div>
+            <div className="flex flex-col gap-2 mb-4">
+              {following?.map((follow, index) => (
+                <MessagePrev
+                  key={`${index}+${follow._id}`}
+                  user={follow}
+                  setSelectedUser={(user) => {
+                    setSelectedUser(user);
+                    setShowFriends(false);
+                  }}
+                />
+              ))}
+            </div>
 
+            <p className="text-gray-600 font-medium mb-2">Followers</p>
+            <div className="flex flex-col gap-2">
+              {followers?.map((follower, index) => (
+                <MessagePrev
+                  key={`${index}+${follower._id}`}
+                  user={follower}
+                  setSelectedUser={(user) => {
+                    setSelectedUser(user);
+                    setShowFriends(false);
+                  }}
+                />
+              ))}
+            </div>
+          </div>
         </div>
       )}
     </div>

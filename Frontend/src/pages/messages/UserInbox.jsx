@@ -60,7 +60,7 @@ const Inbox = ({ currentUser, user, onBack }) => {
   }, [currentUser, user])
 
   return (
-    <div className="w-full h-full flex flex-col bg-gray-100">
+    <div className="w-full md:h-[90vh] h-full flex flex-col bg-gray-100">
       {/* Fixed Header */}
       <div className="p-4 flex items-center gap-3 bg-white border-b shadow sticky top-0 z-20">
         <button onClick={onBack} className="text-xl font-bold">
@@ -76,18 +76,19 @@ const Inbox = ({ currentUser, user, onBack }) => {
 
       {/* Scrollable Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
-        {messages.map((msg, index) => (
-          <div
-            key={index}
-            className={`p-3 rounded-lg max-w-xs ${
-              msg.from === "me"
-                ? "bg-blue-500 text-white ml-auto"
-                : "bg-white text-gray-800"
-            }`}
-          >
-            {msg?.content}
-          </div>
-        ))}
+        {Array.isArray(messages) &&
+          messages.map((msg, index) => (
+            <div
+              key={index}
+              className={`p-3 rounded-lg max-w-xs ${
+                msg.from === "me"
+                  ? "bg-blue-500 text-white ml-auto"
+                  : "bg-white text-gray-800"
+              }`}
+            >
+              {msg?.content}
+            </div>
+          ))}
       </div>
 
       {/* Fixed Input */}
@@ -99,7 +100,10 @@ const Inbox = ({ currentUser, user, onBack }) => {
             className="flex-1 border border-gray-300 rounded-full px-4 py-2 outline-none"
             placeholder="Type a message..."
           />
-          <button onClick={handleEmit} className="bg-blue-500 text-white px-4 py-2 rounded-full">
+          <button
+            onClick={handleEmit}
+            className="bg-blue-500 text-white px-4 py-2 rounded-full"
+          >
             Send
           </button>
         </div>
