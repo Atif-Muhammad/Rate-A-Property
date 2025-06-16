@@ -25,7 +25,7 @@ export const UserInfo = () => {
     queryFn: async () => {
       try {
         const data = await APIS.getUser(owner._id);
-        console.log("Fetched profile:", data);
+        // console.log("Fetched profile:", data);
         return data.data;
       } catch (err) {
         console.error("Failed to fetch profile:", err);

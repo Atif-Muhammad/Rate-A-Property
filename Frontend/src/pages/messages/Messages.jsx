@@ -1,55 +1,62 @@
 import React, { useEffect, useState } from "react";
 import Inbox from "./UserInbox";
-import ProfileCard from "../../components/Card/ProfileCard"
+import ProfileCard from "../../components/Card/ProfileCard";
 import { useLocation } from "react-router-dom";
 import { APIS } from "../../../config/Config";
 import MessagePrev from "../../components/Card/MessagePrev";
 import { X } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 
 export const Messages = () => {
   const location = useLocation();
 
   const [selectedUser, setSelectedUser] = useState(null);
-  const [showFriends, setShowFriends] = useState(false)
-  const [followers, setFollowers] = useState([])
-  const [following, setFollowing] = useState([])
+  const [showFriends, setShowFriends] = useState(false);
+  const [followers, setFollowers] = useState([]);
+  const [following, setFollowing] = useState([]);
+  // const [chats, setChats] = useState([]);
   const { currentUser } = location.state;
   // get the current user's friends
   const getFriends = async () => {
-    await APIS.getFriends(currentUser?._id).then(res => {
-      // console.log(res.data)
-      setFollowers(res.data.finalFollowers);
-      setFollowing(res.data.finalFollowing);
-      // console.log("followers:", followers);
-      // console.log("following:", following)
-      setShowFriends(true)
-    }).catch(err => {
-      console.log(err)
+    await APIS.getFriends(currentUser?._id)
+      .then((res) => {
+        // console.log(res.data)
+        setFollowers(res.data.finalFollowers);
+        setFollowing(res.data.finalFollowing);
+        // console.log("followers:", followers);
+        // console.log("following:", following)
+        setShowFriends(true);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  };
+
+
+  const getChats = async ()=>{
+    return await APIS.getChats(currentUser?._id).then(res=>{
+      // console.log(res.data);
+      // setChats(res.data)
+      return res.data
+    }).catch(err=>{
+      // console.log(err)
+      return err
     })
   }
+
+  const {data: chats} = useQuery({
+    queryKey: ["chats", currentUser?._id],
+    queryFn: getChats,
+    enabled: !!currentUser?._id,
+
+  })
 
   const handleBack = () => {
     setSelectedUser(null);
   };
   useEffect(() => {
-    console.log("current user: ", currentUser)
-  }, [])
-
-  const dummyUsers = [
-    {
-      _id: 1,
-      user_name: "Ali Khan",
-      lastMessage: "Hello!",
-      image: "https://i.pravatar.cc/150?img=1",
-    },
-    {
-      _id: 2,
-      user_name: "Sara Ahmed",
-      lastMessage: "See you soon! ",
-      image: "https://i.pravatar.cc/150?img=2",
-    },
-    
-  ];
+    // console.log("current user: ", currentUser);
+  }, []);
 
 
   return (
@@ -67,13 +74,14 @@ export const Messages = () => {
               </button>
             </div>
             <div className="flex flex-col gap-1">
-              {dummyUsers.map((user, index) => (
+              {chats?.length > 0 ? chats?.map((chat, index) => (
                 <MessagePrev
-                  key={`${index}+${user.id}`}
-                  user={user}
+                  key={`${index}+${chat._id}`}
+                  chat={chat}
+                  currentUser={currentUser?._id}
                   setSelectedUser={setSelectedUser}
                 />
-              ))}
+              )): <div className="w-full h-full grid place-items-center">No chats</div>}
             </div>
           </div>
         ) : (
@@ -97,11 +105,12 @@ export const Messages = () => {
           </div>
 
           <div>
+            <p className="text-gray-600 font-medium mb-2">Following</p>
             <div className="flex flex-col gap-2 mb-4">
               {following?.map((follow, index) => (
                 <MessagePrev
                   key={`${index}+${follow._id}`}
-                  user={follow}
+                  chat={follow}
                   setSelectedUser={(user) => {
                     setSelectedUser(user);
                     setShowFriends(false);
@@ -115,7 +124,7 @@ export const Messages = () => {
               {followers?.map((follower, index) => (
                 <MessagePrev
                   key={`${index}+${follower._id}`}
-                  user={follower}
+                  chat={follower}
                   setSelectedUser={(user) => {
                     setSelectedUser(user);
                     setShowFriends(false);

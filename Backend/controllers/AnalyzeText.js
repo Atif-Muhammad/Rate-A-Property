@@ -4,7 +4,7 @@ function analyzeSentiment(text) {
   return new Promise((resolve, reject) => {
     const options = {
       mode: 'text',
-      pythonPath: 'python',
+      pythonPath: 'python3',
     };
 
     const pyshell = new PythonShell('./SentimentPython/sentiment.py', options);

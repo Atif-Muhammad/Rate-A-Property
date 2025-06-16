@@ -5,6 +5,8 @@ const disLike = require("../models/disLikeModel");
 const media = require("../models/mediaModel");
 const comment = require("../models/commentModel");
 const checkUser = require("./checkUser");
+const notification = require("../models/notificationModel");
+const notiMsgs = require("../Texts/notications");
 const mongoose = require("mongoose");
 // const {gfs} = require("../app")
 const fs = require("fs");
@@ -15,6 +17,8 @@ const deleteCommentsRecursively = require("./deleteComments");
 // const detectNSFW = require("../TensorDetect/DetectNsfw");
 const detectOffensiveText = require("../TensorDetect/DetectOffensiveText");
 const analyzeSentiment = require("./AnalyzeText");
+const { createNotification } = require("./notificationsController");
+const { truncatedNormal } = require("@tensorflow/tfjs");
 
 const postController = {
   createPost: async (req, res) => {
@@ -30,7 +34,6 @@ const postController = {
           timestamp: new Date().toISOString(),
         });
       }
-
 
       const files = [];
 
@@ -96,6 +99,22 @@ const postController = {
         { _id: ownerId },
         { $push: { posts: created_post._id } }
       );
+
+      // create notification for all followers
+      const followers = await user
+        .findOne({ _id: ownerId })
+        .select("user_name followers");
+      // console.log(followers)
+      const payload = {
+        highlighter: notiMsgs.newPostNoti.highlight,
+        for_user: followers?.followers,
+        for_post: created_post._id,
+        message: `${followers?.user_name} ${notiMsgs.newPostNoti.content}`,
+      };
+      // console.log(payload)
+      // call notifcation controller
+      createNotification(payload);
+
       const newPost = await post.findById(created_post._id);
       return res.status(200).send(newPost);
     } catch (error) {
@@ -267,8 +286,9 @@ const postController = {
             }
 
             return {
-              url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${fileData.identifier.filename
-                }`,
+              url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${
+                fileData.identifier.filename
+              }`,
               type: mediaType,
               filename: fileData.identifier.filename,
               likes: file.likes,
@@ -287,8 +307,8 @@ const postController = {
             ...post.owner.toObject(),
             image: post.owner.image?.data
               ? `data:image/png;base64,${post.owner.image.data.toString(
-                "base64"
-              )}`
+                  "base64"
+                )}`
               : null,
           },
         };
@@ -349,8 +369,9 @@ const postController = {
             }
 
             return {
-              url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${fileData.identifier.filename
-                }`,
+              url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${
+                fileData.identifier.filename
+              }`,
               type: mediaType,
               filename: fileData.identifier.filename,
               likes: file.likes,
@@ -369,8 +390,8 @@ const postController = {
             ...post.owner.toObject(),
             image: post.owner.image?.data
               ? `data:image/png;base64,${post.owner.image.data.toString(
-                "base64"
-              )}`
+                  "base64"
+                )}`
               : null,
           },
         };
@@ -419,8 +440,9 @@ const postController = {
           }
 
           return {
-            url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${fileData.identifier.filename
-              }`,
+            url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${
+              fileData.identifier.filename
+            }`,
             type: mediaType,
             filename: fileData.identifier.filename,
             likes: file.likes,
@@ -439,8 +461,8 @@ const postController = {
           ...sngpost.owner.toObject(),
           image: sngpost.owner.image?.data
             ? `data:image/png;base64,${sngpost.owner.image.data.toString(
-              "base64"
-            )}`
+                "base64"
+              )}`
             : null,
         },
       };
@@ -481,6 +503,7 @@ const postController = {
 
     try {
       const user_detail = checkUser(user_token.authToken);
+      // console.log(user_detail)
       const owner_id = user_detail.id;
       const data = {
         for_post: post_id,
@@ -507,7 +530,23 @@ const postController = {
           { _id: owner_id },
           { $push: { likes: liked._id } }
         );
-        await post.updateOne({ _id: post_id }, { $push: { likes: liked._id } });
+        const updated_post = await post.findOneAndUpdate(
+          { _id: post_id },
+          { $push: { likes: liked._id } },
+          { new: true }
+        );
+        // console.log(updated_post)
+        // create notification post owner
+        const payload = {
+          highlighter: notiMsgs.likeNoti.highlight,
+          for_user: [updated_post?.owner],
+          for_post: updated_post?._id,
+          message: `${user_detail?.user_name} ${notiMsgs.likeNoti.content}`,
+        };
+        // console.log(payload)
+        // call notifcation controller
+        createNotification(payload);
+
         res.status(200).send(liked);
       }
     } catch (error) {
@@ -568,7 +607,6 @@ const postController = {
           { _id: post_id },
           { $pull: { likes: un_liked._id } }
         );
-        // create record for un_liked
       }
       const disLiked = await disLike.create(data);
       if (disLiked) {
@@ -576,10 +614,21 @@ const postController = {
           { _id: owner_id },
           { $push: { disLikes: disLiked._id } }
         );
-        await post.updateOne(
+        const updated_post = await post.findOneAndUpdate(
           { _id: post_id },
-          { $push: { disLikes: disLiked._id } }
+          { $push: { disLikes: disLiked._id } },
+          { new: true }
         );
+        // create notification post owner
+        const payload = {
+          highlighter: notiMsgs.DislikeNoti.highlight,
+          for_user: [updated_post?.owner],
+          for_post: updated_post?._id,
+          message: `${user_detail?.user_name} ${notiMsgs.DislikeNoti.content}`,
+        };
+        // console.log(payload)
+        // call notifcation controller
+        createNotification(payload);
         res.status(200).send(data);
       }
     } catch (error) {
@@ -838,9 +887,10 @@ const postController = {
       }
 
       // Update post & user models
-      await post.updateOne(
+      const updated_post = await post.findOneAndUpdate(
         { _id: for_post },
-        { $push: { comments: newComment._id } }
+        { $push: { comments: newComment._id } },
+        { new: true }
       );
       await user.updateOne(
         { _id: ownerId },
@@ -886,8 +936,9 @@ const postController = {
           }
 
           return {
-            url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${fileData.identifier.filename
-              }`,
+            url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${
+              fileData.identifier.filename
+            }`,
             type: mediaType,
             filename: fileData.identifier.filename,
             likes: file.likes,
@@ -906,11 +957,23 @@ const postController = {
           ...populatedComment.owner.toObject(),
           image: populatedComment.owner.image?.data
             ? `data:image/png;base64,${populatedComment.owner.image.data.toString(
-              "base64"
-            )}`
+                "base64"
+              )}`
             : null,
         },
       };
+
+      // create notification post owner
+      // console.log(updated_post)
+      const payload = {
+        highlighter: notiMsgs.commentNoti.highlight,
+        for_user: [updated_post?.owner],
+        for_post: updated_post?._id,
+        message: `${populatedComment?.owner?.user_name} ${notiMsgs.commentNoti.content}`,
+      };
+      // console.log(payload)
+      // call notifcation controller
+      createNotification(payload);
 
       res.status(200).send(formattedComment);
     } catch (error) {
@@ -1034,8 +1097,9 @@ const postController = {
           updatedComment.owner?.toString();
 
         return {
-          url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${file.identifier.filename
-            }`,
+          url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${
+            file.identifier.filename
+          }`,
           type: mediaType,
           filename: file.identifier.filename,
           likes: file.likes,
@@ -1054,8 +1118,8 @@ const postController = {
           ...updatedComment.owner.toObject(),
           image: updatedComment.owner.image?.data
             ? `data:image/png;base64,${updatedComment.owner.image.data.toString(
-              "base64"
-            )}`
+                "base64"
+              )}`
             : null,
         },
       };
@@ -1141,8 +1205,9 @@ const postController = {
             }
 
             return {
-              url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${fileData.identifier.filename
-                }`,
+              url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${
+                fileData.identifier.filename
+              }`,
               type: mediaType,
               filename: fileData.identifier.filename,
               likes: file.likes,
@@ -1161,8 +1226,8 @@ const postController = {
             ...comment.owner?.toObject(),
             image: comment.owner?.image?.data
               ? `data:image/png;base64,${comment.owner?.image?.data.toString(
-                "base64"
-              )}`
+                  "base64"
+                )}`
               : null,
           },
         };
@@ -1211,10 +1276,23 @@ const postController = {
           { _id: owner_id },
           { $push: { likes: liked._id } }
         );
-        await comment.updateOne(
+        const updated_comment = await comment.findOneAndUpdate(
           { _id: comntId },
-          { $push: { likes: liked._id } }
+          { $push: { likes: liked._id } },
+          { new: true }
         );
+
+        // send notification to owner
+        const payload = {
+          highlighter: notiMsgs.cmntLikeNoti.highlight,
+          for_user: [updated_comment?.owner],
+          for_post: updated_comment?._id,
+          message: `${user_detail?.user_name} ${notiMsgs.cmntLikeNoti.content}`,
+        };
+        // console.log(payload)
+        // call notifcation controller
+        createNotification(payload);
+
         res.status(200).send(liked);
       }
     } catch (error) {
@@ -1283,10 +1361,22 @@ const postController = {
           { _id: owner_id },
           { $push: { disLikes: disLiked._id } }
         );
-        await comment.updateOne(
+        const updated_comment = await comment.findOneAndUpdate(
           { _id: comntId },
-          { $push: { disLikes: disLiked._id } }
+          { $push: { disLikes: disLiked._id } },
+          { new: true }
         );
+        // send notification to owner
+        const payload = {
+          highlighter: notiMsgs.cmntDisLikeNoti.highlight,
+          for_user: [updated_comment?.owner],
+          for_post: updated_comment?._id,
+          message: `${user_detail?.user_name} ${notiMsgs.cmntDisLikeNoti.content}`,
+        };
+        // console.log(payload)
+        // call notifcation controller
+        createNotification(payload);
+
         res.status(200).send(data);
       }
     } catch (error) {
@@ -1397,9 +1487,10 @@ const postController = {
       }
 
       // Update parent comment & user models
-      await comment.updateOne(
+      const updated_comment = await comment.findOneAndUpdate(
         { _id: for_post },
-        { $push: { comments: newComment._id } }
+        { $push: { comments: newComment._id } },
+        {new: true}
       );
       await user.updateOne(
         { _id: ownerId },
@@ -1441,8 +1532,9 @@ const postController = {
           }
 
           return {
-            url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${fileData.identifier.filename
-              }`,
+            url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${
+              fileData.identifier.filename
+            }`,
             type: mediaType,
             filename: fileData.identifier.filename,
             likes: file.likes,
@@ -1461,11 +1553,22 @@ const postController = {
           ...populatedComment.owner.toObject(),
           image: populatedComment.owner.image?.data
             ? `data:image/png;base64,${populatedComment.owner.image.data.toString(
-              "base64"
-            )}`
+                "base64"
+              )}`
             : null,
         },
       };
+
+      // send notification to owner
+      const payload = {
+        highlighter: notiMsgs.replyNoti.highlight,
+        for_user: [updated_comment?.owner],
+        for_post: updated_comment?._id,
+        message: `${populatedComment?.owner?.user_name} ${notiMsgs.replyNoti.content}`,
+      };
+      // console.log(payload)
+      // call notifcation controller
+      createNotification(payload);
 
       res.status(200).send(formattedComment);
     } catch (error) {
@@ -1515,8 +1618,9 @@ const postController = {
             }
 
             return {
-              url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${fileData.identifier.filename
-                }`,
+              url: `${req.protocol}://${req.get("host")}/uploads/${ownerId}/${
+                fileData.identifier.filename
+              }`,
               type: mediaType,
               filename: fileData.identifier.filename,
               likes: file.likes,
@@ -1535,8 +1639,8 @@ const postController = {
             ...comment.owner?.toObject(),
             image: comment.owner?.image?.data
               ? `data:image/png;base64,${comment.owner?.image?.data.toString(
-                "base64"
-              )}`
+                  "base64"
+                )}`
               : null,
           },
         };
@@ -1563,12 +1667,26 @@ const postController = {
     const likes = pst.likes.length;
     const disLikes = pst.disLikes.length;
 
-    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
-      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const monthNames = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
 
-    const monthlyEngagements = Object.fromEntries(monthNames.map(name => [name, 0]));
+    const monthlyEngagements = Object.fromEntries(
+      monthNames.map((name) => [name, 0])
+    );
 
-    [...pst.likes, ...pst.disLikes, ...pst.comments].forEach(item => {
+    [...pst.likes, ...pst.disLikes, ...pst.comments].forEach((item) => {
       const monthIndex = new Date(item.createdAt).getMonth();
       const monthName = monthNames[monthIndex];
       monthlyEngagements[monthName]++;
@@ -1579,7 +1697,7 @@ const postController = {
 
     try {
       const results = await Promise.all(
-        comments_to_analyze.map(comment => analyzeSentiment(comment))
+        comments_to_analyze.map((comment) => analyzeSentiment(comment))
       );
 
       // results.forEach((res, i) => {
@@ -1590,15 +1708,17 @@ const postController = {
       //   }
       // });
 
-      const negativeComments = results.filter(res => res.compound < 0).length;
-      const positiveComments = results.filter(res => res.compound >= 0).length;
+      const negativeComments = results.filter((res) => res.compound < 0).length;
+      const positiveComments = results.filter(
+        (res) => res.compound >= 0
+      ).length;
       const sentimentAnalysis = {
         totalComments: comments_to_analyze.length,
         positiveComments,
         negativeComments,
         likes,
         disLikes,
-        monthlyEngagements
+        monthlyEngagements,
       };
 
       res.send(sentimentAnalysis);
@@ -1609,7 +1729,6 @@ const postController = {
         details: error.message,
       });
     }
-
   },
 };
 

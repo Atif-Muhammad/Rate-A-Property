@@ -112,9 +112,11 @@ const userController = {
                     const payload = {
                         id: userDetails._id,
                         email: userDetails.email,
-                        student_name: userDetails.student_name,
+                        user_name: userDetails.user_name,
                         role: userDetails.role,
                     };
+                   
+
                     // check the jwtToken on client, whether it is out-dated or not?
                     const secretKey = process.env.SECRET_KEY;
                     const jwtTokenCheck = req.cookies.authToken;
@@ -312,7 +314,6 @@ const userController = {
         }
 
     },
-
 
     search: async (req, res) => {
         // search for the 'data' in all database/only user name and post's location

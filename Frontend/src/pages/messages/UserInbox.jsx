@@ -1,63 +1,70 @@
 import React, { useEffect, useRef, useState } from "react";
-import io from "socket.io-client"
+import io from "socket.io-client";
 import { APIS } from "../../../config/Config";
 
 const Inbox = ({ currentUser, user, onBack }) => {
-
   const [messages, setMessages] = useState([]);
-  const socketRef = useRef(null)
-  const inputRef = useRef("")
+  const socketRef = useRef(null);
+  const inputRef = useRef("");
 
+  // console.log(user);
 
-  useEffect(()=>{
+  useEffect(() => {
     // console.log(currentUser)
     socketRef.current = io("http://localhost:3000", {
-      query:{
-        currentUser: currentUser
-      }
+      query: {
+        currentUser: currentUser,
+      },
     });
 
-    return ()=>{
+    socketRef.current.on("msgSent", (msg) => {
+      setMessages((prev) => [...prev, msg]);
+    });
+
+    socketRef.current.on("newMsg", (msg) => {
+      setMessages((prev) => [...prev, msg]);
+    });
+
+    return () => {
       socketRef.current?.off();
       socketRef.current?.disconnect();
       socketRef.current?.close();
-    }
-  }, [])
+    };
+  }, []);
 
-  const handleEmit =()=>{
+  const handleEmit = () => {
     const message = inputRef.current?.value;
-    const payload = {
-      sender: currentUser,
-      receiver: user?._id
-    }
-    if(socketRef.current){
-      socketRef.current.emit("sendMsg",{
-        to: user?._id,
+
+    if (socketRef.current) {
+      socketRef.current.emit("sendMsg", {
+        to: user.accB ? user.accB?._id : user?._id,
         from: currentUser,
-        text: message
+        text: message,
       });
     }
 
     // console.log(message)
-  }
+  };
 
-  const fetchMsgs = async ()=>{
+  const fetchMsgs = async () => {
     // console.log("first", currentUser, user?._id)
     const payload = {
       currentUser,
-      user: user?._id
-    }
-    await APIS.fetchMsgs(payload).then(res=>{
-      // console.log(res.data)
-      setMessages(res.data)
-    }).catch(err=>{
-      console.log(err)
-    })
-  }
+      user: user.accB ? user.accB?._id : user?._id,
+    };
+    await APIS.fetchMsgs(payload)
+      .then((res) => {
+        console.log("res:",res.data)
+        setMessages(res.data);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  };
 
-  useEffect(()=>{
+  useEffect(() => {
     fetchMsgs();
-  }, [currentUser, user])
+  }, [currentUser, user]);
 
   return (
     <div className="w-full md:h-[90vh] h-full flex flex-col bg-gray-100">
@@ -66,29 +73,35 @@ const Inbox = ({ currentUser, user, onBack }) => {
         <button onClick={onBack} className="text-xl font-bold">
           ←
         </button>
-        <img
-          src={user.image}
-          alt={user.user_name}
-          className="w-10 h-10 rounded-full"
-        />
-        <h3 className="font-semibold text-lg">{user.user_name}</h3>
+        
+          <img
+            src={user.image}
+            alt={user.user_name}
+            className="w-14 h-14 rounded-full object-cover border-2 border-blue-500"
+          />
+        
+        <h3 className="font-semibold text-lg">
+          
+          {user.user_name}
+        </h3>
       </div>
 
       {/* Scrollable Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
-        {Array.isArray(messages) &&
-          messages.map((msg, index) => (
+        {/* {Array.isArray(messages) && */}
+          {messages?.map((msg, index) => (
             <div
-              key={index}
-              className={`p-3 rounded-lg max-w-xs ${
-                msg.from === "me"
-                  ? "bg-blue-500 text-white ml-auto"
-                  : "bg-white text-gray-800"
-              }`}
+            key={index}
+            className={`p-3 rounded-lg max-w-xs ${
+              msg?.sender === currentUser
+              ? "bg-blue-500 text-white ml-auto"
+              : "bg-gray-200 text-gray-800"
+            }`}
             >
               {msg?.content}
             </div>
           ))}
+          {/* } */}
       </div>
 
       {/* Fixed Input */}

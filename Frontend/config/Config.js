@@ -105,6 +105,17 @@ const fetchMsgs = async (payload) => {
   }
 }
 
+const getChats = async (userId)=>{
+  try {
+    const response = await axios.get(
+      `${Baseurl}/user/getChats?userId=${userId}`, {withCredentials: true}
+    );
+    return response;
+  } catch (error) {
+    return error
+  }
+}
+
 
 
 const createPost = async (data) => {
@@ -433,6 +444,28 @@ const analyzePost = async (postId) => {
   }
 };
 
+
+const createNotification = async (payload)=>{
+  try {
+    const response = await axios.post(`${Baseurl}/user/createNoti`, payload, {withCredentials: true});
+    return response;
+  } catch (error) {
+    return error;
+  }
+
+}
+
+const getNotifications = async (userId)=>{
+  try {
+    const response = await axios.get(`${Baseurl}/user/getNotis/${userId}`, {withCredentials: true});
+    return response;
+  } catch (error) {
+    return error;
+  }
+}
+
+
+
 export const APIS = {
   userWho,
   signup,
@@ -443,6 +476,7 @@ export const APIS = {
   unfollowUser,
   getFriends,
   fetchMsgs,
+  getChats,
   createPost,
   updatePost,
   getPosts,
@@ -469,4 +503,6 @@ export const APIS = {
   getReplies,
   search,
   analyzePost,
+  getNotifications,
+  createNotification
 };

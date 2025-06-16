@@ -2,6 +2,8 @@ const mongoose = require("mongoose")
 const post = require("./postModel")
 const comment = require("./commentModel")
 const like = require("./likesModel")
+const msg = require("../models/MessageModel");
+const chat = require("../models/chatModel")
 
 const userSchema = mongoose.Schema({
     user_name: String,
@@ -38,6 +40,10 @@ const userSchema = mongoose.Schema({
     following: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'user'
+    }],
+    chats: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'chat'
     }]
 })
 
