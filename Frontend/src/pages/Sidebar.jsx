@@ -7,6 +7,7 @@ import {
   UserCircle,
   Settings,
   LogOut,
+  Compass,
 } from "lucide-react";
 import { APIS } from "../../config/Config";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -21,6 +22,7 @@ export const Sidebar = () => {
 
   const navLinks = [
     { to: "/", label: "Home", icon: <Home size={24} /> },
+    { to: "/discover", label: "Discover", icon: <Compass size={24} /> },
     { to: "/notifications", label: "Notifications", icon: <Bell size={24} /> },
     { to: "/messages", label: "Messages", icon: <MessageCircle size={24} /> },
     {
