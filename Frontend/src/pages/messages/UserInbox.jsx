@@ -50,7 +50,7 @@ const Inbox = ({ currentUser, user, onBack }) => {
     // console.log("first", currentUser, user?._id)
     const payload = {
       currentUser,
-      user: user.accB ? user.accB?._id : user?._id,
+      user: user._id,
     };
     await APIS.fetchMsgs(payload)
       .then((res) => {

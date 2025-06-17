@@ -74,14 +74,20 @@ export const Messages = () => {
               </button>
             </div>
             <div className="flex flex-col gap-1">
-              {chats?.length > 0 ? chats?.map((chat, index) => (
-                <MessagePrev
-                  key={`${index}+${chat._id}`}
-                  chat={chat}
-                  currentUser={currentUser?._id}
-                  setSelectedUser={setSelectedUser}
-                />
-              )): <div className="w-full h-full grid place-items-center">No chats</div>}
+              {chats?.length > 0 ? (
+                chats?.map((chat, index) => (
+                  <MessagePrev
+                    key={`${index}+${chat._id}`}
+                    chat={chat}
+                    currentUser={currentUser?._id}
+                    setSelectedUser={setSelectedUser}
+                  />
+                ))
+              ) : (
+                <div className="w-full h-full grid place-items-center">
+                  No chats
+                </div>
+              )}
             </div>
           </div>
         ) : (
@@ -111,6 +117,7 @@ export const Messages = () => {
                 <MessagePrev
                   key={`${index}+${follow._id}`}
                   chat={follow}
+                  currentUser={currentUser?._id}
                   setSelectedUser={(user) => {
                     setSelectedUser(user);
                     setShowFriends(false);
@@ -123,8 +130,9 @@ export const Messages = () => {
             <div className="flex flex-col gap-2">
               {followers?.map((follower, index) => (
                 <MessagePrev
-                  key={`${index}+${follower._id}`}
-                  chat={follower}
+                  key={`${index}+${followers._id}`}
+                  chat={followers}
+                  currentUser={currentUser?._id}
                   setSelectedUser={(user) => {
                     setSelectedUser(user);
                     setShowFriends(false);
