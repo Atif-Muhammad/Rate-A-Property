@@ -18,21 +18,21 @@ export const Sidebar = () => {
   const [showConfirm, setShowConfirm] = useState(false);
 
   // console.log(currentUser);
-      
-const { data: count } = useQuery({
-      queryKey: ["notificationsCount", currentUser?._id],
-      queryFn: async () => {
-        return await APIS.getNotificationsCount(currentUser?._id)
-          .then((res) => {
-            // console.log(res.data)
-            return res.data;
-          })
-          .catch((err) => {
-            return err;
-          });
-      },
-      enabled: !!currentUser?._id,
-    });
+
+  const { data: count } = useQuery({
+    queryKey: ["notificationsCount", currentUser?._id],
+    queryFn: async () => {
+      return await APIS.getNotificationsCount(currentUser?._id)
+        .then((res) => {
+          // console.log(res.data)
+          return res.data;
+        })
+        .catch((err) => {
+          return err;
+        });
+    },
+    enabled: !!currentUser?._id,
+  });
 
   const navLinks = [
     { to: "/", label: "Home", icon: <Home size={24} /> },
@@ -100,7 +100,11 @@ const { data: count } = useQuery({
             >
               {icon}
               <span>{label}</span>
-              {(label === "Notifications" && count > 0) && <div className="absolute right-7 bg-red-500 px-1.5 text-center text-white rounded-full">{count}</div>}
+              {label === "Notifications" && count > 0 && (
+                <div className="absolute right-7 bg-red-500 px-1.5 text-center text-white rounded-full">
+                  {count}
+                </div>
+              )}
             </NavLink>
           ))}
 
@@ -152,5 +156,4 @@ const { data: count } = useQuery({
       )}
     </>
   );
-
 };

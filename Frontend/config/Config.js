@@ -464,6 +464,15 @@ const getNotifications = async (userId)=>{
   }
 }
 
+const notificationRedirect = async (noti_id)=>{
+  try {
+    const response = await axios.post(`${Baseurl}/user/redNoti`,{noti_id}, {withCredentials: true});
+    return response;
+  } catch (error) {
+    return error;
+  }
+}
+
 const getNotificationsCount = async (userId)=>{
   try {
     const response = await axios.get(`${Baseurl}/user/getNotisCount/${userId}`, {withCredentials: true});
@@ -514,5 +523,6 @@ export const APIS = {
   analyzePost,
   getNotifications,
   createNotification,
+  notificationRedirect,
   getNotificationsCount
 };

@@ -109,6 +109,7 @@ const postController = {
         highlighter: notiMsgs.newPostNoti.highlight,
         for_user: followers?.followers,
         for_post: created_post._id,
+        type: "post",
         message: `${followers?.user_name} ${notiMsgs.newPostNoti.content}`,
       };
       // console.log(payload)
@@ -325,7 +326,7 @@ const postController = {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
     const userId = req.query.user;
-    console.log(userId);
+    // console.log(userId);
 
     if (!userId) {
       return res.status(400).json({ error: "Missing userId" });
@@ -541,6 +542,7 @@ const postController = {
           highlighter: notiMsgs.likeNoti.highlight,
           for_user: [updated_post?.owner],
           for_post: updated_post?._id,
+          type: "like",
           message: `${user_detail?.user_name} ${notiMsgs.likeNoti.content}`,
         };
         // console.log(payload)
@@ -624,6 +626,7 @@ const postController = {
           highlighter: notiMsgs.DislikeNoti.highlight,
           for_user: [updated_post?.owner],
           for_post: updated_post?._id,
+          type: "dislike",
           message: `${user_detail?.user_name} ${notiMsgs.DislikeNoti.content}`,
         };
         // console.log(payload)
@@ -969,6 +972,7 @@ const postController = {
         highlighter: notiMsgs.commentNoti.highlight,
         for_user: [updated_post?.owner],
         for_post: updated_post?._id,
+        type: "comment",
         message: `${populatedComment?.owner?.user_name} ${notiMsgs.commentNoti.content}`,
       };
       // console.log(payload)
@@ -1169,7 +1173,7 @@ const postController = {
     const page = parseInt(req.query.page);
     const limit = parseInt(req.query.limit);
     const skip = (page - 1) * limit;
-    console.log(page, limit, skip);
+    // console.log(page, limit, skip);
 
     try {
       const comments = await comment
@@ -1287,6 +1291,7 @@ const postController = {
           highlighter: notiMsgs.cmntLikeNoti.highlight,
           for_user: [updated_comment?.owner],
           for_post: updated_comment?._id,
+          type: "like",
           message: `${user_detail?.user_name} ${notiMsgs.cmntLikeNoti.content}`,
         };
         // console.log(payload)
@@ -1371,6 +1376,7 @@ const postController = {
           highlighter: notiMsgs.cmntDisLikeNoti.highlight,
           for_user: [updated_comment?.owner],
           for_post: updated_comment?._id,
+          type: "dislike",
           message: `${user_detail?.user_name} ${notiMsgs.cmntDisLikeNoti.content}`,
         };
         // console.log(payload)
@@ -1564,6 +1570,7 @@ const postController = {
         highlighter: notiMsgs.replyNoti.highlight,
         for_user: [updated_comment?.owner],
         for_post: updated_comment?._id,
+        type: "reply",
         message: `${populatedComment?.owner?.user_name} ${notiMsgs.replyNoti.content}`,
       };
       // console.log(payload)

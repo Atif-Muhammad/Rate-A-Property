@@ -20,10 +20,14 @@ const notificationSchema = mongoose.Schema({
         ref: 'post',
         default: null
     },
+    type: {
+        type: String,
+        enum: ["post", "like", "dislike", "comment", "reply", "follow"]
+    },
     clicked:{
         type: Boolean,
         default: false
     }
-})
+}, {timestamps: true})
 
 module.exports = mongoose.model("notification", notificationSchema);

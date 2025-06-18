@@ -4,7 +4,7 @@ const userController = require("../../controllers/userController");
 const { upload_memory } = require("../../multerConfig/multerConfig");
 const checkUser = require("../../controllers/checkUser");
 const messageController = require("../../controllers/messageController");
-const { getNotifications, createNotification } = require("../../controllers/notificationsController");
+const { getNotifications, createNotification, getNotificationsCount, getNotification } = require("../../controllers/notificationsController");
 
 router.post(
   "/signup",
@@ -32,6 +32,8 @@ router.get("/getChats", messageController.getChats)
 router.post("/createNoti", createNotification)
 
 router.get("/getNotis/:userId", getNotifications)
+
+router.post("/redNoti", getNotification)
 
 router.get("/getNotisCount/:userId", getNotificationsCount)
 

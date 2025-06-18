@@ -16,15 +16,19 @@ import PostSkeleton from "../../components/skeletons/PostSkeleton";
 export const UserInfo = () => {
   const location = useLocation();
   const { owner, currentUser } = location.state || {};
+  // console.log(owner)
+  // console.log(currentUser)
   const queryClient = useQueryClient();
   const LIMIT = 10;
 
   // Fetch profile data
+  const ownerId = owner?._id ? owner._id : owner;
+  // console.log(ownerId)
   const { data: profile } = useQuery({
-    queryKey: ["userProfile", owner?._id],
+    queryKey: ["userProfile", ownerId],
     queryFn: async () => {
       try {
-        const data = await APIS.getUser(owner._id);
+        const data = await APIS.getUser(ownerId);
         // console.log("Fetched profile:", data);
         return data.data;
       } catch (err) {
@@ -32,7 +36,7 @@ export const UserInfo = () => {
         throw err;
       }
     },
-    enabled: !!owner?._id,
+    enabled: !!ownerId,
   });
 
   const isFollowing = profile?.followers?.includes(currentUser?._id);
@@ -136,7 +140,7 @@ export const UserInfo = () => {
     const res = await APIS.getUserPosts({
       page: pageParam,
       limit: LIMIT,
-      userId: owner._id,
+      userId: ownerId,
     });
     return {
       data: res.data.data,
@@ -147,13 +151,13 @@ export const UserInfo = () => {
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteQuery({
-      queryKey: ["userPosts", owner?._id],
+      queryKey: ["userPosts", ownerId],
       queryFn: fetchPosts,
       getNextPageParam: (lastPage) =>
         lastPage.hasMore ? lastPage.nextPage : undefined,
-      enabled: !!owner?._id,
+      enabled: !!ownerId,
     });
-  console.log(owner);
+  // console.log(owner);
 
   const [showModal, setShowModal] = useState(false);
   const handleOpen = () => setShowModal(true);

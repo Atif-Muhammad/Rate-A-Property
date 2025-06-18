@@ -1,12 +1,15 @@
 import React from "react";
 import { MoreHorizontal, Circle } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-import { useLocation } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useLocation, useNavigate } from "react-router-dom";
 import { APIS } from "../../../config/Config";
 
 export const Notifications = () => {
   const location = useLocation();
   const { currentUser } = location.state;
+  const navigate = useNavigate()
+
+  const queryClient = useQueryClient()
   // console.log(currentUser)
   // const notifications = [
   //   {
@@ -65,6 +68,29 @@ export const Notifications = () => {
     enabled: !!currentUser?._id,
   });
 
+  const navigs = {
+    "post": "/post",
+    "like": "/post",
+    "dislike": "/post",
+    "comment": "/post",
+    "reply": "/post",
+    "follow": "/profile/:user"
+  }
+
+  const viewNoti = (noti_id)=>{
+    // console.log(noti_id)
+    APIS.notificationRedirect(noti_id).then(res=>{
+      // console.log(res.data);
+      navigate(navigs[res.data?.type], {
+        state: {owner: res.data?.for_post, currentUser}
+      })
+
+      queryClient.invalidateQueries({queryKey: ['notificationsCount']})
+    }).catch(err=>{
+      console.log(err)
+    })
+  }
+
   return (
     <div className=" flex p-4 w-full bg-gray-100 overflow-y-auto  ">
       <div className="max-w-3xl mx-auto w-full space-y-8">
@@ -88,6 +114,7 @@ export const Notifications = () => {
           {notifications?.map((n) => (
             <div
               key={n._id}
+              onClick={()=> viewNoti(n._id)}
               className="relative flex items-start bg-white p-5 rounded-2xl shadow-sm hover:shadow-lg transition group border-b"
             >
               {/* Initials */}

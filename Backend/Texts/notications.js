@@ -1,4 +1,8 @@
 const notiMsgs = {
+  followNoti: {
+    highlight: "New Follow!",
+    content: "Started Following you."
+  },
   newPostNoti: {
     highlight: "New Post!",
     content: "Created a new post. Check it out.",

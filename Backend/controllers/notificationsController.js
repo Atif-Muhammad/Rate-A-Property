@@ -16,9 +16,21 @@ const notifications = {
         const {userId} = req.params;
         // console.log(userId)
         try {
-           const notifications = await notification.find({for_user: {$in: [userId]}});
+           const notifications = await notification.find({for_user: {$in: [userId]}}).sort({createdAt: -1});
         //    console.log(notifications)
            res.send(notifications)
+        } catch (error) {
+            res.send(error)
+        }
+    },
+    getNotification: async (req, res)=>{
+        const {noti_id} = req.body;
+        // console.log(noti_id)
+        try {
+            
+           const noti = await notification.findOneAndUpdate({_id: noti_id}, {clicked: true});
+        // console.log(notifications)
+           res.send(noti)
         } catch (error) {
             res.send(error)
         }
