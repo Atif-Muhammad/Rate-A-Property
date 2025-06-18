@@ -22,6 +22,17 @@ const notifications = {
         } catch (error) {
             res.send(error)
         }
+    },
+    getNotificationsCount: async (req, res)=>{
+        const {userId} = req.params;
+        // console.log(userId)
+        try {
+           const notifications = await notification.countDocuments({$and: [{for_user: {$in: [userId]}}, {clicked: false}]});
+        //    console.log(notifications)
+           res.json(notifications)
+        } catch (error) {
+            res.send(error)
+        }
     }
 
 

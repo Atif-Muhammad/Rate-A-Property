@@ -515,22 +515,19 @@ function CommentCard(props) {
             {/* User Info */}
             <div className="flex flex-col space-x-2">
               <span className="font-semibold text-gray-900">
-                {props.comment.owner?.user_name || currentUser.user_name}
+                {props.comment.owner?.user_name}
               </span>
               <span className="text-xs text-gray-500">
-                {getTimeAgo(props.comment.createdAt) || "Just now"}
+                {getTimeAgo(props.comment.createdAt)}
               </span>
             </div>
-            {/* comment text  */}
+
+            {/* Comment Text */}
             <p className="text-gray-800 mt-1 break-all">
-              {isExpanded ||
-              (props.comment?.comment || editText)?.length <= MAX_LENGTH
-                ? props.comment?.comment || editText
-                : `${(props.comment?.comment || editText)?.slice(
-                    0,
-                    MAX_LENGTH
-                  )}... `}
-              {(props.comment?.comment || editText)?.length > MAX_LENGTH && (
+              {isExpanded || props.comment?.comment?.length <= MAX_LENGTH
+                ? props.comment?.comment
+                : `${props.comment?.comment?.slice(0, MAX_LENGTH)}... `}
+              {props.comment?.comment?.length > MAX_LENGTH && (
                 <button
                   onClick={() => setIsExpanded(!isExpanded)}
                   className="text-blue-600 ms-2 cursor-pointer"

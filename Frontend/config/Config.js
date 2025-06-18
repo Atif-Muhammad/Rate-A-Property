@@ -464,6 +464,15 @@ const getNotifications = async (userId)=>{
   }
 }
 
+const getNotificationsCount = async (userId)=>{
+  try {
+    const response = await axios.get(`${Baseurl}/user/getNotisCount/${userId}`, {withCredentials: true});
+    return response;
+  } catch (error) {
+    return error;
+  }
+}
+
 
 
 export const APIS = {
@@ -504,5 +513,6 @@ export const APIS = {
   search,
   analyzePost,
   getNotifications,
-  createNotification
+  createNotification,
+  getNotificationsCount
 };

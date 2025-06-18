@@ -33,4 +33,6 @@ router.post("/createNoti", createNotification)
 
 router.get("/getNotis/:userId", getNotifications)
 
+router.get("/getNotisCount/:userId", getNotificationsCount)
+
 module.exports = router;

@@ -7,7 +7,6 @@ import {
   UserCircle,
   Settings,
   LogOut,
-  Compass,
 } from "lucide-react";
 import { APIS } from "../../config/Config";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -19,10 +18,24 @@ export const Sidebar = () => {
   const [showConfirm, setShowConfirm] = useState(false);
 
   // console.log(currentUser);
+      
+const { data: count } = useQuery({
+      queryKey: ["notificationsCount", currentUser?._id],
+      queryFn: async () => {
+        return await APIS.getNotificationsCount(currentUser?._id)
+          .then((res) => {
+            // console.log(res.data)
+            return res.data;
+          })
+          .catch((err) => {
+            return err;
+          });
+      },
+      enabled: !!currentUser?._id,
+    });
 
   const navLinks = [
     { to: "/", label: "Home", icon: <Home size={24} /> },
-    { to: "/discover", label: "Discover", icon: <Compass size={24} /> },
     { to: "/notifications", label: "Notifications", icon: <Bell size={24} /> },
     { to: "/messages", label: "Messages", icon: <MessageCircle size={24} /> },
     {
@@ -87,6 +100,7 @@ export const Sidebar = () => {
             >
               {icon}
               <span>{label}</span>
+              {(label === "Notifications" && count > 0) && <div className="absolute right-7 bg-red-500 px-1.5 text-center text-white rounded-full">{count}</div>}
             </NavLink>
           ))}
 
